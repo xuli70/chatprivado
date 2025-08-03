@@ -743,7 +743,8 @@ select.form-control {
 /* Layouts de pantalla */
 .screen {
   display: none;
-  min-height: 100vh;
+  min-height: 100svh; /* Small viewport height */
+  min-height: 100dvh; /* Dynamic viewport height - preferred */
   width: 100%;
 }
 
@@ -757,7 +758,8 @@ select.form-control {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: 100svh; /* Small viewport height */
+  min-height: 100dvh; /* Dynamic viewport height - preferred */
   padding: var(--space-24);
   text-align: center;
 }
@@ -887,7 +889,7 @@ select.form-control {
 .chat-container {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 120px; /* Espacio para el input fijo */
+  padding-bottom: 180px; /* Espacio aumentado para el input fijo y botones móvil */
 }
 
 .chat-messages {
@@ -992,6 +994,7 @@ select.form-control {
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   padding: var(--space-16);
+  padding-bottom: calc(var(--space-16) + env(safe-area-inset-bottom));
   z-index: 20;
 }
 
@@ -1032,8 +1035,8 @@ select.form-control {
 /* Acciones del chat */
 .chat-actions {
   position: fixed;
-  bottom: 100px;
-  right: var(--space-16);
+  bottom: calc(140px + env(safe-area-inset-bottom));
+  right: calc(var(--space-16) + env(safe-area-inset-right));
   display: flex;
   gap: var(--space-8);
   z-index: 15;
@@ -1132,7 +1135,7 @@ select.form-control {
 /* Toast */
 .toast {
   position: fixed;
-  bottom: var(--space-20);
+  bottom: calc(var(--space-20) + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   background: var(--color-surface);
@@ -1216,6 +1219,54 @@ select.form-control {
 }
 
 /* Responsive breakpoints */
+
+/* Mobile small screens */
+@media (max-width: 480px) {
+  .chat-container {
+    padding-bottom: 220px; /* Más espacio en móviles pequeños */
+  }
+  
+  .chat-actions {
+    bottom: calc(160px + env(safe-area-inset-bottom)); /* Más espacio del bottom en móviles pequeños */
+    right: calc(var(--space-12) + env(safe-area-inset-right)); /* Menos margen lateral + safe area */
+  }
+  
+  .chat-input-container {
+    padding: var(--space-12);
+    padding-bottom: calc(var(--space-12) + env(safe-area-inset-bottom, 12px));
+  }
+  
+  .chat-messages {
+    padding: var(--space-12);
+    gap: var(--space-12);
+  }
+  
+  .welcome-content {
+    padding: var(--space-16);
+  }
+  
+  .form {
+    padding: var(--space-16);
+  }
+  
+  .modal-content {
+    margin: var(--space-8);
+    max-height: calc(100vh - var(--space-16));
+  }
+  
+  /* Mejorar tamaños de botones para touch */
+  .btn {
+    min-height: 48px;
+    padding: var(--space-12) var(--space-20);
+  }
+  
+  .vote-btn {
+    min-height: 44px;
+    min-width: 64px;
+    padding: var(--space-8) var(--space-12);
+  }
+}
+
 @media (min-width: 768px) {
   .welcome-content {
     padding: var(--space-32);
@@ -1305,4 +1356,21 @@ select.form-control {
 
 [data-color-scheme="dark"] .limit-counter {
   background: var(--color-bg-1);
+}
+
+/* Mejoras para teclado virtual en móviles */
+@media (max-height: 600px) and (max-width: 480px) {
+  .chat-container {
+    padding-bottom: 140px; /* Reducir espacio cuando altura es limitada */
+  }
+  
+  .chat-actions {
+    bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+  
+  .welcome-content {
+    min-height: 100vh; /* Usar viewport fijo en pantallas muy pequeñas */
+    justify-content: flex-start;
+    padding-top: var(--space-32);
+  }
 }

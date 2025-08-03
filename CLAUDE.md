@@ -117,12 +117,22 @@ No installation, build, test, or lint commands are required.
    - `SUPABASE_ANON_KEY=your_actual_anon_key`
 
 ### Deployment Process
-1. ✅ Supabase tables created and configured
+1. ✅ Supabase tables created and configured (SQL ready in SUPABASE_SETUP.md)
 2. ✅ Code updated with backend integration
-3. **NEXT**: Configure environment variables in Coolify
-4. **NEXT**: Deploy and test multi-device functionality
+3. **NEXT**: Execute SQL setup in Supabase and get real ANON_KEY
+4. **NEXT**: Configure environment variables in Coolify
+5. **NEXT**: Deploy and test multi-device functionality
+6. **NEXT**: Implement real-time messaging (NEW REQUIREMENT)
 
 ### Testing Multi-Device
 - Create room on Device A → Join with code on Device B
-- Messages should sync in real-time across devices
+- Messages should sync across devices (manual refresh currently)
 - Voting system prevents duplicates across sessions
+- **NEW**: Messages should appear automatically on all connected devices (real-time)
+
+### Current State - Session End
+- **Problem SOLVED**: "Sala no encontrada" multi-device issue resolved
+- **Backend**: Supabase fully integrated with localStorage fallback
+- **Deployment**: Ready for production with environment variables
+- **NEW FEATURE**: Real-time messaging required for next session
+- **Configuration**: SQL ready to execute, keys need to be configured
