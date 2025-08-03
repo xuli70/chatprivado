@@ -413,6 +413,154 @@ class SupabaseClient {
     isSupabaseAvailable() {
         return this.isOnline && this.client !== null;
     }
+
+    // ==================== REAL-TIME MESSAGING ====================
+
+    // Suscribirse a mensajes nuevos en una sala
+    subscribeToRoomMessages(roomId, onNewMessage) {
+        if (!this.isSupabaseAvailable()) {
+            // Fallback: usar polling para localStorage
+            return this.startPollingForMessages(roomId, onNewMessage);
+        }
+
+        try {
+            console.log(`Suscribiéndose a mensajes de sala: ${roomId}`);
+            
+            const channel = this.client
+                .channel(`room_messages_${roomId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'chat_messages',
+                        filter: `room_id=eq.${roomId}`
+                    },
+                    (payload) => {
+                        console.log('Nuevo mensaje recibido:', payload);
+                        
+                        // Convertir formato de Supabase al formato de la app
+                        const message = {
+                            id: payload.new.id,
+                            text: payload.new.text,
+                            isAnonymous: payload.new.is_anonymous,
+                            author: payload.new.author,
+                            timestamp: payload.new.created_at,
+                            votes: {
+                                likes: payload.new.likes || 0,
+                                dislikes: payload.new.dislikes || 0
+                            }
+                        };
+                        
+                        onNewMessage(message);
+                    }
+                )
+                .subscribe((status) => {
+                    console.log(`Estado de suscripción para sala ${roomId}:`, status);
+                });
+
+            // Guardar referencia del canal para poder desuscribirse
+            if (!this.subscriptions) {
+                this.subscriptions = new Map();
+            }
+            this.subscriptions.set(roomId, channel);
+
+            return channel;
+        } catch (error) {
+            console.error('Error suscribiéndose a mensajes en tiempo real:', error);
+            // Fallback a polling
+            return this.startPollingForMessages(roomId, onNewMessage);
+        }
+    }
+
+    // Desuscribirse de mensajes de una sala
+    unsubscribeFromRoom(roomId) {
+        if (this.subscriptions && this.subscriptions.has(roomId)) {
+            const channel = this.subscriptions.get(roomId);
+            if (channel && typeof channel.unsubscribe === 'function') {
+                channel.unsubscribe();
+                console.log(`Desuscrito de sala: ${roomId}`);
+            }
+            this.subscriptions.delete(roomId);
+        }
+
+        // Detener polling si existe
+        if (this.pollingIntervals && this.pollingIntervals.has(roomId)) {
+            clearInterval(this.pollingIntervals.get(roomId));
+            this.pollingIntervals.delete(roomId);
+            console.log(`Polling detenido para sala: ${roomId}`);
+        }
+    }
+
+    // Sistema de polling para localStorage (fallback)
+    startPollingForMessages(roomId, onNewMessage) {
+        console.log(`Iniciando polling para sala: ${roomId}`);
+        
+        if (!this.pollingIntervals) {
+            this.pollingIntervals = new Map();
+        }
+
+        // Detener polling anterior si existe
+        if (this.pollingIntervals.has(roomId)) {
+            clearInterval(this.pollingIntervals.get(roomId));
+        }
+
+        // Almacenar IDs de mensajes conocidos para evitar duplicados
+        let knownMessageIds = new Set();
+        
+        // Cargar mensajes existentes para evitar duplicados iniciales
+        try {
+            const initialRoom = await this.getRoomLocal(roomId);
+            if (initialRoom && initialRoom.messages) {
+                initialRoom.messages.forEach(msg => knownMessageIds.add(msg.id));
+            }
+        } catch (error) {
+            console.error('Error cargando mensajes iniciales para polling:', error);
+        }
+        
+        const pollInterval = setInterval(async () => {
+            try {
+                const room = await this.getRoomLocal(roomId);
+                if (!room || !room.messages) return;
+
+                // Buscar mensajes nuevos que no conocemos
+                const newMessages = room.messages.filter(message => 
+                    !knownMessageIds.has(message.id)
+                );
+
+                // Procesar mensajes nuevos
+                newMessages.forEach(message => {
+                    knownMessageIds.add(message.id);
+                    onNewMessage(message);
+                });
+
+            } catch (error) {
+                console.error('Error en polling de mensajes:', error);
+            }
+        }, 3000); // Polling cada 3 segundos
+
+        this.pollingIntervals.set(roomId, pollInterval);
+        return pollInterval;
+    }
+
+    // Limpiar todas las suscripciones
+    cleanup() {
+        // Desuscribirse de todos los canales
+        if (this.subscriptions) {
+            this.subscriptions.forEach((channel, roomId) => {
+                this.unsubscribeFromRoom(roomId);
+            });
+            this.subscriptions.clear();
+        }
+
+        // Detener todos los polling
+        if (this.pollingIntervals) {
+            this.pollingIntervals.forEach((interval, roomId) => {
+                clearInterval(interval);
+            });
+            this.pollingIntervals.clear();
+        }
+    }
 }
 
 // Exportar para uso global

@@ -90,7 +90,9 @@ class AnonymousChatApp {
             timeCounter: document.getElementById('timeCounter'),
             messageCounter: document.getElementById('messageCounter'),
             chatMessages: document.getElementById('chatMessages'),
-            characterCount: document.querySelector('.character-count')
+            characterCount: document.querySelector('.character-count'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            connectionText: document.querySelector('.connection-text')
         };
 
         // Modales
@@ -143,6 +145,7 @@ class AnonymousChatApp {
 
         // Limpiar datos automáticamente al cerrar
         window.addEventListener('beforeunload', () => this.cleanup());
+        window.addEventListener('unload', () => this.cleanup());
     }
 
     showScreen(screenId) {
@@ -235,6 +238,7 @@ class AnonymousChatApp {
         this.elements.displays.roomCode.textContent = this.state.currentRoom.id;
         this.loadMessages();
         this.startTimers();
+        this.setupRealtimeMessaging();
         this.elements.inputs.messageInput.focus();
     }
 
@@ -264,12 +268,21 @@ class AnonymousChatApp {
             votes: { likes: 0, dislikes: 0 }
         };
 
+        // Guardar referencia del último mensaje enviado para evitar ecos
+        this.lastSentMessage = {
+            text: message.text,
+            author: message.author,
+            timestamp: message.timestamp
+        };
+
         // Enviar mensaje a Supabase
         const savedMessage = await this.sendMessage(this.state.currentRoom.id, message);
         if (savedMessage) {
             // Actualizar el estado local con el mensaje guardado
             this.state.currentRoom.messages.push(savedMessage);
             this.addMessageToChat(savedMessage);
+            // Actualizar la referencia con el mensaje guardado
+            this.lastSentMessage.id = savedMessage.id;
         } else {
             // Fallback: usar el mensaje original si Supabase falla
             this.state.currentRoom.messages.push(message);
@@ -286,10 +299,15 @@ class AnonymousChatApp {
         }
     }
 
-    addMessageToChat(message) {
+    addMessageToChat(message, isRealtime = false) {
         const messageEl = document.createElement('div');
         messageEl.className = `message ${!message.isAnonymous ? 'creator-message' : ''}`;
         messageEl.setAttribute('data-message-id', message.id);
+
+        // Agregar clase especial para mensajes en tiempo real
+        if (isRealtime) {
+            messageEl.classList.add('realtime-message');
+        }
 
         const timeStr = new Date(message.timestamp).toLocaleTimeString('es-ES', {
             hour: '2-digit',
@@ -300,6 +318,7 @@ class AnonymousChatApp {
             <div class="message-header">
                 <span class="message-author">${message.author}</span>
                 <span class="message-time">${timeStr}</span>
+                ${isRealtime ? '<span class="realtime-indicator">📡</span>' : ''}
             </div>
             <div class="message-content">${this.escapeHtml(message.text)}</div>
             <div class="message-actions">
@@ -313,6 +332,18 @@ class AnonymousChatApp {
         `;
 
         this.elements.displays.chatMessages.appendChild(messageEl);
+        
+        // Scroll suave para mensajes en tiempo real
+        if (isRealtime) {
+            // Resaltar brevemente el mensaje nuevo
+            setTimeout(() => {
+                messageEl.classList.add('message-highlight');
+                setTimeout(() => {
+                    messageEl.classList.remove('message-highlight', 'realtime-indicator');
+                }, 2000);
+            }, 100);
+        }
+        
         messageEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
         // Bind voting events
@@ -553,6 +584,9 @@ class AnonymousChatApp {
             this.state.timers.delete(this.state.currentRoom.id);
         }
 
+        // Limpiar suscripciones de real-time
+        this.cleanupRealtimeMessaging();
+
         this.state.currentRoom = null;
         this.state.currentUser = null;
         this.showScreen('welcomeScreen');
@@ -698,6 +732,98 @@ class AnonymousChatApp {
     cleanup() {
         // Limpiar timers al cerrar
         this.state.timers.forEach(timer => clearInterval(timer));
+        
+        // Limpiar suscripciones de real-time
+        this.cleanupRealtimeMessaging();
+    }
+
+    // ==================== REAL-TIME MESSAGING ====================
+
+    setupRealtimeMessaging() {
+        if (!this.supabaseClient || !this.state.currentRoom) {
+            console.warn('No se puede configurar real-time messaging');
+            this.updateConnectionStatus('offline', 'Sin conexión');
+            return;
+        }
+
+        const roomId = this.state.currentRoom.id;
+        console.log(`Configurando real-time messaging para sala: ${roomId}`);
+
+        // Determinar estado de conexión inicial
+        if (this.supabaseClient.isSupabaseAvailable()) {
+            this.updateConnectionStatus('online', 'Tiempo Real');
+        } else {
+            this.updateConnectionStatus('offline', 'Modo Local');
+        }
+
+        // Suscribirse a mensajes nuevos
+        this.supabaseClient.subscribeToRoomMessages(roomId, (newMessage) => {
+            this.handleNewRealtimeMessage(newMessage);
+        });
+    }
+
+    handleNewRealtimeMessage(message) {
+        // Verificar que no es un mensaje duplicado
+        const existingMessage = this.state.currentRoom.messages.find(m => m.id === message.id);
+        if (existingMessage) {
+            console.log('Mensaje duplicado ignorado:', message.id);
+            return;
+        }
+
+        // Verificar que el mensaje no es del usuario actual (evitar eco)
+        // Para esto comparamos el timestamp - si es muy reciente probablemente lo envió este usuario
+        const messageTime = new Date(message.timestamp);
+        const now = new Date();
+        const timeDiff = now - messageTime;
+        
+        // Si el mensaje es de menos de 1 segundo, verificar si coincide con el último mensaje enviado
+        if (timeDiff < 1000 && this.lastSentMessage && 
+            this.lastSentMessage.text === message.text && 
+            this.lastSentMessage.author === message.author) {
+            console.log('Evitando eco del propio mensaje');
+            return;
+        }
+
+        console.log('Agregando mensaje en tiempo real:', message);
+
+        // Agregar mensaje al estado y a la interfaz
+        this.state.currentRoom.messages.push(message);
+        this.addMessageToChat(message, true); // true = es mensaje en tiempo real
+
+        // Actualizar contador de mensajes
+        this.updateCounters();
+
+        // Mostrar notificación si no está en foco
+        if (!document.hasFocus()) {
+            this.showToast(`Nuevo mensaje de ${message.author}`, 'info');
+        }
+
+        // Guardar estado actualizado
+        this.saveRoom(this.state.currentRoom);
+    }
+
+    cleanupRealtimeMessaging() {
+        if (this.supabaseClient && this.state.currentRoom) {
+            this.supabaseClient.unsubscribeFromRoom(this.state.currentRoom.id);
+            console.log('Real-time messaging limpiado');
+        }
+    }
+
+    updateConnectionStatus(status, text) {
+        if (!this.elements.displays.connectionStatus || !this.elements.displays.connectionText) {
+            return;
+        }
+
+        // Remover clases anteriores
+        this.elements.displays.connectionStatus.classList.remove('online', 'offline');
+        
+        // Agregar nueva clase
+        this.elements.displays.connectionStatus.classList.add(status);
+        
+        // Actualizar texto
+        this.elements.displays.connectionText.textContent = text;
+        
+        console.log(`Estado de conexión actualizado: ${status} - ${text}`);
     }
 
     escapeHtml(text) {

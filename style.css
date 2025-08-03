@@ -1210,12 +1210,83 @@ select.form-control {
   }
 }
 
+@keyframes messageHighlight {
+  0% {
+    background-color: var(--color-bg-3);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes realtimeIndicator {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
 .message {
   animation: slideInUp var(--duration-normal) var(--ease-standard);
 }
 
 .vote-btn:active {
   animation: pulse var(--duration-fast) var(--ease-standard);
+}
+
+/* Mensajes en tiempo real */
+.realtime-message {
+  animation: slideInUp var(--duration-normal) var(--ease-standard);
+}
+
+.message-highlight {
+  animation: messageHighlight 2s var(--ease-standard);
+}
+
+.realtime-indicator {
+  animation: realtimeIndicator 1s var(--ease-standard) infinite;
+  color: var(--color-success);
+  font-size: var(--font-size-xs);
+  margin-left: var(--space-8);
+}
+
+/* Indicador de estado de conexión */
+.connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-base);
+  background: var(--color-secondary);
+}
+
+.connection-status.online {
+  color: var(--color-success);
+  background: var(--color-bg-3);
+}
+
+.connection-status.offline {
+  color: var(--color-error);
+  background: var(--color-bg-4);
+}
+
+.connection-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.connection-status.online .connection-indicator {
+  animation: pulse 2s var(--ease-standard) infinite;
 }
 
 /* Responsive breakpoints */
