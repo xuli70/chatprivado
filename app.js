@@ -34,9 +34,11 @@ class AnonymousChatApp {
         this.cacheElements();
         this.bindEvents();
         
-        // Inicializar cliente de Supabase
+        // Inicializar cliente de Supabase y esperar a que esté listo
         if (typeof SupabaseClient !== 'undefined') {
             this.supabaseClient = new SupabaseClient();
+            // Dar tiempo para que se inicialice
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         this.loadFromStorage();
@@ -740,9 +742,15 @@ class AnonymousChatApp {
     // ==================== REAL-TIME MESSAGING ====================
 
     setupRealtimeMessaging() {
-        if (!this.supabaseClient || !this.state.currentRoom) {
-            console.warn('No se puede configurar real-time messaging');
-            this.updateConnectionStatus('offline', 'Sin conexión');
+        if (!this.state.currentRoom) {
+            console.warn('No hay sala actual para configurar real-time messaging');
+            this.updateConnectionStatus('offline', 'Sin sala');
+            return;
+        }
+
+        if (!this.supabaseClient) {
+            console.warn('SupabaseClient no está disponible, usando modo local');
+            this.updateConnectionStatus('offline', 'Modo Local');
             return;
         }
 
@@ -752,14 +760,21 @@ class AnonymousChatApp {
         // Determinar estado de conexión inicial
         if (this.supabaseClient.isSupabaseAvailable()) {
             this.updateConnectionStatus('online', 'Tiempo Real');
+            console.log('Configurando Supabase real-time para sala:', roomId);
         } else {
             this.updateConnectionStatus('offline', 'Modo Local');
+            console.log('Configurando polling local para sala:', roomId);
         }
 
         // Suscribirse a mensajes nuevos
-        this.supabaseClient.subscribeToRoomMessages(roomId, (newMessage) => {
-            this.handleNewRealtimeMessage(newMessage);
-        });
+        try {
+            this.supabaseClient.subscribeToRoomMessages(roomId, (newMessage) => {
+                this.handleNewRealtimeMessage(newMessage);
+            });
+        } catch (error) {
+            console.error('Error configurando real-time messaging:', error);
+            this.updateConnectionStatus('offline', 'Error Conexión');
+        }
     }
 
     handleNewRealtimeMessage(message) {

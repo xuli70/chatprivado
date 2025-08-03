@@ -9,7 +9,8 @@
       "Bash(docker stop:*)",
       "Bash(docker rm:*)",
       "Bash(env)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(start index.html)"
     ]
   },
   "disabledMcpjsonServers": [

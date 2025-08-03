@@ -509,29 +509,32 @@ class SupabaseClient {
         let knownMessageIds = new Set();
         
         // Cargar mensajes existentes para evitar duplicados iniciales
-        try {
-            const initialRoom = await this.getRoomLocal(roomId);
+        this.getRoomLocal(roomId).then(initialRoom => {
             if (initialRoom && initialRoom.messages) {
                 initialRoom.messages.forEach(msg => knownMessageIds.add(msg.id));
             }
-        } catch (error) {
+        }).catch(error => {
             console.error('Error cargando mensajes iniciales para polling:', error);
-        }
+        });
         
-        const pollInterval = setInterval(async () => {
+        const pollInterval = setInterval(() => {
             try {
-                const room = await this.getRoomLocal(roomId);
-                if (!room || !room.messages) return;
+                // Usar getRoomLocal de forma síncrona
+                this.getRoomLocal(roomId).then(room => {
+                    if (!room || !room.messages) return;
 
-                // Buscar mensajes nuevos que no conocemos
-                const newMessages = room.messages.filter(message => 
-                    !knownMessageIds.has(message.id)
-                );
+                    // Buscar mensajes nuevos que no conocemos
+                    const newMessages = room.messages.filter(message => 
+                        !knownMessageIds.has(message.id)
+                    );
 
-                // Procesar mensajes nuevos
-                newMessages.forEach(message => {
-                    knownMessageIds.add(message.id);
-                    onNewMessage(message);
+                    // Procesar mensajes nuevos
+                    newMessages.forEach(message => {
+                        knownMessageIds.add(message.id);
+                        onNewMessage(message);
+                    });
+                }).catch(error => {
+                    console.error('Error en polling de mensajes:', error);
                 });
 
             } catch (error) {
