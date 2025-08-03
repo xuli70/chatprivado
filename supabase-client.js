@@ -11,6 +11,25 @@ class SupabaseClient {
         // Generar fingerprint único para el usuario (para votaciones)
         this.userFingerprint = this.generateUserFingerprint();
         
+        // Inicializar sistema de polling adaptativo
+        this.pollingIntervals = new Map();
+        this.pollingState = new Map();
+        
+        // Sistema de reconexión y heartbeat
+        this.reconnectionState = {
+            isReconnecting: false,
+            reconnectAttempts: 0,
+            maxReconnectAttempts: 5,
+            reconnectDelay: 1000, // Comenzar con 1 segundo
+            maxReconnectDelay: 30000, // Máximo 30 segundos
+            heartbeatInterval: null,
+            lastHeartbeat: null,
+            networkStatus: navigator.onLine
+        };
+        
+        // Configurar listeners para optimización de polling
+        this.setupPollingOptimizations();
+        
         this.initializeClient();
     }
 
@@ -57,6 +76,11 @@ class SupabaseClient {
                 if (error && error.code === 'PGRST116') {
                     console.warn('Tablas de chat no existen en Supabase, usando localStorage');
                     this.isOnline = false;
+                } else if (!error) {
+                    console.log('✅ Conexión a Supabase establecida exitosamente');
+                    this.isOnline = true;
+                    // Iniciar sistema de heartbeat
+                    this.startHeartbeat();
                 }
             } else {
                 this.isOnline = false;
@@ -414,6 +438,141 @@ class SupabaseClient {
         return this.isOnline && this.client !== null;
     }
 
+    // Configurar optimizaciones para el polling
+    setupPollingOptimizations() {
+        // Page Visibility API - pausar polling cuando la pestaña no está activa
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', () => {
+                const isVisible = !document.hidden;
+                console.log(`Visibilidad de página cambió: ${isVisible ? 'visible' : 'oculta'}`);
+                
+                // Ajustar polling basado en visibilidad
+                this.pollingState.forEach((state, roomId) => {
+                    if (isVisible) {
+                        // Reactivar polling normal cuando la página es visible
+                        state.lastActivityTime = Date.now() - 5000; // Simular actividad reciente
+                    }
+                    // El polling ya se ajusta automáticamente en calculateNextInterval
+                });
+            });
+        }
+
+        // Network status changes (si está disponible)
+        if (typeof navigator !== 'undefined' && 'onLine' in navigator) {
+            window.addEventListener('online', () => {
+                console.log('Conexión de red restaurada');
+                this.handleNetworkChange(true);
+            });
+            
+            window.addEventListener('offline', () => {
+                console.log('Conexión de red perdida');
+                this.handleNetworkChange(false);
+            });
+        }
+    }
+
+    // Manejar cambios de red
+    handleNetworkChange(isOnline) {
+        console.log(`Estado de red cambió: ${isOnline ? 'online' : 'offline'}`);
+        this.reconnectionState.networkStatus = isOnline;
+        
+        if (isOnline) {
+            console.log('Red restaurada - iniciando reconexión automática');
+            this.startReconnectionProcess();
+        } else {
+            console.log('Red perdida - pausando heartbeat y marcando como offline');
+            this.pauseHeartbeat();
+            this.isOnline = false;
+        }
+    }
+
+    // Iniciar proceso de reconexión automática
+    async startReconnectionProcess() {
+        if (this.reconnectionState.isReconnecting) {
+            console.log('Reconexión ya en progreso, saltando');
+            return;
+        }
+
+        this.reconnectionState.isReconnecting = true;
+        this.reconnectionState.reconnectAttempts = 0;
+        
+        console.log('🔄 Iniciando proceso de reconexión automática');
+        
+        // Notificar al UI sobre el estado de reconexión
+        this.notifyConnectionStatusChange('reconnecting', {
+            attempt: 0,
+            maxAttempts: this.reconnectionState.maxReconnectAttempts
+        });
+        
+        const reconnectAttempt = async () => {
+            if (!navigator.onLine) {
+                console.log('Red no disponible, deteniendo reconexión');
+                this.reconnectionState.isReconnecting = false;
+                return false;
+            }
+
+            this.reconnectionState.reconnectAttempts++;
+            console.log(`Intento de reconexión ${this.reconnectionState.reconnectAttempts}/${this.reconnectionState.maxReconnectAttempts}`);
+
+            try {
+                // Intentar reconectar a Supabase
+                await this.initializeClient();
+                
+                if (this.isOnline && this.client) {
+                    console.log('✅ Reconexión exitosa a Supabase');
+                    this.reconnectionState.isReconnecting = false;
+                    this.reconnectionState.reconnectAttempts = 0;
+                    this.reconnectionState.reconnectDelay = 1000; // Reset delay
+                    
+                    // Notificar éxito de reconexión
+                    this.notifyConnectionStatusChange('online', {
+                        wasReconnecting: true
+                    });
+                    
+                    // Reiniciar heartbeat
+                    this.startHeartbeat();
+                    
+                    return true;
+                }
+            } catch (error) {
+                console.error(`Error en intento de reconexión ${this.reconnectionState.reconnectAttempts}:`, error);
+            }
+
+            // Si no se pudo reconectar y aún hay intentos
+            if (this.reconnectionState.reconnectAttempts < this.reconnectionState.maxReconnectAttempts) {
+                // Notificar intento fallido
+                this.notifyConnectionStatusChange('reconnecting', {
+                    attempt: this.reconnectionState.reconnectAttempts,
+                    maxAttempts: this.reconnectionState.maxReconnectAttempts
+                });
+                
+                // Calcular delay exponencial con jitter
+                const jitter = Math.random() * 1000; // 0-1 segundo de jitter
+                const delay = Math.min(
+                    this.reconnectionState.reconnectDelay * Math.pow(2, this.reconnectionState.reconnectAttempts - 1) + jitter,
+                    this.reconnectionState.maxReconnectDelay
+                );
+                
+                console.log(`⏳ Próximo intento en ${Math.round(delay/1000)}s`);
+                
+                setTimeout(reconnectAttempt, delay);
+            } else {
+                console.error('❌ Agotados todos los intentos de reconexión');
+                this.reconnectionState.isReconnecting = false;
+                
+                // Notificar falla completa
+                this.notifyConnectionStatusChange('offline', {
+                    wasOnline: true,
+                    exhaustedRetries: true
+                });
+            }
+
+            return false;
+        };
+
+        return await reconnectAttempt();
+    }
+
     // ==================== REAL-TIME MESSAGING ====================
 
     // Suscribirse a mensajes nuevos en una sala
@@ -484,20 +643,33 @@ class SupabaseClient {
             this.subscriptions.delete(roomId);
         }
 
-        // Detener polling si existe
+        // Detener polling adaptativo si existe
         if (this.pollingIntervals && this.pollingIntervals.has(roomId)) {
-            clearInterval(this.pollingIntervals.get(roomId));
+            const intervalOrTimeout = this.pollingIntervals.get(roomId);
+            clearTimeout(intervalOrTimeout); // Ahora usamos timeout en lugar de interval
             this.pollingIntervals.delete(roomId);
-            console.log(`Polling detenido para sala: ${roomId}`);
+            console.log(`Polling adaptativo detenido para sala: ${roomId}`);
+        }
+
+        // Limpiar estado del polling
+        if (this.pollingState && this.pollingState.has(roomId)) {
+            const pollingState = this.pollingState.get(roomId);
+            pollingState.isActive = false; // Marcar como inactivo
+            this.pollingState.delete(roomId);
+            console.log(`Estado de polling limpiado para sala: ${roomId}`);
         }
     }
 
-    // Sistema de polling para localStorage (fallback)
+    // Sistema de polling adaptativo para localStorage (fallback)
     startPollingForMessages(roomId, onNewMessage) {
-        console.log(`Iniciando polling para sala: ${roomId}`);
+        console.log(`Iniciando polling adaptativo para sala: ${roomId}`);
         
         if (!this.pollingIntervals) {
             this.pollingIntervals = new Map();
+        }
+
+        if (!this.pollingState) {
+            this.pollingState = new Map();
         }
 
         // Detener polling anterior si existe
@@ -505,49 +677,267 @@ class SupabaseClient {
             clearInterval(this.pollingIntervals.get(roomId));
         }
 
-        // Almacenar IDs de mensajes conocidos para evitar duplicados
-        let knownMessageIds = new Set();
+        // Estado del polling adaptativo
+        const pollingState = {
+            knownMessageIds: new Set(),
+            lastActivityTime: Date.now(),
+            currentInterval: 1000, // Comenzar con 1 segundo
+            isActive: true,
+            consecutiveEmptyPolls: 0
+        };
+        this.pollingState.set(roomId, pollingState);
         
         // Cargar mensajes existentes para evitar duplicados iniciales
         this.getRoomLocal(roomId).then(initialRoom => {
             if (initialRoom && initialRoom.messages) {
-                initialRoom.messages.forEach(msg => knownMessageIds.add(msg.id));
+                initialRoom.messages.forEach(msg => {
+                    pollingState.knownMessageIds.add(msg.id);
+                });
             }
         }).catch(error => {
             console.error('Error cargando mensajes iniciales para polling:', error);
         });
-        
-        const pollInterval = setInterval(() => {
+
+        // Función de polling adaptativo
+        const adaptivePolling = () => {
+            // No hacer polling si la página no está visible (optimización de batería)
+            if (document.hidden) {
+                this.scheduleNextPoll(roomId, adaptivePolling, 5000); // Polling muy lento cuando no está visible
+                return;
+            }
+
             try {
-                // Usar getRoomLocal de forma síncrona
                 this.getRoomLocal(roomId).then(room => {
-                    if (!room || !room.messages) return;
+                    if (!room || !room.messages) {
+                        pollingState.consecutiveEmptyPolls++;
+                        this.scheduleNextPoll(roomId, adaptivePolling, this.calculateNextInterval(roomId));
+                        return;
+                    }
 
                     // Buscar mensajes nuevos que no conocemos
                     const newMessages = room.messages.filter(message => 
-                        !knownMessageIds.has(message.id)
+                        !pollingState.knownMessageIds.has(message.id)
                     );
 
-                    // Procesar mensajes nuevos
-                    newMessages.forEach(message => {
-                        knownMessageIds.add(message.id);
-                        onNewMessage(message);
-                    });
+                    if (newMessages.length > 0) {
+                        console.log(`Encontrados ${newMessages.length} mensajes nuevos en polling`);
+                        pollingState.lastActivityTime = Date.now();
+                        pollingState.consecutiveEmptyPolls = 0;
+                        
+                        // Procesar mensajes nuevos
+                        newMessages.forEach(message => {
+                            pollingState.knownMessageIds.add(message.id);
+                            onNewMessage(message);
+                        });
+                    } else {
+                        pollingState.consecutiveEmptyPolls++;
+                    }
+
+                    // Programar siguiente polling
+                    this.scheduleNextPoll(roomId, adaptivePolling, this.calculateNextInterval(roomId));
+                    
                 }).catch(error => {
                     console.error('Error en polling de mensajes:', error);
+                    pollingState.consecutiveEmptyPolls++;
+                    this.scheduleNextPoll(roomId, adaptivePolling, this.calculateNextInterval(roomId));
                 });
 
             } catch (error) {
                 console.error('Error en polling de mensajes:', error);
+                pollingState.consecutiveEmptyPolls++;
+                this.scheduleNextPoll(roomId, adaptivePolling, this.calculateNextInterval(roomId));
             }
-        }, 3000); // Polling cada 3 segundos
+        };
 
-        this.pollingIntervals.set(roomId, pollInterval);
-        return pollInterval;
+        // Iniciar polling
+        adaptivePolling();
+        return true; // Indicar que el polling se inició
+    }
+
+    // Calcular intervalo adaptativo basado en actividad
+    calculateNextInterval(roomId) {
+        const pollingState = this.pollingState.get(roomId);
+        if (!pollingState) return 1000;
+
+        const timeSinceLastActivity = Date.now() - pollingState.lastActivityTime;
+        const recentActivity = timeSinceLastActivity < 30000; // 30 segundos
+        const veryRecentActivity = timeSinceLastActivity < 10000; // 10 segundos
+
+        // Polling muy frecuente si hay actividad muy reciente
+        if (veryRecentActivity) {
+            pollingState.currentInterval = 500; // 500ms
+        }
+        // Polling normal si hay actividad reciente
+        else if (recentActivity) {
+            pollingState.currentInterval = 1000; // 1s
+        }
+        // Polling lento si no hay actividad reciente pero menos de 2 minutos
+        else if (timeSinceLastActivity < 120000) {
+            pollingState.currentInterval = 2000; // 2s
+        }
+        // Polling muy lento para salas inactivas
+        else {
+            pollingState.currentInterval = 5000; // 5s
+        }
+
+        // Log del intervalo calculado para debugging
+        if (pollingState.currentInterval !== 1000) { // Solo log si no es el intervalo por defecto
+            console.log(`Polling adaptativo - Sala ${roomId}: ${pollingState.currentInterval}ms (actividad hace ${Math.round(timeSinceLastActivity/1000)}s)`);
+        }
+
+        return pollingState.currentInterval;
+    }
+
+    // Notificar actividad en una sala (para optimizar polling)
+    notifyRoomActivity(roomId) {
+        const pollingState = this.pollingState.get(roomId);
+        if (pollingState) {
+            pollingState.lastActivityTime = Date.now();
+            pollingState.consecutiveEmptyPolls = 0;
+            console.log(`Actividad notificada para sala ${roomId} - polling acelerado`);
+        }
+    }
+
+    // Obtener estado del polling para debugging
+    getPollingState(roomId) {
+        return this.pollingState.get(roomId);
+    }
+
+    // ==================== SISTEMA DE HEARTBEAT ====================
+
+    // Iniciar sistema de heartbeat para detectar problemas de conexión
+    startHeartbeat() {
+        if (!this.isSupabaseAvailable()) {
+            console.log('Supabase no disponible, saltando heartbeat');
+            return;
+        }
+
+        // Limpiar heartbeat anterior si existe
+        this.pauseHeartbeat();
+
+        console.log('💓 Iniciando sistema de heartbeat');
+        
+        this.reconnectionState.heartbeatInterval = setInterval(async () => {
+            await this.performHeartbeat();
+        }, 30000); // Heartbeat cada 30 segundos
+
+        // Realizar primer heartbeat inmediatamente
+        this.performHeartbeat();
+    }
+
+    // Pausar sistema de heartbeat
+    pauseHeartbeat() {
+        if (this.reconnectionState.heartbeatInterval) {
+            clearInterval(this.reconnectionState.heartbeatInterval);
+            this.reconnectionState.heartbeatInterval = null;
+            console.log('⏸️ Heartbeat pausado');
+        }
+    }
+
+    // Realizar heartbeat - ping simple a Supabase
+    async performHeartbeat() {
+        if (!this.client || !navigator.onLine) {
+            return;
+        }
+
+        try {
+            console.log('💓 Realizando heartbeat...');
+            const startTime = Date.now();
+            
+            // Hacer una consulta simple y rápida
+            const { error } = await this.client
+                .from('chat_rooms')
+                .select('count')
+                .limit(1);
+
+            const responseTime = Date.now() - startTime;
+            this.reconnectionState.lastHeartbeat = Date.now();
+
+            if (error) {
+                console.warn('❌ Heartbeat falló:', error.message);
+                this.handleHeartbeatFailure();
+            } else {
+                console.log(`✅ Heartbeat exitoso (${responseTime}ms)`);
+                // Reset reconnection state on successful heartbeat
+                this.reconnectionState.reconnectAttempts = 0;
+                this.reconnectionState.reconnectDelay = 1000;
+            }
+        } catch (error) {
+            console.error('❌ Error en heartbeat:', error);
+            this.handleHeartbeatFailure();
+        }
+    }
+
+    // Manejar falla de heartbeat
+    handleHeartbeatFailure() {
+        console.warn('💔 Heartbeat falló - posible problema de conexión');
+        
+        // Si hay múltiples fallas seguidas, iniciar reconexión
+        const timeSinceLastSuccess = Date.now() - (this.reconnectionState.lastHeartbeat || 0);
+        
+        if (timeSinceLastSuccess > 60000) { // 1 minuto sin heartbeat exitoso
+            console.warn('🔄 Múltiples heartbeats fallidos - iniciando reconexión');
+            this.isOnline = false;
+            
+            // Notificar problema de conexión
+            this.notifyConnectionStatusChange('error', {
+                reason: 'heartbeat_failed'
+            });
+            
+            this.startReconnectionProcess();
+        }
+    }
+
+    // Notificar cambios de estado de conexión al UI
+    notifyConnectionStatusChange(status, details = {}) {
+        // Emitir evento personalizado para que la app principal pueda escuchar
+        if (typeof window !== 'undefined' && window.chatApp) {
+            if (window.chatApp.updateConnectionStatusEnhanced) {
+                window.chatApp.updateConnectionStatusEnhanced(status, details);
+            } else {
+                // Fallback al método original
+                const statusText = {
+                    'online': 'Tiempo Real',
+                    'offline': 'Modo Local',
+                    'reconnecting': 'Reconectando...',
+                    'error': 'Error Conexión'
+                }[status] || 'Desconocido';
+                
+                window.chatApp.updateConnectionStatus(status, statusText);
+            }
+        }
+        
+        console.log(`🔄 Notificando cambio de estado: ${status}`, details);
+    }
+            console.warn('🔄 Múltiples heartbeats fallidos - iniciando reconexión');
+            this.isOnline = false;
+            this.startReconnectionProcess();
+        }
+    }
+
+    // Obtener estado de reconexión para debugging
+    getReconnectionState() {
+        return {
+            ...this.reconnectionState,
+            timeSinceLastHeartbeat: this.reconnectionState.lastHeartbeat ? 
+                Date.now() - this.reconnectionState.lastHeartbeat : null
+        };
+    }
+
+    // Programar siguiente polling
+    scheduleNextPoll(roomId, pollingFunction, interval) {
+        const pollingState = this.pollingState.get(roomId);
+        if (!pollingState || !pollingState.isActive) return;
+
+        const timeoutId = setTimeout(pollingFunction, interval);
+        this.pollingIntervals.set(roomId, timeoutId);
     }
 
     // Limpiar todas las suscripciones
     cleanup() {
+        // Pausar heartbeat
+        this.pauseHeartbeat();
+        
         // Desuscribirse de todos los canales
         if (this.subscriptions) {
             this.subscriptions.forEach((channel, roomId) => {
@@ -556,13 +946,25 @@ class SupabaseClient {
             this.subscriptions.clear();
         }
 
-        // Detener todos los polling
+        // Detener todos los polling adaptativos
         if (this.pollingIntervals) {
-            this.pollingIntervals.forEach((interval, roomId) => {
-                clearInterval(interval);
+            this.pollingIntervals.forEach((intervalOrTimeout, roomId) => {
+                clearTimeout(intervalOrTimeout); // Ahora usamos timeout
             });
             this.pollingIntervals.clear();
         }
+
+        // Limpiar estados de polling
+        if (this.pollingState) {
+            this.pollingState.forEach((state, roomId) => {
+                state.isActive = false;
+            });
+            this.pollingState.clear();
+        }
+
+        // Reset reconnection state
+        this.reconnectionState.isReconnecting = false;
+        this.reconnectionState.reconnectAttempts = 0;
     }
 }
 

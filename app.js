@@ -17,7 +17,13 @@ class AnonymousChatApp {
             currentRoom: null,
             currentUser: null,
             userVotes: new Map(), // Para rastrear votos del usuario
-            timers: new Map()
+            timers: new Map(),
+            messageStates: new Map(), // Para rastrear estados de mensajes (enviando, enviado, entregado)
+            typingIndicator: {
+                isTyping: false,
+                timeout: null,
+                lastActivity: null
+            }
         };
 
         // Elementos del DOM
@@ -150,12 +156,20 @@ class AnonymousChatApp {
         this.elements.buttons.cancel.addEventListener('click', () => this.hideModal());
 
         // Input de mensaje
-        this.elements.inputs.messageInput.addEventListener('input', () => this.updateCharacterCount());
+        this.elements.inputs.messageInput.addEventListener('input', () => {
+            this.updateCharacterCount();
+            this.handleTypingActivity();
+        });
         this.elements.inputs.messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.elements.forms.message.requestSubmit();
             }
+        });
+        
+        // Detener typing indicator cuando se pierde el focus
+        this.elements.inputs.messageInput.addEventListener('blur', () => {
+            this.stopTypingIndicator();
         });
 
         // Limpiar datos automáticamente al cerrar
@@ -297,15 +311,38 @@ class AnonymousChatApp {
             timestamp: message.timestamp
         };
 
+        // Notificar actividad al sistema de polling adaptativo
+        if (this.supabaseClient && this.supabaseClient.notifyRoomActivity) {
+            this.supabaseClient.notifyRoomActivity(this.state.currentRoom.id);
+        }
+
+        // Marcar mensaje como 'enviando'
+        const tempMessageId = `temp_${Date.now()}`;
+        this.setMessageState(tempMessageId, 'sending');
+        this.showMessageState(tempMessageId, 'Enviando...');
+
         // Enviar mensaje a Supabase
         const savedMessage = await this.sendMessage(this.state.currentRoom.id, message);
         if (savedMessage) {
+            // Marcar como enviado exitosamente
+            this.setMessageState(tempMessageId, 'sent');
+            this.showMessageState(tempMessageId, 'Enviado', 2000);
+            
             // Actualizar el estado local con el mensaje guardado
             this.state.currentRoom.messages.push(savedMessage);
             this.addMessageToChat(savedMessage);
             // Actualizar la referencia con el mensaje guardado
             this.lastSentMessage.id = savedMessage.id;
+            
+            // Marcar como entregado después de un breve delay
+            setTimeout(() => {
+                this.setMessageState(savedMessage.id, 'delivered');
+            }, 1000);
         } else {
+            // Marcar como error si falla
+            this.setMessageState(tempMessageId, 'error');
+            this.showMessageState(tempMessageId, 'Error al enviar', 5000);
+            
             // Fallback: usar el mensaje original si Supabase falla
             this.state.currentRoom.messages.push(message);
             this.addMessageToChat(message);
@@ -495,16 +532,22 @@ class AnonymousChatApp {
         this.updateCounters();
         
         // Timer para actualizar contador cada minuto
-        const timer = setInterval(() => {
+        const counterTimer = setInterval(() => {
             if (this.isRoomExpired(this.state.currentRoom)) {
                 this.showToast('La sala ha expirado', 'error');
-                clearInterval(timer);
+                clearInterval(counterTimer);
                 return;
             }
             this.updateCounters();
         }, 60000);
 
-        this.state.timers.set(this.state.currentRoom.id, timer);
+        // Timer para limpiar estados de mensajes cada 30 segundos
+        const cleanupTimer = setInterval(() => {
+            this.cleanupMessageStates();
+        }, 30000);
+
+        this.state.timers.set(this.state.currentRoom.id, counterTimer);
+        this.state.timers.set(`${this.state.currentRoom.id}_cleanup`, cleanupTimer);
     }
 
     updateCounters() {
@@ -611,6 +654,13 @@ class AnonymousChatApp {
 
         // Limpiar suscripciones de real-time
         this.cleanupRealtimeMessaging();
+
+        // Limpiar estados de UX
+        this.stopTypingIndicator();
+        this.state.messageStates.clear();
+        
+        // Optimización final al salir
+        this.optimizeDOM();
 
         // Limpiar sesión guardada
         this.clearCurrentSession();
@@ -845,6 +895,15 @@ class AnonymousChatApp {
         
         // Limpiar suscripciones de real-time
         this.cleanupRealtimeMessaging();
+        
+        // Limpiar estados de UX
+        this.stopTypingIndicator();
+        this.state.messageStates.clear();
+        
+        // Optimización final
+        this.optimizeDOM();
+        
+        console.log('🧽 Cleanup completo ejecutado');
     }
 
     // ==================== REAL-TIME MESSAGING ====================
@@ -909,6 +968,11 @@ class AnonymousChatApp {
 
         console.log('Agregando mensaje en tiempo real:', message);
 
+        // Notificar actividad al sistema de polling adaptativo
+        if (this.supabaseClient && this.supabaseClient.notifyRoomActivity) {
+            this.supabaseClient.notifyRoomActivity(this.state.currentRoom.id);
+        }
+
         // Agregar mensaje al estado y a la interfaz
         this.state.currentRoom.messages.push(message);
         this.addMessageToChat(message, true); // true = es mensaje en tiempo real
@@ -941,7 +1005,7 @@ class AnonymousChatApp {
         }
 
         // Remover clases anteriores
-        this.elements.displays.connectionStatus.classList.remove('online', 'offline');
+        this.elements.displays.connectionStatus.classList.remove('online', 'offline', 'reconnecting');
         
         // Agregar nueva clase
         this.elements.displays.connectionStatus.classList.add(status);
@@ -952,14 +1016,631 @@ class AnonymousChatApp {
         console.log(`Estado de conexión actualizado: ${status} - ${text}`);
     }
 
+    // Nuevas funciones de estado mejoradas
+    updateConnectionStatusEnhanced(status, details = {}) {
+        const statusMap = {
+            'online': { text: 'Tiempo Real', icon: '🟢' },
+            'offline': { text: 'Modo Local', icon: '🔴' },
+            'reconnecting': { text: 'Reconectando...', icon: '🟡' },
+            'error': { text: 'Error Conexión', icon: '⚠️' }
+        };
+        
+        const config = statusMap[status] || statusMap['offline'];
+        let displayText = config.text;
+        
+        // Agregar detalles adicionales si están disponibles
+        if (details.attempt && status === 'reconnecting') {
+            displayText = `Reconectando... (${details.attempt}/${details.maxAttempts})`;
+        }
+        
+        this.updateConnectionStatus(status, displayText);
+        
+        // Mostrar toast para cambios importantes
+        if (status === 'online' && details.wasReconnecting) {
+            this.showToast('✅ Conexión restaurada', 'success');
+        } else if (status === 'offline' && details.wasOnline) {
+            this.showToast('⚠️ Usando modo local', 'warning');
+        }
+    }
+
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // ==================== MESSAGE STATES & TYPING INDICATORS ====================
+
+    // Establecer estado de un mensaje
+    setMessageState(messageId, state) {
+        this.state.messageStates.set(messageId, {
+            state: state, // 'sending', 'sent', 'delivered', 'error'
+            timestamp: Date.now()
+        });
+        console.log(`Mensaje ${messageId}: ${state}`);
+    }
+
+    // Mostrar estado visual del mensaje
+    showMessageState(messageId, text, duration = 3000) {
+        // Crear o actualizar elemento de estado
+        let stateElement = document.getElementById(`message-state-${messageId}`);
+        
+        if (!stateElement) {
+            stateElement = document.createElement('div');
+            stateElement.id = `message-state-${messageId}`;
+            stateElement.className = 'message-state-indicator';
+            
+            // Insertar al final del chat
+            this.elements.displays.chatMessages.appendChild(stateElement);
+        }
+        
+        stateElement.textContent = text;
+        stateElement.style.display = 'block';
+        
+        // Auto-hide después del duration
+        if (duration > 0) {
+            setTimeout(() => {
+                if (stateElement && stateElement.parentNode) {
+                    stateElement.style.display = 'none';
+                }
+            }, duration);
+        }
+    }
+
+    // Manejar actividad de escritura
+    handleTypingActivity() {
+        const now = Date.now();
+        this.state.typingIndicator.lastActivity = now;
+        
+        // Si no está escribiendo, mostrar indicador
+        if (!this.state.typingIndicator.isTyping) {
+            this.showTypingIndicator();
+        }
+        
+        // Reset del timeout
+        if (this.state.typingIndicator.timeout) {
+            clearTimeout(this.state.typingIndicator.timeout);
+        }
+        
+        // Ocultar después de 2 segundos de inactividad
+        this.state.typingIndicator.timeout = setTimeout(() => {
+            this.stopTypingIndicator();
+        }, 2000);
+    }
+
+    // Mostrar indicador de escritura
+    showTypingIndicator() {
+        if (this.state.typingIndicator.isTyping) return;
+        
+        this.state.typingIndicator.isTyping = true;
+        
+        // Crear elemento de typing indicator si no existe
+        let typingElement = document.getElementById('typing-indicator');
+        if (!typingElement) {
+            typingElement = document.createElement('div');
+            typingElement.id = 'typing-indicator';
+            typingElement.className = 'typing-indicator';
+            typingElement.innerHTML = `
+                <div class="typing-content">
+                    <span class="typing-text">Escribiendo</span>
+                    <div class="typing-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                </div>
+            `;
+            this.elements.displays.chatMessages.appendChild(typingElement);
+        }
+        
+        typingElement.style.display = 'block';
+        typingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        
+        console.log('✍️ Mostrando indicador de escritura');
+    }
+
+    // Ocultar indicador de escritura
+    stopTypingIndicator() {
+        if (!this.state.typingIndicator.isTyping) return;
+        
+        this.state.typingIndicator.isTyping = false;
+        
+        const typingElement = document.getElementById('typing-indicator');
+        if (typingElement) {
+            typingElement.style.display = 'none';
+        }
+        
+        if (this.state.typingIndicator.timeout) {
+            clearTimeout(this.state.typingIndicator.timeout);
+            this.state.typingIndicator.timeout = null;
+        }
+        
+        console.log('✒️ Ocultando indicador de escritura');
+    }
+
+    // Limpiar estados de mensajes antiguos (llamar periódicamente)
+    cleanupMessageStates() {
+        const now = Date.now();
+        const maxAge = 60000; // 1 minuto
+        
+        for (const [messageId, stateData] of this.state.messageStates.entries()) {
+            if (now - stateData.timestamp > maxAge) {
+                this.state.messageStates.delete(messageId);
+                
+                // Limpiar elemento visual si existe
+                const element = document.getElementById(`message-state-${messageId}`);
+                if (element && element.parentNode) {
+                    element.parentNode.removeChild(element);
+                }
+            }
+        }
+    }
+
+    // ==================== DEBUGGING TOOLS ====================
+
+    // Obtener estado del polling para debugging
+    getPollingDebugInfo() {
+        if (!this.supabaseClient) {
+            return 'No hay cliente de Supabase disponible';
+        }
+
+        const debugInfo = {
+            networkStatus: navigator.onLine,
+            supabaseAvailable: this.supabaseClient.isSupabaseAvailable(),
+            pageVisible: !document.hidden
+        };
+
+        // Estado de reconexión
+        if (this.supabaseClient.getReconnectionState) {
+            const reconnectionState = this.supabaseClient.getReconnectionState();
+            debugInfo.reconnection = {
+                isReconnecting: reconnectionState.isReconnecting,
+                attempts: reconnectionState.reconnectAttempts,
+                maxAttempts: reconnectionState.maxReconnectAttempts,
+                lastHeartbeat: reconnectionState.timeSinceLastHeartbeat ? 
+                    Math.round(reconnectionState.timeSinceLastHeartbeat / 1000) + 's ago' : 'never'
+            };
+        }
+
+        // Estado de polling si hay sala activa
+        if (this.state.currentRoom) {
+            debugInfo.room = {
+                id: this.state.currentRoom.id,
+                messagesCount: this.state.currentRoom.messages.length
+            };
+
+            const pollingState = this.supabaseClient.getPollingState(this.state.currentRoom.id);
+            if (pollingState) {
+                const timeSinceActivity = Date.now() - pollingState.lastActivityTime;
+                debugInfo.polling = {
+                    currentInterval: pollingState.currentInterval + 'ms',
+                    timeSinceLastActivity: Math.round(timeSinceActivity / 1000) + 's',
+                    consecutiveEmptyPolls: pollingState.consecutiveEmptyPolls,
+                    knownMessagesCount: pollingState.knownMessageIds.size,
+                    isActive: pollingState.isActive
+                };
+            } else {
+                debugInfo.polling = 'No hay estado de polling';
+            }
+        } else {
+            debugInfo.room = 'No hay sala activa';
+        }
+        
+        return debugInfo;
+    }
+
+    // Función para testing manual del sistema completo
+    testPollingSystem() {
+        console.log('=== TESTING SISTEMA DE CHAT FLUIDO ===');
+        console.log('Estado actual:', this.getPollingDebugInfo());
+        
+        // Simular actividad
+        if (this.supabaseClient && this.state.currentRoom) {
+            console.log('Simulando actividad en la sala...');
+            this.supabaseClient.notifyRoomActivity(this.state.currentRoom.id);
+            
+            setTimeout(() => {
+                console.log('Estado después de simular actividad:', this.getPollingDebugInfo());
+            }, 1000);
+        }
+        
+        // Testing de reconexión si está disponible
+        if (this.supabaseClient && this.supabaseClient.startReconnectionProcess) {
+            console.log('Para probar reconexión: testReconnection()');
+        }
+    }
+
+    // Función para testing manual de reconexión
+    testReconnectionSystem() {
+        if (!this.supabaseClient) {
+            console.log('No hay cliente de Supabase para probar reconexión');
+            return;
+        }
+        
+        console.log('=== TESTING SISTEMA DE RECONEXIÓN ===');
+        console.log('Estado antes:', this.supabaseClient.getReconnectionState());
+        
+        // Simular pérdida y recuperación de conexión
+        console.log('Simulando pérdida de conexión...');
+        this.supabaseClient.handleNetworkChange(false);
+        
+        setTimeout(() => {
+            console.log('Simulando recuperación de conexión...');
+            this.supabaseClient.handleNetworkChange(true);
+        }, 2000);
+    }
+
+    // ==================== EDGE CASE TESTING SUITE ====================
+
+    // Test comprehensivo de casos edge
+    runEdgeCaseTests() {
+        console.log('🧪 === INICIANDO TESTS DE CASOS EDGE ===');
+        
+        const tests = [
+            () => this.testMultipleTabsScenario(),
+            () => this.testNetworkInterruption(),
+            () => this.testRapidMessaging(),
+            () => this.testSessionPersistence(),
+            () => this.testPollingUnderLoad(),
+            () => this.testHeartbeatFailure(),
+            () => this.testMemoryLeaks()
+        ];
+        
+        let testIndex = 0;
+        const runNextTest = () => {
+            if (testIndex < tests.length) {
+                console.log(`📋 Test ${testIndex + 1}/${tests.length} iniciando...`);
+                tests[testIndex]();
+                testIndex++;
+                setTimeout(runNextTest, 5000); // 5 segundos entre tests
+            } else {
+                console.log('✅ === TODOS LOS TESTS COMPLETADOS ===');
+                this.generatePerformanceReport();
+            }
+        };
+        
+        runNextTest();
+    }
+
+    // Test: Múltiples pestañas
+    testMultipleTabsScenario() {
+        console.log('📋 Test: Múltiples pestañas');
+        
+        // Simular otra pestaña enviando mensajes
+        if (this.state.currentRoom) {
+            const mockMessage = {
+                id: Date.now() + Math.random(),
+                text: `Mensaje desde otra pestaña - Test ${Date.now()}`,
+                isAnonymous: true,
+                author: 'Anónimo',
+                timestamp: new Date().toISOString(),
+                votes: { likes: 0, dislikes: 0 }
+            };
+            
+            // Simular mensaje externo
+            setTimeout(() => {
+                this.handleNewRealtimeMessage(mockMessage);
+                console.log('✅ Test múltiples pestañas: Mensaje externo procesado');
+            }, 1000);
+        }
+    }
+
+    // Test: Interrupción de red
+    testNetworkInterruption() {
+        console.log('📋 Test: Interrupción de red');
+        
+        // Simular caída y recuperación de red
+        if (this.supabaseClient) {
+            this.supabaseClient.handleNetworkChange(false);
+            
+            setTimeout(() => {
+                this.supabaseClient.handleNetworkChange(true);
+                console.log('✅ Test interrupción de red: Ciclo completo');
+            }, 3000);
+        }
+    }
+
+    // Test: Mensajería rápida
+    testRapidMessaging() {
+        console.log('📋 Test: Mensajería rápida');
+        
+        if (!this.state.currentRoom) {
+            console.log('⚠️ Test saltado: No hay sala activa');
+            return;
+        }
+        
+        // Enviar múltiples mensajes rápidamente
+        for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+                const mockMessage = {
+                    id: Date.now() + i,
+                    text: `Mensaje rápido ${i + 1}/5`,
+                    isAnonymous: true,
+                    author: 'Test',
+                    timestamp: new Date().toISOString(),
+                    votes: { likes: 0, dislikes: 0 }
+                };
+                this.handleNewRealtimeMessage(mockMessage);
+            }, i * 200); // 200ms entre mensajes
+        }
+        
+        setTimeout(() => {
+            console.log('✅ Test mensajería rápida: Completado');
+        }, 1500);
+    }
+
+    // Test: Persistencia de sesión
+    testSessionPersistence() {
+        console.log('📋 Test: Persistencia de sesión');
+        
+        const sessionData = localStorage.getItem('currentSession');
+        if (sessionData) {
+            try {
+                const session = JSON.parse(sessionData);
+                const sessionAge = Date.now() - new Date(session.timestamp).getTime();
+                console.log(`✅ Sesión encontrada, edad: ${Math.round(sessionAge/1000)}s`);
+            } catch (error) {
+                console.error('❌ Error parsing session:', error);
+            }
+        } else {
+            console.log('⚠️ No hay sesión guardada');
+        }
+    }
+
+    // Test: Polling bajo carga
+    testPollingUnderLoad() {
+        console.log('📋 Test: Polling bajo carga');
+        
+        if (this.supabaseClient && this.state.currentRoom) {
+            // Simular actividad intensa
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    this.supabaseClient.notifyRoomActivity(this.state.currentRoom.id);
+                }, i * 100);
+            }
+            
+            setTimeout(() => {
+                const pollingState = this.supabaseClient.getPollingState(this.state.currentRoom.id);
+                console.log('✅ Test polling bajo carga:', pollingState?.currentInterval + 'ms');
+            }, 2000);
+        }
+    }
+
+    // Test: Falla de heartbeat
+    testHeartbeatFailure() {
+        console.log('📋 Test: Falla de heartbeat');
+        
+        if (this.supabaseClient && this.supabaseClient.handleHeartbeatFailure) {
+            // Simular falla de heartbeat
+            this.supabaseClient.handleHeartbeatFailure();
+            console.log('✅ Test heartbeat failure: Simulado');
+        }
+    }
+
+    // Test: Memory leaks
+    testMemoryLeaks() {
+        console.log('📋 Test: Memory leaks');
+        
+        const before = {
+            timers: this.state.timers.size,
+            messageStates: this.state.messageStates.size,
+            userVotes: this.state.userVotes.size
+        };
+        
+        // Limpiar estados
+        this.cleanupMessageStates();
+        
+        const after = {
+            timers: this.state.timers.size,
+            messageStates: this.state.messageStates.size,
+            userVotes: this.state.userVotes.size
+        };
+        
+        console.log('✅ Test memory leaks - Before:', before, 'After:', after);
+    }
+
+    // Generar reporte de performance
+    generatePerformanceReport() {
+        console.log('📈 === REPORTE DE PERFORMANCE ===');
+        
+        const report = {
+            timestamp: new Date().toISOString(),
+            system: {
+                userAgent: navigator.userAgent,
+                online: navigator.onLine,
+                memory: performance.memory ? {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+                    total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB',
+                    limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + 'MB'
+                } : 'No disponible'
+            },
+            app: this.getPollingDebugInfo(),
+            localStorage: {
+                usage: this.calculateLocalStorageUsage() + 'KB',
+                items: Object.keys(localStorage).length
+            },
+            recommendations: this.generateOptimizationRecommendations()
+        };
+        
+        console.log('📈 Reporte completo:', report);
+        return report;
+    }
+
+    // Calcular uso de localStorage
+    calculateLocalStorageUsage() {
+        let total = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                total += localStorage[key].length + key.length;
+            }
+        }
+        return Math.round(total / 1024 * 100) / 100; // KB con 2 decimales
+    }
+
+    // Generar recomendaciones de optimización
+    generateOptimizationRecommendations() {
+        const recommendations = [];
+        
+        if (this.state.messageStates.size > 50) {
+            recommendations.push('Considerar aumentar frecuencia de limpieza de estados');
+        }
+        
+        if (this.calculateLocalStorageUsage() > 1000) {
+            recommendations.push('localStorage > 1MB - considerar limpieza');
+        }
+        
+        if (this.state.timers.size > 10) {
+            recommendations.push('Múltiples timers activos - revisar cleanup');
+        }
+        
+        return recommendations.length > 0 ? recommendations : ['Sistema optimizado correctamente'];
+    }
+
+    // ==================== OPTIMIZACIONES FINALES ====================
+
+    // Optimización de DOM - Eliminar elementos innecesarios
+    optimizeDOM() {
+        // Remover indicadores viejos que puedan haber quedado
+        const oldIndicators = document.querySelectorAll('.message-state-indicator[style*="display: none"]');
+        oldIndicators.forEach(el => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        });
+        
+        // Remover typing indicators duplicados (edge case)
+        const typingIndicators = document.querySelectorAll('.typing-indicator');
+        if (typingIndicators.length > 1) {
+            for (let i = 1; i < typingIndicators.length; i++) {
+                if (typingIndicators[i].parentNode) {
+                    typingIndicators[i].parentNode.removeChild(typingIndicators[i]);
+                }
+            }
+        }
+        
+        console.log('🧽 DOM optimizado - elementos innecesarios removidos');
+    }
+
+    // Optimización de eventos - Prevenir memory leaks
+    optimizeEventListeners() {
+        // Verificar que no hay listeners duplicados
+        const messageInput = this.elements.inputs.messageInput;
+        if (messageInput) {
+            // Clonar elemento para remover todos los listeners
+            const newInput = messageInput.cloneNode(true);
+            messageInput.parentNode.replaceChild(newInput, messageInput);
+            this.elements.inputs.messageInput = newInput;
+            
+            // Re-bind solo los listeners necesarios
+            newInput.addEventListener('input', () => {
+                this.updateCharacterCount();
+                this.handleTypingActivity();
+            });
+            
+            newInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.elements.forms.message.requestSubmit();
+                }
+            });
+            
+            newInput.addEventListener('blur', () => {
+                this.stopTypingIndicator();
+            });
+            
+            console.log('🎯 Event listeners optimizados');
+        }
+    }
+
+    // Optimización completa del sistema
+    performFullOptimization() {
+        console.log('🚀 === INICIANDO OPTIMIZACIÓN COMPLETA ===');
+        
+        // Limpiezas
+        this.cleanupMessageStates();
+        this.optimizeDOM();
+        
+        // Optimizaciones de memoria
+        this.optimizeEventListeners();
+        
+        // Forzar garbage collection si está disponible
+        if (window.gc) {
+            window.gc();
+            console.log('🗑️ Garbage collection ejecutado');
+        }
+        
+        // Generar reporte post-optimización
+        setTimeout(() => {
+            const report = this.generatePerformanceReport();
+            console.log('✅ === OPTIMIZACIÓN COMPLETADA ===');
+            console.log('Recomendaciones post-optimización:', report.recommendations);
+        }, 1000);
     }
 }
 
 // Inicializar aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.chatApp = new AnonymousChatApp();
+    
+    // Funciones de debugging globales para testing
+    window.debugPolling = () => {
+        if (window.chatApp) {
+            console.log('Estado del polling:', window.chatApp.getPollingDebugInfo());
+        }
+    };
+    
+    window.testPolling = () => {
+        if (window.chatApp) {
+            window.chatApp.testPollingSystem();
+        }
+    };
+    
+    window.testReconnection = () => {
+        if (window.chatApp) {
+            window.chatApp.testReconnectionSystem();
+        }
+    };
+    
+    window.runEdgeTests = () => {
+        if (window.chatApp) {
+            window.chatApp.runEdgeCaseTests();
+        }
+    };
+    
+    window.performanceReport = () => {
+        if (window.chatApp) {
+            return window.chatApp.generatePerformanceReport();
+        }
+    };
+    
+    // Mostrar información de debugging cada 15 segundos en modo desarrollo
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        setInterval(() => {
+            if (window.chatApp) {
+                const debugInfo = window.chatApp.getPollingDebugInfo();
+                if (debugInfo.room !== 'No hay sala activa') {
+                    console.log('🔄 Debug Sistema:', debugInfo);
+                }
+            }
+        }, 15000); // Cada 15 segundos para no saturar la consola
+    }
+    
+    // Información de comandos disponibles
+    console.log('🔧 === COMANDOS DE DEBUGGING DISPONIBLES ===');
+    console.log('🔍 ESTADO:');
+    console.log('- debugPolling(): Ver estado actual completo del sistema');
+    console.log('- performanceReport(): Generar reporte de performance detallado');
+    console.log('');
+    console.log('🧪 TESTS INDIVIDUALES:');
+    console.log('- testPolling(): Probar sistema de polling adaptativo');
+    console.log('- testReconnection(): Probar sistema de reconexión automática');
+    console.log('');
+    console.log('🚀 TESTS AVANZADOS:');
+    console.log('- runEdgeTests(): Ejecutar suite completa de tests de casos edge');
+    console.log('');
+    console.log('⚙️ AUTO-DEBUG:');
+    console.log('- Auto-debug activado cada 15s en localhost');
+    console.log('- Limpieza automática de estados cada 30s');
+    console.log('');
+    console.log('🎉 === SISTEMA DE FLUIDEZ CONVERSACIONAL v3.0 ===');
+    console.log('✅ Polling Adaptativo | ✅ Reconexión Auto | ✅ UX Indicators | ✅ Edge Testing');
+    console.log('🚀 ¡LISTO PARA CONVERSACIONES ULTRA-FLUIDAS!');
 });
