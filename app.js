@@ -42,7 +42,20 @@ class AnonymousChatApp {
         }
         
         this.loadFromStorage();
-        this.showScreen('welcomeScreen');
+        
+        // Intentar restaurar sesión previa
+        const sessionRestored = await this.restoreSession();
+        if (sessionRestored) {
+            // Si se restauró la sesión, ir directamente al chat
+            this.startChat();
+            // Mostrar notificación de sesión restaurada
+            setTimeout(() => {
+                this.showToast(`Sesión restaurada: ${this.state.currentRoom.id}`, 'success');
+            }, 1000);
+        } else {
+            // Si no hay sesión, mostrar pantalla de bienvenida
+            this.showScreen('welcomeScreen');
+        }
     }
 
     cacheElements() {
@@ -201,6 +214,9 @@ class AnonymousChatApp {
         this.state.currentRoom = room;
         this.state.currentUser = { name: creatorName, isCreator: true };
 
+        // Guardar sesión
+        this.saveCurrentSession();
+
         // Mostrar modal con código
         this.elements.displays.displayRoomCode.textContent = roomCode;
         this.showModal('roomCode');
@@ -231,6 +247,10 @@ class AnonymousChatApp {
 
         this.state.currentRoom = room;
         this.state.currentUser = { name: 'Anónimo', isCreator: false };
+        
+        // Guardar sesión
+        this.saveCurrentSession();
+        
         this.startChat();
     }
 
@@ -299,6 +319,9 @@ class AnonymousChatApp {
         if (this.state.currentUser.isCreator) {
             this.state.currentUser.isCreator = false; // Después del primer mensaje, también es anónimo
         }
+
+        // Actualizar sesión guardada
+        this.saveCurrentSession();
     }
 
     addMessageToChat(message, isRealtime = false) {
@@ -589,6 +612,9 @@ class AnonymousChatApp {
         // Limpiar suscripciones de real-time
         this.cleanupRealtimeMessaging();
 
+        // Limpiar sesión guardada
+        this.clearCurrentSession();
+
         this.state.currentRoom = null;
         this.state.currentUser = null;
         this.showScreen('welcomeScreen');
@@ -662,6 +688,9 @@ class AnonymousChatApp {
             localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
         }
         this.saveUserVotes();
+        
+        // Guardar sesión actual para persistencia
+        this.saveCurrentSession();
     }
 
     async loadRoom(roomId) {
@@ -729,6 +758,85 @@ class AnonymousChatApp {
                 }
             }
         });
+    }
+
+    // ==================== GESTIÓN DE SESIÓN ====================
+
+    saveCurrentSession() {
+        if (!this.state.currentRoom || !this.state.currentUser) {
+            // No hay sesión activa para guardar
+            localStorage.removeItem('currentSession');
+            return;
+        }
+
+        const sessionData = {
+            roomId: this.state.currentRoom.id,
+            user: {
+                name: this.state.currentUser.name,
+                isCreator: this.state.currentUser.isCreator
+            },
+            timestamp: new Date().toISOString()
+        };
+
+        localStorage.setItem('currentSession', JSON.stringify(sessionData));
+        console.log('Sesión guardada:', sessionData);
+    }
+
+    async restoreSession() {
+        const sessionData = localStorage.getItem('currentSession');
+        if (!sessionData) {
+            console.log('No hay sesión guardada para restaurar');
+            return false;
+        }
+
+        try {
+            const session = JSON.parse(sessionData);
+            console.log('Intentando restaurar sesión:', session);
+
+            // Verificar que la sesión no sea muy antigua (más de 24 horas)
+            const sessionTime = new Date(session.timestamp);
+            const now = new Date();
+            const timeDiff = now - sessionTime;
+            const maxSessionTime = 24 * 60 * 60 * 1000; // 24 horas
+
+            if (timeDiff > maxSessionTime) {
+                console.log('Sesión expirada, eliminando');
+                localStorage.removeItem('currentSession');
+                return false;
+            }
+
+            // Cargar la sala
+            const room = await this.loadRoom(session.roomId);
+            if (!room) {
+                console.log('Sala no encontrada, eliminando sesión');
+                localStorage.removeItem('currentSession');
+                return false;
+            }
+
+            // Verificar que la sala no haya expirado
+            if (this.isRoomExpired(room)) {
+                console.log('Sala expirada, eliminando sesión');
+                localStorage.removeItem('currentSession');
+                return false;
+            }
+
+            // Restaurar estado
+            this.state.currentRoom = room;
+            this.state.currentUser = session.user;
+
+            console.log('Sesión restaurada exitosamente');
+            return true;
+
+        } catch (error) {
+            console.error('Error restaurando sesión:', error);
+            localStorage.removeItem('currentSession');
+            return false;
+        }
+    }
+
+    clearCurrentSession() {
+        localStorage.removeItem('currentSession');
+        console.log('Sesión actual eliminada');
     }
 
     cleanup() {
@@ -815,6 +923,9 @@ class AnonymousChatApp {
 
         // Guardar estado actualizado
         this.saveRoom(this.state.currentRoom);
+        
+        // Actualizar sesión guardada
+        this.saveCurrentSession();
     }
 
     cleanupRealtimeMessaging() {
