@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Anónimo - Espacios de diálogo honesto</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Pantalla de bienvenida -->
+    <div id="welcomeScreen" class="screen active">
+        <div class="container">
+            <div class="welcome-content">
+                <div class="logo">
+                    <h1>💬 Chat Anónimo</h1>
+                    <p>Crea espacios de diálogo honestos y sin prejuicios</p>
+                </div>
+                
+                <div class="welcome-actions">
+                    <button id="createRoomBtn" class="btn btn--primary btn--lg btn--full-width">
+                        Crear Nueva Sala
+                    </button>
+                    <div class="divider">o</div>
+                    <button id="joinRoomBtn" class="btn btn--outline btn--lg btn--full-width">
+                        Unirse a Sala
+                    </button>
+                </div>
+
+                <div class="privacy-notice">
+                    <p><small>🔒 Tus datos se almacenan localmente en tu dispositivo</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de crear sala -->
+    <div id="createRoomScreen" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button id="backToWelcome" class="btn-back">← Volver</button>
+                <h2>Crear Nueva Sala</h2>
+            </div>
+
+            <form id="createRoomForm" class="form">
+                <div class="form-group">
+                    <label for="creatorName" class="form-label">Tu nombre (visible solo en la pregunta inicial)</label>
+                    <input type="text" id="creatorName" class="form-control" placeholder="Ej: María, Dr. López..." maxlength="50" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="initialQuestion" class="form-label">Escribe tu pregunta para iniciar el diálogo</label>
+                    <textarea id="initialQuestion" class="form-control" rows="4" placeholder="¿Cuál es tu pregunta?" maxlength="300" required></textarea>
+                    <small class="form-help">Máximo 300 caracteres</small>
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--lg btn--full-width">
+                    Crear Sala
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pantalla de unirse a sala -->
+    <div id="joinRoomScreen" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button id="backToWelcomeFromJoin" class="btn-back">← Volver</button>
+                <h2>Unirse a Sala</h2>
+            </div>
+
+            <form id="joinRoomForm" class="form">
+                <div class="form-group">
+                    <label for="roomCode" class="form-label">Código de sala</label>
+                    <input type="text" id="roomCode" class="form-control" placeholder="Ej: ROOM123" maxlength="10" required>
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--lg btn--full-width">
+                    Unirse a Sala
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pantalla principal del chat -->
+    <div id="chatScreen" class="screen">
+        <div class="chat-header">
+            <div class="chat-info">
+                <h3 id="roomCodeDisplay">ROOM123</h3>
+                <button id="shareRoomBtn" class="btn btn--sm">Compartir</button>
+            </div>
+            <div class="chat-limits">
+                <span id="timeCounter" class="limit-counter">⏱️ --:--</span>
+                <span id="messageCounter" class="limit-counter">💬 --/50</span>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div id="chatMessages" class="chat-messages">
+                <!-- Los mensajes se insertan aquí dinámicamente -->
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form id="messageForm" class="message-form">
+                <div class="input-group">
+                    <textarea id="messageInput" class="form-control message-input" placeholder="Escribe tu respuesta anónima..." maxlength="280" rows="2"></textarea>
+                    <button type="submit" class="btn btn--primary send-btn" disabled>
+                        Enviar
+                    </button>
+                </div>
+                <small class="character-count">0/280</small>
+            </form>
+        </div>
+
+        <div class="chat-actions">
+            <button id="leaveRoomBtn" class="btn btn--outline btn--sm">Salir de Sala</button>
+            <button id="clearDataBtn" class="btn btn--outline btn--sm">Limpiar Datos</button>
+        </div>
+    </div>
+
+    <!-- Modal de código de sala -->
+    <div id="roomCodeModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>¡Sala Creada!</h3>
+                <button id="closeModal" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Comparte este código con otros para que se unan:</p>
+                <div class="room-code-display">
+                    <code id="displayRoomCode">ROOM123</code>
+                    <button id="copyCodeBtn" class="btn btn--sm">Copiar</button>
+                </div>
+                <p><small>El código se ha copiado automáticamente al portapapeles</small></p>
+            </div>
+            <div class="modal-footer">
+                <button id="startChatBtn" class="btn btn--primary btn--full-width">
+                    Comenzar Chat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirmar acción</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">¿Estás seguro?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelBtn" class="btn btn--outline">Cancelar</button>
+                <button id="confirmBtn" class="btn btn--primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toast" class="toast hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
