@@ -20,6 +20,7 @@ RUN apk add --no-cache caddy wget
 # Copiar solo archivos necesarios de la aplicación
 COPY index.html .
 COPY app.js .
+COPY supabase-client.js .
 COPY style.css .
 COPY README.md .
 
@@ -53,5 +54,15 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
 
+# Crear script de inicio que genere las variables de entorno para el frontend
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'echo "// Variables de entorno generadas dinámicamente" > /app/env.js' >> /app/start.sh && \
+    echo 'echo "window.env = {" >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  SUPABASE_URL: \"${SUPABASE_URL:-}\"," >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  SUPABASE_ANON_KEY: \"${SUPABASE_ANON_KEY:-}\"" >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "};" >> /app/env.js' >> /app/start.sh && \
+    echo 'exec caddy run --config /app/Caddyfile --adapter caddyfile' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
 # Comando de inicio
-CMD ["caddy", "run", "--config", "/app/Caddyfile", "--adapter", "caddyfile"]
+CMD ["/app/start.sh"]

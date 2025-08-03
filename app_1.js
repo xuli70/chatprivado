@@ -23,22 +23,13 @@ class AnonymousChatApp {
         // Elementos del DOM
         this.elements = {};
         
-        // Cliente de Supabase
-        this.supabaseClient = null;
-        
         // Inicializar aplicación
         this.init();
     }
 
-    async init() {
+    init() {
         this.cacheElements();
         this.bindEvents();
-        
-        // Inicializar cliente de Supabase
-        if (typeof SupabaseClient !== 'undefined') {
-            this.supabaseClient = new SupabaseClient();
-        }
-        
         this.loadFromStorage();
         this.showScreen('welcomeScreen');
     }
@@ -168,7 +159,7 @@ class AnonymousChatApp {
         return result;
     }
 
-    async handleCreateRoom(e) {
+    handleCreateRoom(e) {
         e.preventDefault();
         
         const creatorName = this.elements.inputs.creatorName.value.trim();
@@ -192,7 +183,7 @@ class AnonymousChatApp {
             messages: []
         };
 
-        await this.saveRoom(room);
+        this.saveRoom(room);
         this.state.currentRoom = room;
         this.state.currentUser = { name: creatorName, isCreator: true };
 
@@ -202,7 +193,7 @@ class AnonymousChatApp {
         this.copyToClipboard(roomCode);
     }
 
-    async handleJoinRoom(e) {
+    handleJoinRoom(e) {
         e.preventDefault();
         
         const roomCode = this.elements.inputs.roomCode.value.trim().toUpperCase();
@@ -212,7 +203,7 @@ class AnonymousChatApp {
             return;
         }
 
-        const room = await this.loadRoom(roomCode);
+        const room = this.loadRoom(roomCode);
         
         if (!room) {
             this.showToast('Sala no encontrada', 'error');
@@ -238,7 +229,7 @@ class AnonymousChatApp {
         this.elements.inputs.messageInput.focus();
     }
 
-    async handleSendMessage(e) {
+    handleSendMessage(e) {
         e.preventDefault();
         
         const messageText = this.elements.inputs.messageInput.value.trim();
@@ -264,18 +255,9 @@ class AnonymousChatApp {
             votes: { likes: 0, dislikes: 0 }
         };
 
-        // Enviar mensaje a Supabase
-        const savedMessage = await this.sendMessage(this.state.currentRoom.id, message);
-        if (savedMessage) {
-            // Actualizar el estado local con el mensaje guardado
-            this.state.currentRoom.messages.push(savedMessage);
-            this.addMessageToChat(savedMessage);
-        } else {
-            // Fallback: usar el mensaje original si Supabase falla
-            this.state.currentRoom.messages.push(message);
-            this.addMessageToChat(message);
-        }
-
+        this.state.currentRoom.messages.push(message);
+        this.saveRoom(this.state.currentRoom);
+        this.addMessageToChat(message);
         this.elements.inputs.messageInput.value = '';
         this.updateCharacterCount();
         this.updateCounters();
@@ -322,7 +304,7 @@ class AnonymousChatApp {
         });
     }
 
-    async handleVote(e) {
+    handleVote(e) {
         const messageId = parseInt(e.currentTarget.getAttribute('data-message-id'));
         const voteType = e.currentTarget.getAttribute('data-vote-type');
         
@@ -333,45 +315,21 @@ class AnonymousChatApp {
         const message = this.state.currentRoom.messages.find(m => m.id === messageId);
         if (!message) return;
 
-        // Usar Supabase para gestionar el voto
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            const result = await this.supabaseClient.voteMessage(messageId, voteType, currentVote);
-            if (result.success) {
-                // Actualizar estado local basado en el resultado de Supabase
-                if (result.removed) {
-                    this.state.userVotes.delete(userVoteKey);
-                } else if (result.newVote) {
-                    this.state.userVotes.set(userVoteKey, result.newVote);
-                }
-                
-                // Recargar la sala para obtener los contadores actualizados
-                const updatedRoom = await this.loadRoom(this.state.currentRoom.id);
-                if (updatedRoom) {
-                    const updatedMessage = updatedRoom.messages.find(m => m.id === messageId);
-                    if (updatedMessage) {
-                        message.votes = updatedMessage.votes;
-                    }
-                }
-            }
-        } else {
-            // Fallback: manejo local
-            // Remover voto anterior si existe
-            if (currentVote) {
-                message.votes[currentVote]--;
-            }
-
-            // Si es el mismo voto, solo remover
-            if (currentVote === voteType) {
-                this.state.userVotes.delete(userVoteKey);
-            } else {
-                // Agregar nuevo voto
-                message.votes[voteType]++;
-                this.state.userVotes.set(userVoteKey, voteType);
-            }
-            
-            await this.saveRoom(this.state.currentRoom);
+        // Remover voto anterior si existe
+        if (currentVote) {
+            message.votes[currentVote]--;
         }
 
+        // Si es el mismo voto, solo remover
+        if (currentVote === voteType) {
+            this.state.userVotes.delete(userVoteKey);
+        } else {
+            // Agregar nuevo voto
+            message.votes[voteType]++;
+            this.state.userVotes.set(userVoteKey, voteType);
+        }
+
+        this.saveRoom(this.state.currentRoom);
         this.updateMessageVoteDisplay(messageId, message.votes);
         this.updateVoteButtonStates(messageId, this.state.userVotes.get(userVoteKey));
     }
@@ -612,49 +570,14 @@ class AnonymousChatApp {
     }
 
     // Gestión de almacenamiento
-    async saveRoom(room) {
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            try {
-                await this.supabaseClient.createRoom(room);
-            } catch (error) {
-                console.error('Error guardando sala en Supabase:', error);
-                // Fallback a localStorage
-                localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
-            }
-        } else {
-            // Fallback a localStorage
-            localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
-        }
+    saveRoom(room) {
+        localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
         this.saveUserVotes();
     }
 
-    async loadRoom(roomId) {
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            try {
-                const room = await this.supabaseClient.getRoom(roomId);
-                if (room) {
-                    return room;
-                }
-            } catch (error) {
-                console.error('Error cargando sala de Supabase:', error);
-            }
-        }
-        
-        // Fallback a localStorage
+    loadRoom(roomId) {
         const roomData = localStorage.getItem(`room_${roomId}`);
         return roomData ? JSON.parse(roomData) : null;
-    }
-
-    async sendMessage(roomId, message) {
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            try {
-                return await this.supabaseClient.sendMessage(roomId, message);
-            } catch (error) {
-                console.error('Error enviando mensaje a Supabase:', error);
-                return null;
-            }
-        }
-        return null;
     }
 
     saveUserVotes() {

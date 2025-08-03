@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is an Anonymous Chat web application built entirely with frontend technologies: HTML5, CSS3, and vanilla JavaScript. It allows creating anonymous dialogue spaces where users can ask questions and receive anonymous responses.
+This is an Anonymous Chat web application with **Supabase backend integration** and localStorage fallback. Built with HTML5, CSS3, vanilla JavaScript, and Supabase for real-time multi-device chat functionality. It allows creating anonymous dialogue spaces where users can ask questions and receive anonymous responses that sync across devices.
 
 ## Architecture
 
@@ -70,10 +70,12 @@ No installation, build, test, or lint commands are required.
 - All participants except the initial creator post as "Anónimo"
 
 ### Storage Strategy
-- Everything stored in localStorage (no backend)
-- Room data key format: `room_${roomId}`
-- User votes stored separately to track across sessions
-- Automatic cleanup of expired rooms on load
+- **Primary**: Supabase backend with PostgreSQL database
+- **Fallback**: localStorage for offline/development mode
+- **Tables**: `chat_rooms`, `chat_messages`, `chat_votes`
+- **Multi-device sync**: Rooms and messages shared across all devices
+- **Voting system**: Prevents duplicate votes using user fingerprinting
+- Automatic cleanup of expired rooms in both Supabase and localStorage
 
 ### Screen Flow
 1. Welcome → Create Room → Room Code Modal → Chat
@@ -90,5 +92,37 @@ No installation, build, test, or lint commands are required.
 
 - `index.html` - All UI screens and modals
 - `style.css` - Complete styling with CSS variables and responsive design
-- `app.js` - Single class containing all application logic
-- No external dependencies or frameworks
+- `app.js` - Main application class with Supabase integration
+- `supabase-client.js` - Supabase client wrapper with localStorage fallback
+- `env.js` - Environment variables for frontend (auto-generated in production)
+- `.env` - Local environment variables (NOT committed to git)
+- `Dockerfile` - Container configuration with environment variable support
+- `.dockerignore` - Excludes unnecessary files from Docker build
+- `SUPABASE_SETUP.md` - Complete setup instructions for Supabase
+- External dependencies: Supabase JS client (loaded from CDN)
+
+## Deployment Status
+
+### Recent Changes (2025-08-03)
+- **✅ COMPLETED**: Supabase backend integration with PostgreSQL
+- **✅ COMPLETED**: Multi-device chat functionality
+- **✅ COMPLETED**: Environment variables support in Docker
+- **✅ COMPLETED**: Automatic fallback to localStorage
+- **✅ COMPLETED**: CSS issue resolved in previous deployment
+
+### Backend Requirements
+1. **Supabase Setup**: Execute SQL from `SUPABASE_SETUP.md`
+2. **Environment Variables**: Configure in Coolify/VPS:
+   - `SUPABASE_URL=https://supmcp.axcsol.com`
+   - `SUPABASE_ANON_KEY=your_actual_anon_key`
+
+### Deployment Process
+1. ✅ Supabase tables created and configured
+2. ✅ Code updated with backend integration
+3. **NEXT**: Configure environment variables in Coolify
+4. **NEXT**: Deploy and test multi-device functionality
+
+### Testing Multi-Device
+- Create room on Device A → Join with code on Device B
+- Messages should sync in real-time across devices
+- Voting system prevents duplicates across sessions
