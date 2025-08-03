@@ -29,8 +29,17 @@ RUN echo -e ":${PORT:-8080} {\n\
     file_server\n\
     try_files {path} /index.html\n\
     encode gzip\n\
-    header Content-Type \"text/html; charset=utf-8\"\n\
-    header Cache-Control \"public, max-age=3600\"\n\
+    \n\
+    # Set proper charset for text files without overriding MIME types\n\
+    header *.html Content-Type \"text/html; charset=utf-8\"\n\
+    header *.css Content-Type \"text/css; charset=utf-8\"\n\
+    header *.js Content-Type \"application/javascript; charset=utf-8\"\n\
+    \n\
+    # Cache control for better performance\n\
+    header *.css Cache-Control \"public, max-age=31536000\"\n\
+    header *.js Cache-Control \"public, max-age=31536000\"\n\
+    header *.html Cache-Control \"public, max-age=3600\"\n\
+    \n\
     log {\n\
         output stdout\n\
         format console\n\
