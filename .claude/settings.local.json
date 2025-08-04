@@ -21,7 +21,8 @@
       "Bash(python:*)",
       "Bash(start http://localhost:8000)",
       "Bash(start debug-admin.html)",
-      "Bash(start debug-simple.html)"
+      "Bash(start debug-simple.html)",
+      "Bash(mkdir:*)"
     ]
   },
   "enabledMcpjsonServers": [

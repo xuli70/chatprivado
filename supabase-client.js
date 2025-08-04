@@ -143,7 +143,8 @@ class SupabaseClient {
                 question: room.question,
                 created_at: room.createdAt,
                 expires_at: room.expiresAt,
-                message_limit: room.messageLimit
+                message_limit: room.messageLimit,
+                is_active: true  // Nueva columna para persistencia permanente
             };
 
             const { data, error } = await this.client
@@ -170,11 +171,12 @@ class SupabaseClient {
         }
 
         try {
-            // Obtener datos de la sala
+            // Obtener datos de la sala - solo salas activas
             const { data: roomData, error: roomError } = await this.client
                 .from('chat_rooms')
                 .select('*')
                 .eq('id', roomId)
+                .eq('is_active', true)  // Solo obtener salas activas
                 .single();
 
             if (roomError) {
@@ -228,40 +230,21 @@ class SupabaseClient {
         }
 
         try {
-            // 1. Eliminar todos los mensajes de la sala
-            const { error: messagesError } = await this.client
-                .from('chat_messages')
-                .delete()
-                .eq('room_id', roomId);
-
-            if (messagesError) {
-                console.warn('Error eliminando mensajes:', messagesError);
-                // Continuar con eliminación de sala aunque falle eliminar mensajes
-            }
-
-            // 2. Eliminar todos los votos de la sala
-            const { error: votesError } = await this.client
-                .from('chat_votes')
-                .delete()
-                .eq('room_id', roomId);
-
-            if (votesError) {
-                console.warn('Error eliminando votos:', votesError);
-                // Continuar con eliminación de sala aunque falle eliminar votos
-            }
-
-            // 3. Eliminar la sala
+            // NUEVO SISTEMA: Soft delete - marcar sala como inactiva en lugar de eliminar
+            // Los mensajes y votos se conservan para que el admin pueda reactivar la sala
+            
+            // Marcar sala como inactiva (soft delete)
             const { error: roomError } = await this.client
                 .from('chat_rooms')
-                .delete()
+                .update({ is_active: false })
                 .eq('id', roomId);
 
             if (roomError) {
-                console.error('Error eliminando sala de Supabase:', roomError);
+                console.error('Error marcando sala como inactiva en Supabase:', roomError);
                 throw roomError;
             }
 
-            console.log('Sala eliminada completamente de Supabase:', roomId);
+            console.log('Sala marcada como inactiva en Supabase:', roomId);
             
             // También eliminar de localStorage como backup
             this.deleteRoomLocal(roomId);
@@ -272,6 +255,96 @@ class SupabaseClient {
             // Fallback a eliminación local
             return this.deleteRoomLocal(roomId);
         }
+    }
+
+    // 🔍 Obtener solo salas activas (para usuarios regulares)
+    async getAllActiveRooms() {
+        if (!this.isOnline) {
+            return this.getAllActiveRoomsLocal();
+        }
+
+        try {
+            const { data: rooms, error } = await this.client
+                .from('chat_rooms')
+                .select('*')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error obteniendo salas activas:', error);
+                return this.getAllActiveRoomsLocal();
+            }
+
+            console.log(`✅ Obtenidas ${rooms.length} salas activas de Supabase`);
+            return rooms.map(room => this.convertSupabaseRoomToApp(room));
+        } catch (error) {
+            console.error('Error en getAllActiveRooms:', error);
+            return this.getAllActiveRoomsLocal();
+        }
+    }
+
+    // 🔍 Obtener todas las salas con estado (para administradores)
+    async getAllRoomsWithStatus() {
+        if (!this.isOnline) {
+            return this.getAllRoomsWithStatusLocal();
+        }
+
+        try {
+            const { data: rooms, error } = await this.client
+                .from('chat_rooms')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error obteniendo todas las salas:', error);
+                return this.getAllRoomsWithStatusLocal();
+            }
+
+            console.log(`✅ Obtenidas ${rooms.length} salas total de Supabase (activas + inactivas)`);
+            return rooms.map(room => this.convertSupabaseRoomToApp(room));
+        } catch (error) {
+            console.error('Error en getAllRoomsWithStatus:', error);
+            return this.getAllRoomsWithStatusLocal();
+        }
+    }
+
+    // 🔄 Reactivar sala (para administradores)
+    async reactivateRoom(roomId) {
+        if (!this.isOnline) {
+            return { success: false, message: 'Sin conexión a Supabase' };
+        }
+
+        try {
+            const { error } = await this.client
+                .from('chat_rooms')
+                .update({ is_active: true })
+                .eq('id', roomId);
+
+            if (error) {
+                console.error('Error reactivando sala:', error);
+                return { success: false, message: error.message };
+            }
+
+            console.log('✅ Sala reactivada:', roomId);
+            return { success: true, message: 'Sala reactivada exitosamente' };
+        } catch (error) {
+            console.error('Error en reactivateRoom:', error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    // 🔄 Convertir formato Supabase a formato App
+    convertSupabaseRoomToApp(supabaseRoom) {
+        return {
+            id: supabaseRoom.id,
+            creator: supabaseRoom.creator,
+            question: supabaseRoom.question,
+            createdAt: supabaseRoom.created_at,
+            expiresAt: supabaseRoom.expires_at,
+            messageLimit: supabaseRoom.message_limit,
+            isActive: supabaseRoom.is_active,  // Nueva propiedad
+            messages: [] // Se llenarán cuando se necesiten
+        };
     }
 
     // ==================== GESTIÓN DE MENSAJES ====================
@@ -412,6 +485,10 @@ class SupabaseClient {
     // ==================== FUNCIONES DE FALLBACK (localStorage) ====================
 
     createRoomLocal(room) {
+        // Asegurar que las salas locales tengan la propiedad isActive
+        if (room.isActive === undefined) {
+            room.isActive = true;
+        }
         localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
         return room;
     }
@@ -422,24 +499,83 @@ class SupabaseClient {
     }
 
     deleteRoomLocal(roomId) {
-        console.log('Eliminando sala de localStorage:', roomId);
+        console.log('Marcando sala como inactiva en localStorage:', roomId);
         const roomKey = `room_${roomId}`;
-        localStorage.removeItem(roomKey);
+        const roomData = localStorage.getItem(roomKey);
         
-        // También limpiar datos relacionados si existen
-        const userVotes = localStorage.getItem('userVotes');
-        if (userVotes) {
+        if (roomData) {
             try {
-                const votes = JSON.parse(userVotes);
-                // Remover votos relacionados con esta sala (si están guardados por sala)
-                // Esta es una implementación básica - en el futuro se puede mejorar
-                localStorage.setItem('userVotes', JSON.stringify(votes));
+                const room = JSON.parse(roomData);
+                // Soft delete: marcar como inactiva en lugar de eliminar
+                room.isActive = false;
+                localStorage.setItem(roomKey, JSON.stringify(room));
+                console.log('✅ Sala marcada como inactiva en localStorage:', roomId);
             } catch (error) {
-                console.warn('Error limpiando votos relacionados:', error);
+                console.error('Error marcando sala como inactiva:', error);
+                // Fallback: eliminar completamente si no se puede parsear
+                localStorage.removeItem(roomKey);
             }
         }
         
         return { success: true, useLocalStorage: true };
+    }
+
+    // 🔍 Fallback: Obtener salas activas de localStorage
+    getAllActiveRoomsLocal() {
+        const rooms = [];
+        const keys = Object.keys(localStorage);
+        
+        keys.forEach(key => {
+            if (key.startsWith('room_')) {
+                try {
+                    const roomData = localStorage.getItem(key);
+                    if (roomData) {
+                        const room = JSON.parse(roomData);
+                        // En localStorage, consideramos activas todas las salas que no han expirado
+                        // o que tienen isActive !== false
+                        if (room.isActive !== false) {
+                            rooms.push(room);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cargando sala local:', key, error);
+                }
+            }
+        });
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        rooms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log(`📋 localStorage: ${rooms.length} salas activas encontradas`);
+        return rooms;
+    }
+
+    // 🔍 Fallback: Obtener todas las salas con estado de localStorage
+    getAllRoomsWithStatusLocal() {
+        const rooms = [];
+        const keys = Object.keys(localStorage);
+        
+        keys.forEach(key => {
+            if (key.startsWith('room_')) {
+                try {
+                    const roomData = localStorage.getItem(key);
+                    if (roomData) {
+                        const room = JSON.parse(roomData);
+                        // Agregar isActive si no existe (compatibilidad con salas viejas)
+                        if (room.isActive === undefined) {
+                            room.isActive = true;
+                        }
+                        rooms.push(room);
+                    }
+                } catch (error) {
+                    console.error('Error cargando sala local:', key, error);
+                }
+            }
+        });
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        rooms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log(`📋 localStorage: ${rooms.length} salas totales encontradas`);
+        return rooms;
     }
 
     sendMessageLocal(roomId, message) {

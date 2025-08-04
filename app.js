@@ -434,52 +434,65 @@ class AnonymousChatApp {
     }
 
     // 📋 FUNCIONES ADMINISTRADOR - Listar salas existentes
-    adminListRooms() {
+    async adminListRooms() {
         console.log('📋 Admin: Ver salas existentes');
         
-        // CORRECCIÓN: Usar vista admin para obtener TODAS las salas
-        const rooms = this.getAllRooms(true); // adminView = true
-        
-        if (rooms.length === 0) {
+        try {
+            // NUEVA LÓGICA: Usar vista admin con soporte is_active
+            const rooms = await this.getAllRooms(true); // adminView = true
+            
+            if (rooms.length === 0) {
+                this.showConfirmModal(
+                    '📋 Salas del Sistema',
+                    'No hay salas en el sistema.',
+                    () => this.hideModal(),
+                    'Cerrar'
+                );
+                return;
+            }
+            
+            // Crear listado con estado basado en is_active
+            let roomsList = '📋 Salas Existentes (Vista Administrador):\n\n';
+            
+            rooms.forEach((room, index) => {
+                // NUEVA LÓGICA: Estado basado en is_active
+                const isActive = room.isActive !== false;
+                const status = isActive ? '✅ Activa' : '❌ Eliminada';
+                const isExpired = this.isRoomExpired(room);
+                const timeStatus = isExpired ? ' (Expiró naturalmente)' : ' (Dentro del tiempo)';
+                const messageCount = room.messages ? room.messages.length : 0;
+                
+                roomsList += `${index + 1}. ${room.id}\n`;
+                roomsList += `   Creador: ${room.creator}\n`;
+                roomsList += `   Estado: ${status}${timeStatus}\n`;
+                roomsList += `   Mensajes: ${messageCount}/${room.messageLimit}\n`;
+                roomsList += `   Creada: ${new Date(room.createdAt).toLocaleString()}\n`;
+                
+                if (isActive) {
+                    roomsList += `   Acción: adminDeleteRoom("${room.id}") para eliminar\n`;
+                } else {
+                    roomsList += `   Acción: adminReactivateRoom("${room.id}") para reactivar\n`;
+                }
+                roomsList += '\n';
+            });
+            
+            roomsList += '🔧 Comandos disponibles:\n';
+            roomsList += '• adminDeleteRoom("CODIGO") - Eliminar sala (soft delete)\n';
+            roomsList += '• adminReactivateRoom("CODIGO") - Reactivar sala eliminada\n';
+            roomsList += '• adminShowStats() - Ver estadísticas del sistema';
+            
+            // Mostrar en modal de confirmación
             this.showConfirmModal(
                 '📋 Salas del Sistema',
-                'No hay salas en el sistema.',
+                roomsList,
                 () => this.hideModal(),
                 'Cerrar'
             );
-            return;
-        }
-        
-        // Crear listado dinámico con botones de eliminación
-        let roomsList = '📋 Salas Existentes (Vista Administrador):\n\n';
-        let roomsWithActions = '';
-        
-        rooms.forEach((room, index) => {
-            // CORRECCIÓN: Para admin, todas las salas están ✅ Activas (persisten hasta eliminación manual)
-            const status = '✅ Activa';
-            const isExpired = this.isRoomExpired(room);
-            const timeStatus = isExpired ? ' (Expiró naturalmente)' : ' (Dentro del tiempo)';
-            const messageCount = room.messages ? room.messages.length : 0;
             
-            roomsList += `${index + 1}. ${room.id}\n`;
-            roomsList += `   Creador: ${room.creator}\n`;
-            roomsList += `   Estado: ${status}${timeStatus}\n`;
-            roomsList += `   Mensajes: ${messageCount}/${room.messageLimit}\n`;
-            roomsList += `   Creada: ${new Date(room.createdAt).toLocaleString()}\n`;
-            roomsList += `   Para eliminar: Escribe "DELETE ${room.id}"\n\n`;
-        });
-        
-        roomsList += '\n🗑️ Para eliminar una sala específica:\n';
-        roomsList += 'Cierra este modal y usa: adminDeleteRoom("CODIGO_SALA")\n';
-        roomsList += 'Ejemplo: adminDeleteRoom("ABC123")';
-        
-        // Mostrar en modal de confirmación
-        this.showConfirmModal(
-            '📋 Salas del Sistema',
-            roomsList,
-            () => this.hideModal(),
-            'Cerrar'
-        );
+        } catch (error) {
+            console.error('Error en adminListRooms:', error);
+            this.showToast('Error obteniendo lista de salas', 'error');
+        }
     }
 
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
@@ -520,36 +533,42 @@ class AnonymousChatApp {
         }
     }
     
-    // 🗑️ Ejecutar eliminación de sala (confirmada)
+    // 🗑️ Ejecutar eliminación de sala (confirmada) - NUEVA LÓGICA SOFT DELETE
     async executeAdminDeleteRoom(roomId) {
-        console.log('🗑️ Ejecutando eliminación de sala:', roomId);
+        console.log('🗑️ Ejecutando eliminación (soft delete) de sala:', roomId);
         
         try {
-            // 1. Eliminar de localStorage
-            const roomKey = `room_${roomId}`;
-            localStorage.removeItem(roomKey);
-            
-            // 2. Si existe Supabase client, eliminar también de la base de datos
+            // NUEVA LÓGICA: Usar soft delete de Supabase
             if (this.supabaseClient && this.supabaseClient.isConnected()) {
-                try {
-                    await this.supabaseClient.deleteRoom(roomId);
-                    console.log('✅ Sala eliminada de Supabase:', roomId);
-                } catch (supabaseError) {
-                    console.warn('⚠️ Error eliminando de Supabase (continuando):', supabaseError);
+                const result = await this.supabaseClient.deleteRoom(roomId);
+                if (result.success) {
+                    console.log('✅ Sala marcada como inactiva en Supabase:', roomId);
+                } else {
+                    throw new Error('Error en soft delete de Supabase');
+                }
+            } else {
+                // Fallback: soft delete en localStorage
+                const roomKey = `room_${roomId}`;
+                const roomData = localStorage.getItem(roomKey);
+                if (roomData) {
+                    const room = JSON.parse(roomData);
+                    room.isActive = false;
+                    localStorage.setItem(roomKey, JSON.stringify(room));
+                    console.log('✅ Sala marcada como inactiva en localStorage:', roomId);
                 }
             }
             
-            // 3. Si el usuario está actualmente en esta sala, sacarlo
+            // Si el usuario está actualmente en esta sala, sacarlo
             if (this.state.currentRoom && this.state.currentRoom.id === roomId) {
                 console.log('🚪 Usuario estaba en la sala eliminada, redirigiendo...');
                 this.clearCurrentSession();
                 this.showScreen('welcomeScreen');
                 this.showToast('La sala fue eliminada por el administrador', 'warning');
             } else {
-                this.showToast(`Sala ${roomId} eliminada correctamente`, 'success');
+                this.showToast(`Sala ${roomId} eliminada (se puede reactivar)`, 'success');
             }
             
-            // 4. Cerrar modal
+            // Cerrar modal
             this.hideModal();
             
         } catch (error) {
@@ -558,28 +577,107 @@ class AnonymousChatApp {
         }
     }
 
+    // 🔄 NUEVA FUNCIÓN: Reactivar sala eliminada (solo admin)
+    async adminReactivateRoom(roomId) {
+        console.log('🔄 Admin: Reactivar sala', roomId);
+        
+        try {
+            // Verificar que la sala existe y está inactiva
+            const rooms = await this.getAllRooms(true); // Vista admin
+            const room = rooms.find(r => r.id === roomId);
+            
+            if (!room) {
+                this.showToast(`Sala ${roomId} no encontrada`, 'error');
+                return;
+            }
+            
+            if (room.isActive !== false) {
+                this.showToast(`Sala ${roomId} ya está activa`, 'warning');
+                return;
+            }
+            
+            // Mostrar confirmación
+            const confirmText = `¿Reactivar la sala ${roomId}?\n\n` +
+                              `Creador: ${room.creator}\n` +
+                              `Pregunta: ${room.question}\n` +
+                              `Creada: ${new Date(room.createdAt).toLocaleString()}\n\n` +
+                              `La sala volverá a estar disponible para usuarios.`;
+            
+            this.showConfirmModal(
+                '🔄 Confirmar Reactivación',
+                confirmText,
+                () => this.executeAdminReactivateRoom(roomId),
+                'Reactivar Sala',
+                'primary'
+            );
+            
+        } catch (error) {
+            console.error('Error al procesar reactivación:', error);
+            this.showToast('Error al procesar la reactivación', 'error');
+        }
+    }
+    
+    // 🔄 Ejecutar reactivación de sala (confirmada)
+    async executeAdminReactivateRoom(roomId) {
+        console.log('🔄 Ejecutando reactivación de sala:', roomId);
+        
+        try {
+            // Reactivar usando Supabase
+            if (this.supabaseClient && this.supabaseClient.isConnected()) {
+                const result = await this.supabaseClient.reactivateRoom(roomId);
+                if (result.success) {
+                    console.log('✅ Sala reactivada en Supabase:', roomId);
+                } else {
+                    throw new Error(result.message || 'Error reactivando en Supabase');
+                }
+            } else {
+                // Fallback: reactivar en localStorage
+                const roomKey = `room_${roomId}`;
+                const roomData = localStorage.getItem(roomKey);
+                if (roomData) {
+                    const room = JSON.parse(roomData);
+                    room.isActive = true;
+                    localStorage.setItem(roomKey, JSON.stringify(room));
+                    console.log('✅ Sala reactivada en localStorage:', roomId);
+                } else {
+                    throw new Error('Sala no encontrada en localStorage');
+                }
+            }
+            
+            this.showToast(`Sala ${roomId} reactivada exitosamente`, 'success');
+            this.hideModal();
+            
+        } catch (error) {
+            console.error('Error reactivando sala:', error);
+            this.showToast(`Error reactivando sala: ${error.message}`, 'error');
+        }
+    }
+
     // 📊 FUNCIONES ADMINISTRADOR - Estadísticas del sistema
-    adminShowStats() {
+    async adminShowStats() {
         console.log('📊 Admin: Mostrar estadísticas');
         
-        // CORRECCIÓN: Usar vista admin para obtener TODAS las salas
-        const rooms = this.getAllRooms(true); // adminView = true  
-        const activeRooms = rooms.filter(room => !this.isRoomExpired(room));
-        const expiredRooms = rooms.filter(room => this.isRoomExpired(room));
+        try {
+            // NUEVA LÓGICA: Usar vista admin con soporte is_active
+            const rooms = await this.getAllRooms(true); // adminView = true  
+            const activeRooms = rooms.filter(room => room.isActive !== false);
+            const inactiveRooms = rooms.filter(room => room.isActive === false);
+            const expiredRooms = rooms.filter(room => this.isRoomExpired(room));
         
-        let totalMessages = 0;
-        rooms.forEach(room => {
-            totalMessages += room.messages ? room.messages.length : 0;
-        });
-        
-        const storageUsage = this.calculateLocalStorageUsage();
-        
-        const stats = `📊 Estadísticas del Sistema:
+            let totalMessages = 0;
+            rooms.forEach(room => {
+                totalMessages += room.messages ? room.messages.length : 0;
+            });
+            
+            const storageUsage = this.calculateLocalStorageUsage();
+            
+            const stats = `📊 Estadísticas del Sistema (Nueva Lógica):
 
 🏠 Salas:
    • Total: ${rooms.length}
    • Activas: ${activeRooms.length}
-   • Expiradas: ${expiredRooms.length}
+   • Eliminadas (inactivas): ${inactiveRooms.length}
+   • Expiradas por tiempo: ${expiredRooms.length}
 
 💬 Mensajes:
    • Total: ${totalMessages}
@@ -590,19 +688,49 @@ class AnonymousChatApp {
    • Límite: ${Math.round(this.config.maxStorageSize / 1024)} KB
 
 🔧 Sistema:
-   • Modo: ${this.supabaseClient?.isSupabaseAvailable() ? 'Supabase + Local' : 'Solo Local'}
-   • Admin: ✅ Activo`;
-        
-        this.showConfirmModal(
-            '📊 Estadísticas',
-            stats,
-            () => this.hideModal(),
-            'Cerrar'
-        );
+   • Modo: ${this.supabaseClient?.isConnected() ? 'Supabase + Local' : 'Solo Local'}
+   • Persistencia: ✅ Columna is_active implementada
+   • Admin: ✅ Activo
+
+🎮 Comandos disponibles:
+   • adminListRooms() - Ver todas las salas
+   • adminDeleteRoom("ID") - Eliminar sala (soft delete)
+   • adminReactivateRoom("ID") - Reactivar sala eliminada`;
+            
+            this.showConfirmModal(
+                '📊 Estadísticas del Sistema',
+                stats,
+                () => this.hideModal(),
+                'Cerrar'
+            );
+            
+        } catch (error) {
+            console.error('Error obteniendo estadísticas:', error);
+            this.showToast('Error obteniendo estadísticas del sistema', 'error');
+        }
     }
 
-    // 🔍 Obtener todas las salas del sistema
-    getAllRooms(adminView = false) {
+    // 🔍 Obtener todas las salas del sistema con nueva lógica is_active
+    async getAllRooms(adminView = false) {
+        console.log(`📋 getAllRooms llamado con adminView: ${adminView}`);
+        
+        // Usar Supabase si está disponible
+        if (this.supabaseClient && this.supabaseClient.isConnected()) {
+            try {
+                if (adminView) {
+                    // Admin: obtener TODAS las salas (activas + inactivas)
+                    return await this.supabaseClient.getAllRoomsWithStatus();
+                } else {
+                    // Usuario regular: obtener solo salas activas
+                    return await this.supabaseClient.getAllActiveRooms();
+                }
+            } catch (error) {
+                console.error('Error obteniendo salas de Supabase:', error);
+                // Fallback a localStorage
+            }
+        }
+        
+        // Fallback: usar localStorage
         const rooms = [];
         const keys = Object.keys(localStorage);
         
@@ -612,9 +740,22 @@ class AnonymousChatApp {
                     const roomData = localStorage.getItem(key);
                     if (roomData) {
                         const room = JSON.parse(roomData);
-                        // Para vista admin: mostrar TODAS las salas sin filtrar
-                        // Para usuarios: mantener lógica actual (sin filtro de expiración aquí)
-                        rooms.push(room);
+                        
+                        // Asegurar compatibilidad: agregar isActive si no existe
+                        if (room.isActive === undefined) {
+                            room.isActive = true;
+                        }
+                        
+                        // Filtrar según vista
+                        if (adminView) {
+                            // Admin: todas las salas
+                            rooms.push(room);
+                        } else {
+                            // Usuario: solo salas activas
+                            if (room.isActive === true) {
+                                rooms.push(room);
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Error cargando sala:', key, error);
@@ -625,6 +766,7 @@ class AnonymousChatApp {
         // Ordenar por fecha de creación (más recientes primero)
         rooms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         
+        console.log(`📋 getAllRooms retorna ${rooms.length} salas (adminView: ${adminView})`);
         return rooms;
     }
 
