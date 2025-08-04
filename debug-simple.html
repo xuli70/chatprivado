@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Simple - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+        #output { background: #f0f0f0; padding: 10px; margin-top: 20px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Sistema Admin</h1>
+    
+    <h2>Paso 1: Crear datos de prueba</h2>
+    <button onclick="crearSalas()">🏗️ Crear 3 Salas de Prueba</button>
+    <button onclick="mostrarStorage()">💾 Ver localStorage</button>
+    
+    <h2>Paso 2: Probar funciones</h2>
+    <button onclick="probarGetAllRooms()">📋 Test getAllRooms()</button>
+    <button onclick="probarGetAllRoomsAdmin()">📋 Test getAllRooms(true)</button>
+    
+    <h2>Paso 3: Limpiar</h2>
+    <button onclick="limpiar()">🗑️ Limpiar Todo</button>
+    
+    <div id="output"></div>
+
+    <script src="env.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="app.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        const app = new AnonymousChatApp();
+        
+        function log(msg) {
+            output.textContent += new Date().toLocaleTimeString() + ' - ' + msg + '\n';
+            console.log(msg);
+        }
+        
+        function crearSalas() {
+            const salas = [
+                {
+                    id: 'TEST01',
+                    creator: 'Admin',
+                    question: 'Sala admin activa',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 7200000).toISOString(),
+                    messageLimit: 50,
+                    messages: [{
+                        id: Date.now(),
+                        text: 'Mensaje inicial',
+                        isAnonymous: false,
+                        author: 'Admin',
+                        timestamp: new Date().toISOString(),
+                        votes: { likes: 0, dislikes: 0 }
+                    }]
+                },
+                {
+                    id: 'TEST02',
+                    creator: 'Usuario',
+                    question: 'Sala normal expirada',
+                    createdAt: new Date(Date.now() - 10000000).toISOString(),
+                    expiresAt: new Date(Date.now() - 1000000).toISOString(),
+                    messageLimit: 50,
+                    messages: []
+                },
+                {
+                    id: 'TEST03',
+                    creator: 'Test',
+                    question: 'Sala reciente',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 7200000).toISOString(),
+                    messageLimit: 50,
+                    messages: []
+                }
+            ];
+            
+            salas.forEach(sala => {
+                localStorage.setItem(`room_${sala.id}`, JSON.stringify(sala));
+            });
+            
+            log(`✅ Creadas ${salas.length} salas de prueba`);
+            mostrarStorage();
+        }
+        
+        function mostrarStorage() {
+            const keys = Object.keys(localStorage);
+            const roomKeys = keys.filter(k => k.startsWith('room_'));
+            log(`💾 localStorage tiene ${roomKeys.length} salas:`);
+            roomKeys.forEach(key => {
+                try {
+                    const room = JSON.parse(localStorage.getItem(key));
+                    const expired = new Date() > new Date(room.expiresAt) ? ' (EXPIRADA)' : ' (ACTIVA)';
+                    log(`  - ${key}: ${room.id} - ${room.creator}${expired}`);
+                } catch (e) {
+                    log(`  - ${key}: ERROR`);
+                }
+            });
+        }
+        
+        function probarGetAllRooms() {
+            log('\n🔍 Probando getAllRooms():');
+            const rooms = app.getAllRooms();
+            log(`Resultado: ${rooms.length} salas encontradas`);
+            rooms.forEach((room, i) => {
+                const expired = app.isRoomExpired(room) ? 'EXPIRADA' : 'ACTIVA';
+                log(`  ${i+1}. ${room.id} - ${room.creator} - ${expired}`);
+            });
+        }
+        
+        function probarGetAllRoomsAdmin() {
+            log('\n🔍 Probando getAllRooms(true):');
+            const rooms = app.getAllRooms(true);
+            log(`Resultado: ${rooms.length} salas encontradas`);
+            rooms.forEach((room, i) => {
+                const expired = app.isRoomExpired(room) ? 'EXPIRADA' : 'ACTIVA';
+                log(`  ${i+1}. ${room.id} - ${room.creator} - ${expired}`);
+            });
+            
+            // Simular lo que hace adminListRooms
+            log('\n🎯 Simulando adminListRooms():');
+            if (rooms.length === 0) {
+                log('❌ No hay salas - se mostraría modal vacío');
+            } else {
+                log('✅ Hay salas - se generaría listado:');
+                rooms.forEach((room, index) => {
+                    const status = '✅ Activa';
+                    const isExpired = app.isRoomExpired(room);
+                    const timeStatus = isExpired ? ' (Expiró naturalmente)' : ' (Dentro del tiempo)';
+                    const messageCount = room.messages ? room.messages.length : 0;
+                    
+                    log(`${index + 1}. ${room.id}`);
+                    log(`   Creador: ${room.creator}`);
+                    log(`   Estado: ${status}${timeStatus}`);
+                    log(`   Mensajes: ${messageCount}/${room.messageLimit}`);
+                });
+            }
+        }
+        
+        function limpiar() {
+            const keys = Object.keys(localStorage);
+            const roomKeys = keys.filter(k => k.startsWith('room_'));
+            roomKeys.forEach(key => localStorage.removeItem(key));
+            log(`🗑️ Eliminadas ${roomKeys.length} salas`);
+            output.textContent = '';
+        }
+        
+        // Auto-mostrar estado inicial
+        setTimeout(() => {
+            log('🚀 Sistema cargado');
+            mostrarStorage();
+        }, 1000);
+    </script>
+</body>
+</html>

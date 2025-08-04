@@ -19,7 +19,9 @@
       "mcp__supabase-mcp__query",
       "Bash(node:*)",
       "Bash(python:*)",
-      "Bash(start http://localhost:8000)"
+      "Bash(start http://localhost:8000)",
+      "Bash(start debug-admin.html)",
+      "Bash(start debug-simple.html)"
     ]
   },
   "enabledMcpjsonServers": [

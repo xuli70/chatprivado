@@ -1347,10 +1347,25 @@ class AnonymousChatApp {
         });
     }
 
-    showConfirmModal(title, message, confirmCallback) {
+    showConfirmModal(title, message, confirmCallback, buttonText = 'Confirmar', buttonStyle = 'primary') {
         this.elements.modals.confirmTitle.textContent = title;
         this.elements.modals.confirmMessage.textContent = message;
         this.confirmCallback = confirmCallback;
+        
+        // Actualizar texto del botón si se proporciona
+        const confirmBtn = this.elements.buttons.confirm;
+        if (confirmBtn) {
+            confirmBtn.textContent = buttonText;
+            
+            // Actualizar estilo del botón
+            confirmBtn.className = 'btn btn--lg';
+            if (buttonStyle === 'danger') {
+                confirmBtn.classList.add('btn--danger');
+            } else {
+                confirmBtn.classList.add('btn--primary');
+            }
+        }
+        
         this.showModal('confirm');
     }
 

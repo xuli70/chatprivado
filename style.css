@@ -425,6 +425,19 @@ pre code {
   background: var(--color-primary-active);
 }
 
+.btn--danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: #c82333;
+}
+
+.btn--danger:active {
+  background: #bd2130;
+}
+
 .btn--secondary {
   background: var(--color-secondary);
   color: var(--color-text);
