@@ -451,48 +451,94 @@ class AnonymousChatApp {
                 return;
             }
             
-            // Crear listado con estado basado en is_active
-            let roomsList = '📋 Salas Existentes (Vista Administrador):\n\n';
+            // Crear interfaz HTML dinámica con botones de acción
+            this.showAdminRoomsModal(rooms);
             
+        } catch (error) {
+            console.error('Error en adminListRooms:', error);
+            this.showToast('Error obteniendo lista de salas', 'error');
+        }
+    }
+
+    // 📋 NUEVA FUNCIÓN: Modal personalizado para listado de salas admin
+    showAdminRoomsModal(rooms) {
+        console.log('📋 Mostrando modal personalizado con', rooms.length, 'salas');
+        
+        // Generar HTML dinámico para cada sala
+        let roomsHTML = '<div class="admin-rooms-list">';
+        
+        if (rooms.length === 0) {
+            roomsHTML += '<p class="no-rooms">No hay salas en el sistema.</p>';
+        } else {
             rooms.forEach((room, index) => {
-                // NUEVA LÓGICA: Estado basado en is_active
                 const isActive = room.isActive !== false;
                 const status = isActive ? '✅ Activa' : '❌ Eliminada';
                 const isExpired = this.isRoomExpired(room);
                 const timeStatus = isExpired ? ' (Expiró naturalmente)' : ' (Dentro del tiempo)';
                 const messageCount = room.messages ? room.messages.length : 0;
                 
-                roomsList += `${index + 1}. ${room.id}\n`;
-                roomsList += `   Creador: ${room.creator}\n`;
-                roomsList += `   Estado: ${status}${timeStatus}\n`;
-                roomsList += `   Mensajes: ${messageCount}/${room.messageLimit}\n`;
-                roomsList += `   Creada: ${new Date(room.createdAt).toLocaleString()}\n`;
+                roomsHTML += `
+                <div class="room-item ${isActive ? 'room-active' : 'room-inactive'}">
+                    <div class="room-header">
+                        <h4>${room.id}</h4>
+                        <span class="room-status">${status}${timeStatus}</span>
+                    </div>
+                    <div class="room-info">
+                        <p><strong>Creador:</strong> ${room.creator}</p>
+                        <p><strong>Pregunta:</strong> ${room.question}</p>
+                        <p><strong>Mensajes:</strong> ${messageCount}/${room.messageLimit}</p>
+                        <p><strong>Creada:</strong> ${new Date(room.createdAt).toLocaleString()}</p>
+                    </div>
+                    <div class="room-actions">
+                `;
                 
                 if (isActive) {
-                    roomsList += `   Acción: adminDeleteRoom("${room.id}") para eliminar\n`;
+                    roomsHTML += `
+                        <button class="btn btn--danger btn--sm" onclick="app.adminDeleteRoom('${room.id}')">
+                            🗑️ Eliminar
+                        </button>
+                    `;
                 } else {
-                    roomsList += `   Acción: adminReactivateRoom("${room.id}") para reactivar\n`;
+                    roomsHTML += `
+                        <button class="btn btn--primary btn--sm" onclick="app.adminReactivateRoom('${room.id}')">
+                            🔄 Reactivar
+                        </button>
+                    `;
                 }
-                roomsList += '\n';
+                
+                roomsHTML += `
+                    </div>
+                </div>
+                `;
             });
-            
-            roomsList += '🔧 Comandos disponibles:\n';
-            roomsList += '• adminDeleteRoom("CODIGO") - Eliminar sala (soft delete)\n';
-            roomsList += '• adminReactivateRoom("CODIGO") - Reactivar sala eliminada\n';
-            roomsList += '• adminShowStats() - Ver estadísticas del sistema';
-            
-            // Mostrar en modal de confirmación
-            this.showConfirmModal(
-                '📋 Salas del Sistema',
-                roomsList,
-                () => this.hideModal(),
-                'Cerrar'
-            );
-            
-        } catch (error) {
-            console.error('Error en adminListRooms:', error);
-            this.showToast('Error obteniendo lista de salas', 'error');
         }
+        
+        roomsHTML += '</div>';
+        
+        // Insertar HTML dinámico en el modal
+        const confirmMessage = document.getElementById('confirmMessage');
+        if (confirmMessage) {
+            confirmMessage.innerHTML = roomsHTML;
+        }
+        
+        // Configurar modal
+        const confirmTitle = document.getElementById('confirmTitle');
+        if (confirmTitle) {
+            confirmTitle.textContent = '📋 Salas del Sistema (Vista Administrador)';
+        }
+        
+        // Configurar callback para cerrar
+        this.confirmCallback = () => this.hideModal();
+        
+        // Configurar botón de cerrar
+        const confirmBtn = document.getElementById('confirmBtn');
+        if (confirmBtn) {
+            confirmBtn.textContent = 'Cerrar';
+            confirmBtn.className = 'btn btn--outline btn--lg';
+        }
+        
+        // Mostrar modal
+        this.showModal('confirm');
     }
 
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
@@ -568,8 +614,13 @@ class AnonymousChatApp {
                 this.showToast(`Sala ${roomId} eliminada (se puede reactivar)`, 'success');
             }
             
-            // Cerrar modal
+            // Cerrar modal y refrescar listado
             this.hideModal();
+            
+            // Refrescar el listado de salas después de 1 segundo
+            setTimeout(() => {
+                this.adminListRooms();
+            }, 1000);
             
         } catch (error) {
             console.error('Error eliminando sala:', error);
@@ -646,6 +697,11 @@ class AnonymousChatApp {
             
             this.showToast(`Sala ${roomId} reactivada exitosamente`, 'success');
             this.hideModal();
+            
+            // Refrescar el listado de salas después de 1 segundo
+            setTimeout(() => {
+                this.adminListRooms();
+            }, 1000);
             
         } catch (error) {
             console.error('Error reactivando sala:', error);
