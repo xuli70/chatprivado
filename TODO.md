@@ -55,7 +55,7 @@
 - [x] **IMPLEMENTADO**: Solo botón "Unirse a Sala" visible para usuarios regulares
 - [x] **COMPLETADO**: Sistema de acceso administrador incógnito
 - [x] **CONFIGURADO**: Variable de entorno `ADMIN_PASSWORD` en .env local y producción
-- [x] **FUNCIONANDO**: Detectar password especial `ADMIN2025_SECRET_ACCESS` en campo "Código de sala"
+- [x] **FUNCIONANDO**: Detectar password especial `ADMIN2025` en campo "Código de sala"
 
 ### 🛠️ FUNCIONALIDADES SISTEMA ADMINISTRADOR - TODAS IMPLEMENTADAS
 - [x] **FUNCIONES ADMIN**: ✅ Crear Sala, ✅ Ver Salas Existentes, ✅ Compartir códigos, ✅ Estadísticas del sistema
@@ -65,7 +65,7 @@
 
 ### 🔧 CAMBIOS TÉCNICOS REALIZADOS
 - **index.html**: Eliminado botón "Crear Nueva Sala" del Welcome Screen
-- **.env & env.js**: Agregada variable `ADMIN_PASSWORD=ADMIN2025_SECRET_ACCESS`
+- **.env & env.js**: Agregada variable `ADMIN_PASSWORD=ADMIN2025`
 - **app.js**: Implementado sistema completo con 15 nuevas funciones especializadas
 - **Arquitectura**: Reutilización inteligente de pantallas existentes (HTML minimalista logrado)
 
@@ -74,7 +74,7 @@
   ```
   SUPABASE_URL=https://supmcp.axcsol.com
   SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc1MjM5MzEyMCwiZXhwIjo0OTA4MDY2NzIwLCJyb2xlIjoiYW5vbiJ9._g-1Vn-8D_lH_CRihAM58E0zKdZm5ZU8SVrKuJgJ4sU
-  ADMIN_PASSWORD=ADMIN2025_SECRET_ACCESS
+  ADMIN_PASSWORD=ADMIN2025
   ```
 - [ ] **Testing sistema administrador** en producción
 - [ ] **Testing multi-dispositivo** en producción tras despliegue

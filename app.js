@@ -244,7 +244,14 @@ class AnonymousChatApp {
         }
 
         // 🔐 SISTEMA ADMINISTRADOR INCÓGNITO - Detectar password admin
-        const adminPassword = window.env?.ADMIN_PASSWORD || 'ADMIN2025_SECRET_ACCESS';
+        const adminPassword = window.env?.ADMIN_PASSWORD || 'ADMIN2025';
+        console.log('🔍 Verificando acceso admin:', { 
+            roomCode, 
+            adminPassword, 
+            windowEnv: window.env,
+            match: roomCode === adminPassword 
+        });
+        
         if (roomCode === adminPassword) {
             console.log('🔑 Acceso de administrador detectado');
             this.state.isAdmin = true;
