@@ -80,6 +80,7 @@ class AnonymousChatApp {
             backToWelcome: document.getElementById('backToWelcome'),
             backToWelcomeFromJoin: document.getElementById('backToWelcomeFromJoin'),
             shareRoom: document.getElementById('shareRoomBtn'),
+            refreshRoom: document.getElementById('refreshRoomBtn'),
             leaveRoom: document.getElementById('leaveRoomBtn'),
             clearData: document.getElementById('clearDataBtn'),
             copyCode: document.getElementById('copyCodeBtn'),
@@ -145,6 +146,7 @@ class AnonymousChatApp {
 
         // Botones del chat
         this.elements.buttons.shareRoom.addEventListener('click', () => this.shareRoom());
+        this.elements.buttons.refreshRoom.addEventListener('click', () => this.refreshRoom());
         this.elements.buttons.leaveRoom.addEventListener('click', () => this.confirmLeaveRoom());
         this.elements.buttons.clearData.addEventListener('click', () => this.confirmClearData());
 
@@ -606,6 +608,53 @@ class AnonymousChatApp {
         } else {
             this.copyToClipboard(shareText);
             this.showToast('Enlace copiado al portapapeles', 'success');
+        }
+    }
+
+    async refreshRoom() {
+        if (!this.state.currentRoom) {
+            this.showToast('No hay sala activa para actualizar', 'error');
+            return;
+        }
+
+        this.showToast('Actualizando sala...', 'info');
+
+        try {
+            // Recargar datos de la sala desde Supabase/localStorage
+            const updatedRoom = await this.loadRoom(this.state.currentRoom.id);
+            
+            if (!updatedRoom) {
+                this.showToast('Error: Sala no encontrada', 'error');
+                return;
+            }
+
+            // Verificar que la sala no haya expirado
+            if (this.isRoomExpired(updatedRoom)) {
+                this.showToast('La sala ha expirado', 'error');
+                return;
+            }
+
+            // Actualizar estado local con datos frescos
+            this.state.currentRoom = updatedRoom;
+            
+            // Refrescar la interfaz
+            this.loadMessages(); // Recargar todos los mensajes
+            this.updateCounters(); // Actualizar contadores de tiempo y mensajes
+            
+            // Reestablecer conexión real-time si es necesario
+            this.cleanupRealtimeMessaging();
+            this.setupRealtimeMessaging();
+            
+            // Guardar sesión actualizada
+            this.saveCurrentSession();
+            
+            this.showToast('Sala actualizada ✅', 'success');
+            
+            console.log('Sala actualizada exitosamente:', updatedRoom.id);
+            
+        } catch (error) {
+            console.error('Error actualizando sala:', error);
+            this.showToast('Error al actualizar la sala', 'error');
         }
     }
 
