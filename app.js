@@ -554,12 +554,12 @@ class AnonymousChatApp {
         // Event listeners para botones de eliminar
         const deleteButtons = document.querySelectorAll('.admin-delete-btn');
         deleteButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
+            button.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const roomId = button.getAttribute('data-room-id');
                 if (roomId) {
                     console.log('🗑️ Click eliminar sala:', roomId);
-                    this.adminDeleteRoom(roomId);
+                    await this.adminDeleteRoom(roomId);
                 }
             });
         });
@@ -581,20 +581,31 @@ class AnonymousChatApp {
     }
 
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
-    adminDeleteRoom(roomId) {
+    async adminDeleteRoom(roomId) {
         console.log('🗑️ Admin: Eliminar sala', roomId);
         
-        // Verificar que la sala existe
-        const roomKey = `room_${roomId}`;
-        const roomData = localStorage.getItem(roomKey);
-        
-        if (!roomData) {
-            this.showToast(`Sala ${roomId} no encontrada`, 'error');
-            return;
-        }
-        
         try {
-            const room = JSON.parse(roomData);
+            // Obtener la sala desde donde esté disponible (Supabase o localStorage)
+            let room = null;
+            
+            // Primero intentar desde Supabase si está disponible
+            if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
+                room = await this.supabaseClient.getRoom(roomId);
+            }
+            
+            // Si no se encontró en Supabase, buscar en localStorage
+            if (!room) {
+                const roomKey = `room_${roomId}`;
+                const roomData = localStorage.getItem(roomKey);
+                if (roomData) {
+                    room = JSON.parse(roomData);
+                }
+            }
+            
+            if (!room) {
+                this.showToast(`Sala ${roomId} no encontrada`, 'error');
+                return;
+            }
             
             // Mostrar confirmación con detalles de la sala
             const messageCount = room.messages ? room.messages.length : 0;
