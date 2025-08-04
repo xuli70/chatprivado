@@ -261,10 +261,13 @@ class AnonymousChatApp {
             return;
         }
 
+        // Ya no verificamos expiración - las salas no expiran automáticamente
+        /*
         if (this.isRoomExpired(room)) {
             this.showToast('Esta sala ha expirado', 'error');
             return;
         }
+        */
 
         this.state.currentRoom = room;
         this.state.currentUser = { name: 'Anónimo', isCreator: false };
@@ -477,8 +480,20 @@ class AnonymousChatApp {
                 const isActive = room.isActive !== false;
                 const status = isActive ? '✅ Activa' : '❌ Eliminada';
                 const isExpired = this.isRoomExpired(room);
-                const timeStatus = isExpired ? ' (Expiró naturalmente)' : ' (Dentro del tiempo)';
+                // Ya no mostramos estado de expiración porque las salas no expiran
+                const timeStatus = ''; // isExpired ? ' (Expiró naturalmente)' : ' (Dentro del tiempo)';
                 const messageCount = room.messages ? room.messages.length : 0;
+                
+                // 🔍 DEBUG: Logging detallado para diagnosticar problema botón "Entrar"
+                console.log(`🔍 SALA ${room.id}:`, {
+                    isActive: isActive,
+                    isExpired: isExpired,
+                    shouldShowEnterButton: isActive && !isExpired,
+                    room_isActive_raw: room.isActive,
+                    createdAt: room.createdAt,
+                    expiresAt: room.expiresAt,
+                    now: new Date().toISOString()
+                });
                 
                 roomsHTML += `
                 <div class="room-item ${isActive ? 'room-active' : 'room-inactive'}">
@@ -495,8 +510,8 @@ class AnonymousChatApp {
                     <div class="room-actions">
                 `;
                 
-                if (isActive && !isExpired) {
-                    // Sala activa y no expirada - Mostrar botón Entrar y Eliminar
+                if (isActive) {
+                    // Sala activa - Mostrar botón Entrar y Eliminar
                     roomsHTML += `
                         <button class="btn btn--primary btn--sm admin-join-btn" data-room-id="${room.id}">
                             🚪 Entrar
@@ -505,15 +520,8 @@ class AnonymousChatApp {
                             🗑️ Eliminar
                         </button>
                     `;
-                } else if (isActive && isExpired) {
-                    // Sala activa pero expirada - Solo eliminar
-                    roomsHTML += `
-                        <button class="btn btn--danger btn--sm admin-delete-btn" data-room-id="${room.id}">
-                            🗑️ Eliminar
-                        </button>
-                    `;
                 } else {
-                    // Sala eliminada - Solo reactivar
+                    // Sala eliminada (solo por admin) - Solo reactivar
                     roomsHTML += `
                         <button class="btn btn--primary btn--sm admin-reactivate-btn" data-room-id="${room.id}">
                             🔄 Reactivar
@@ -602,7 +610,15 @@ class AnonymousChatApp {
             });
         });
         
-        console.log(`✅ Event listeners configurados: ${deleteButtons.length} eliminar, ${reactivateButtons.length} reactivar`);
+        console.log(`✅ Event listeners configurados: ${deleteButtons.length} eliminar, ${reactivateButtons.length} reactivar, ${joinButtons.length} entrar`);
+        
+        // 🔍 DEBUG: Información detallada de botones encontrados
+        console.log('🔍 DEBUG BOTONES:', {
+            totalDeleteButtons: deleteButtons.length,
+            totalReactivateButtons: reactivateButtons.length, 
+            totalJoinButtons: joinButtons.length,
+            adminJoinExistingRoomExists: typeof this.adminJoinExistingRoom === 'function'
+        });
     }
 
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
@@ -1802,10 +1818,36 @@ class AnonymousChatApp {
     }
 
     isRoomExpired(room) {
-        return new Date() > new Date(room.expiresAt);
+        // 🚫 DESHABILITADO: Las salas NO expiran automáticamente
+        // Solo el administrador puede desactivar salas manualmente
+        return false;
+        
+        /* Código original comentado para referencia:
+        const now = new Date();
+        const expiresAt = new Date(room.expiresAt);
+        const isExpired = now > expiresAt;
+        
+        // 🔍 DEBUG: Log detallado de expiración
+        if (room.id && room.id.startsWith('TEST')) {
+            console.log(`🕐 EXPIRATION CHECK para ${room.id}:`, {
+                now: now.toISOString(),
+                expiresAt: room.expiresAt,
+                expiresAtDate: expiresAt.toISOString(),
+                isExpired: isExpired,
+                timeUntilExpiry: Math.round((expiresAt - now) / 1000 / 60) + ' minutos'
+            });
+        }
+        
+        return isExpired;
+        */
     }
 
     cleanupExpiredRooms() {
+        // 🚫 DESHABILITADO: No limpiamos salas "expiradas" automáticamente
+        // Las salas solo se eliminan por acción manual del administrador
+        return;
+        
+        /* Código original comentado:
         const keys = Object.keys(localStorage);
         keys.forEach(key => {
             if (key.startsWith('room_')) {
@@ -1818,6 +1860,7 @@ class AnonymousChatApp {
                 }
             }
         });
+        */
     }
 
     // ==================== GESTIÓN DE SESIÓN ====================
@@ -2659,4 +2702,87 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🎉 === SISTEMA DE FLUIDEZ CONVERSACIONAL v3.0 ===');
     console.log('✅ Polling Adaptativo | ✅ Reconexión Auto | ✅ UX Indicators | ✅ Edge Testing');
     console.log('🚀 ¡LISTO PARA CONVERSACIONES ULTRA-FLUIDAS!');
+    
+    // 🧪 FUNCIÓN TEMPORAL DE TESTING - Crear sala de prueba
+    window.createTestRoom = function() {
+        const roomId = 'TEST' + Math.random().toString(36).substr(2, 4).toUpperCase();
+        const room = {
+            id: roomId,
+            creator: 'Usuario Test',
+            question: '¿Esta es una pregunta de prueba para testing admin?',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 horas
+            messageLimit: 50,
+            messages: [{
+                id: Date.now(),
+                text: 'Mensaje inicial de testing',
+                isAnonymous: false,
+                author: 'Usuario Test',
+                timestamp: new Date().toISOString(),
+                votes: { likes: 0, dislikes: 0 }
+            }],
+            isActive: true // Asegurar que está activa
+        };
+        
+        localStorage.setItem(`room_${roomId}`, JSON.stringify(room));
+        console.log(`🧪 Sala de test creada: ${roomId}`);
+        return roomId;
+    };
+    
+    console.log('🧪 TESTING: Usa createTestRoom() para crear salas de prueba');
+    
+    // 🎯 FUNCIÓN DE TESTING DIRECTO - Simular flujo admin completo
+    window.testAdminEnterButton = async function() {
+        console.log('\n🎯 === INICIANDO TEST DIRECTO ADMIN ENTER BUTTON ===\n');
+        
+        // Paso 1: Crear sala de test
+        console.log('🏁 Paso 1: Creando sala de test...');
+        const roomId = window.createTestRoom();
+        
+        // Paso 2: Activar modo admin
+        console.log('🏁 Paso 2: Activando modo admin...');
+        window.chatApp.state.isAdmin = true;
+        
+        // Paso 3: Obtener todas las salas
+        console.log('🏁 Paso 3: Obteniendo todas las salas...');
+        const rooms = await window.chatApp.getAllRooms(true);
+        console.log(`📄 Encontradas ${rooms.length} salas`);
+        
+        // Paso 4: Mostrar modal de salas admin
+        console.log('🏁 Paso 4: Mostrando modal de salas admin...');
+        window.chatApp.showAdminRoomsModal(rooms);
+        
+        // Paso 5: Verificar botones después de un delay
+        setTimeout(() => {
+            console.log('🏁 Paso 5: Verificando botones generados...');
+            const joinButtons = document.querySelectorAll('.admin-join-btn');
+            const deleteButtons = document.querySelectorAll('.admin-delete-btn');
+            const reactivateButtons = document.querySelectorAll('.admin-reactivate-btn');
+            
+            console.log('\n📊 RESULTADO FINAL:');
+            console.log(`🚀 Botón "Entrar": ${joinButtons.length} encontrados`);
+            console.log(`🗑️ Botón "Eliminar": ${deleteButtons.length} encontrados`);
+            console.log(`🔄 Botón "Reactivar": ${reactivateButtons.length} encontrados`);
+            
+            if (joinButtons.length === 0) {
+                console.error('\n❌ ERROR: No se generaron botones "Entrar"');
+                console.log('🔍 Revisa los logs anteriores para ver:');
+                console.log('  - isActive de cada sala');
+                console.log('  - isExpired de cada sala');
+                console.log('  - shouldShowEnterButton de cada sala');
+            } else {
+                console.log('\n✅ ÉXITO: Botones "Entrar" generados correctamente');
+                
+                // Test de click
+                const firstBtn = joinButtons[0];
+                const testRoomId = firstBtn.getAttribute('data-room-id');
+                console.log(`🔥 Haciendo click en botón para sala: ${testRoomId}`);
+                firstBtn.click();
+            }
+            
+            console.log('\n🎯 === FIN DEL TEST ===\n');
+        }, 1000);
+    };
+    
+    console.log('🎯 TESTING: Usa testAdminEnterButton() para test completo del flujo admin');
 });

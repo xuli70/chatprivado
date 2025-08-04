@@ -30,7 +30,10 @@
       "Bash(start C:UsersSebastian000chatprivadoindex.html)",
       "Bash(start C:UsersSebastian000chatprivadodebug-simple.html)",
       "Bash(start test-voting.html)",
-      "Bash(start test-admin-join.html)"
+      "Bash(start test-admin-join.html)",
+      "mcp__filesystem__edit_file",
+      "mcp__filesystem__write_file",
+      "Bash(start debug-admin-buttons.html)"
     ]
   },
   "enabledMcpjsonServers": [

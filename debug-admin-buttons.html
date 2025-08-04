@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Admin Buttons Issue</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .debug-section { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            background: white;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        
+        button { 
+            margin: 8px; 
+            padding: 12px 20px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        button.warning { background: #ffc107; color: #212529; }
+        
+        .result { 
+            margin: 15px 0; 
+            padding: 15px; 
+            background: #f8f9fa; 
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            white-space: pre-wrap;
+        }
+        
+        .step { 
+            background: #e9ecef; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            border-left: 4px solid #6c757d;
+        }
+        
+        code { 
+            background: #f1f3f4; 
+            padding: 2px 6px; 
+            border-radius: 3px; 
+            font-family: monospace;
+        }
+        
+        .logs {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Admin Button "🚪 Entrar" Issue</h1>
+    
+    <div class="debug-section info">
+        <h3>📋 Instrucciones de Testing</h3>
+        <div class="step">
+            <strong>Paso 1:</strong> Crear sala de prueba con el botón de abajo
+        </div>
+        <div class="step">
+            <strong>Paso 2:</strong> Hacer testing del flujo admin completo
+        </div>
+        <div class="step">
+            <strong>Paso 3:</strong> Observar logs de debugging en tiempo real
+        </div>
+        <div class="step">
+            <strong>Paso 4:</strong> Ver análisis detallado del problema
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h3>🧪 Preparación de Testing</h3>
+        <button onclick="createTestRoom()">🏗️ Crear Sala de Test</button>
+        <button onclick="listAllRooms()">📋 Ver Todas las Salas</button>
+        <button onclick="clearAllRooms()" class="danger">🗑️ Limpiar Todas las Salas</button>
+        <div id="preparation-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>🔍 Testing Flujo Admin</h3>
+        <button onclick="testAdminFlow()">🔑 Test Completo: ADMIN2025 → Ver Salas</button>
+        <button onclick="checkModalContent()">🔍 Inspeccionar Modal HTML</button>
+        <button onclick="checkEventListeners()">👂 Verificar Event Listeners</button>
+        <div id="admin-flow-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>📊 Logs de Debugging en Tiempo Real</h3>
+        <button onclick="clearLogs()">🧽 Limpiar Logs</button>
+        <button onclick="captureConsole()" class="success">📝 Capturar Console Logs</button>
+        <div id="logs-container" class="logs"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>🔧 Análisis y Diagnóstico</h3>
+        <button onclick="analyzeIssue()">🔬 Analizar Problema Completo</button>
+        <button onclick="generateReport()" class="warning">📄 Generar Reporte Detallado</button>
+        <div id="analysis-result" class="result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="app.js"></script>
+    
+    <script>
+        let app;
+        let logCapture = [];
+        
+        // Inicializar cuando esté listo
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Esperar un poco para que se inicialice
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                app = window.chatApp;
+                
+                if (app) {
+                    updateResult('preparation-result', '✅ Aplicación cargada correctamente\n📍 App disponible globalmente como window.chatApp', 'success');
+                } else {
+                    updateResult('preparation-result', '❌ Error: Aplicación no se cargó correctamente', 'error');
+                }
+            } catch (error) {
+                updateResult('preparation-result', '❌ Error inicializando: ' + error.message, 'error');
+            }
+            
+            // Configurar captura de logs
+            setupLogCapture();
+        });
+        
+        function updateResult(elementId, content, className = '') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = 'result ' + className;
+        }
+        
+        function createTestRoom() {
+            const result = document.getElementById('preparation-result');
+            result.textContent = 'Creando sala de test...';
+            
+            try {
+                if (typeof window.createTestRoom === 'function') {
+                    const roomId = window.createTestRoom();
+                    updateResult('preparation-result', `✅ Sala de test creada: ${roomId}\n🔍 Verifica en localStorage que existe\n📝 isActive: true (garantizado)`, 'success');
+                } else {
+                    // Crear manualmente si la función no existe
+                    const roomId = 'TEST' + Math.random().toString(36).substr(2, 4).toUpperCase();
+                    const room = {
+                        id: roomId,
+                        creator: 'Usuario Test',
+                        question: '¿Esta es una pregunta de prueba para testing admin?',
+                        createdAt: new Date().toISOString(),
+                        expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+                        messageLimit: 50,
+                        messages: [{
+                            id: Date.now(),
+                            text: 'Mensaje inicial de testing',
+                            isAnonymous: false,
+                            author: 'Usuario Test',
+                            timestamp: new Date().toISOString(),
+                            votes: { likes: 0, dislikes: 0 }
+                        }],
+                        isActive: true
+                    };
+                    
+                    localStorage.setItem(`room_${roomId}`, JSON.stringify(room));
+                    updateResult('preparation-result', `✅ Sala de test creada manualmente: ${roomId}`, 'success');
+                }
+            } catch (error) {
+                updateResult('preparation-result', '❌ Error creando sala: ' + error.message, 'error');
+            }
+        }
+        
+        function listAllRooms() {
+            const result = document.getElementById('preparation-result');
+            
+            try {
+                const rooms = [];
+                const keys = Object.keys(localStorage);
+                
+                keys.forEach(key => {
+                    if (key.startsWith('room_')) {
+                        try {
+                            const roomData = localStorage.getItem(key);
+                            if (roomData) {
+                                const room = JSON.parse(roomData);
+                                rooms.push({
+                                    id: room.id,
+                                    isActive: room.isActive,
+                                    expired: new Date() > new Date(room.expiresAt)
+                                });
+                            }
+                        } catch (e) {
+                            console.error('Error parsing room:', key, e);
+                        }
+                    }
+                });
+                
+                if (rooms.length === 0) {
+                    updateResult('preparation-result', '📋 No hay salas en localStorage\n💡 Crea una sala de test primero', 'warning');
+                } else {
+                    let roomsList = `📋 Salas encontradas (${rooms.length}):\\n`;
+                    rooms.forEach(room => {
+                        const status = room.isActive !== false ? '✅ Activa' : '❌ Inactiva';
+                        const expired = room.expired ? '⏰ Expirada' : '✅ Válida';
+                        roomsList += `• ${room.id}: ${status}, ${expired}\\n`;
+                    });
+                    updateResult('preparation-result', roomsList, 'info');
+                }
+            } catch (error) {
+                updateResult('preparation-result', '❌ Error listando salas: ' + error.message, 'error');
+            }
+        }
+        
+        function clearAllRooms() {
+            const keys = Object.keys(localStorage);
+            let cleared = 0;
+            
+            keys.forEach(key => {
+                if (key.startsWith('room_')) {
+                    localStorage.removeItem(key);
+                    cleared++;
+                }
+            });
+            
+            updateResult('preparation-result', `🗑️ ${cleared} salas eliminadas de localStorage`, 'warning');
+        }
+        
+        async function testAdminFlow() {
+            const result = document.getElementById('admin-flow-result');
+            result.textContent = 'Ejecutando test del flujo admin...\\n';
+            
+            try {
+                if (!app) {
+                    throw new Error('App no está disponible');
+                }
+                
+                // Paso 1: Activar admin
+                result.textContent += '🔑 Paso 1: Activando modo admin...\\n';
+                app.state.isAdmin = true;
+                
+                // Paso 2: Obtener salas
+                result.textContent += '📋 Paso 2: Obteniendo salas...\\n';
+                const rooms = await app.getAllRooms(true);
+                result.textContent += `📊 Encontradas ${rooms.length} salas\\n`;
+                
+                // Paso 3: Generar modal
+                result.textContent += '🎨 Paso 3: Generando modal...\\n';
+                app.showAdminRoomsModal(rooms);
+                
+                // Paso 4: Verificar botones
+                result.textContent += '🔍 Paso 4: Verificando botones generados...\\n';
+                
+                setTimeout(() => {
+                    const joinButtons = document.querySelectorAll('.admin-join-btn');
+                    const deleteButtons = document.querySelectorAll('.admin-delete-btn');
+                    const reactivateButtons = document.querySelectorAll('.admin-reactivate-btn');
+                    
+                    result.textContent += `👆 Botones encontrados:\\n`;
+                    result.textContent += `• 🚪 Entrar: ${joinButtons.length}\\n`;
+                    result.textContent += `• 🗑️ Eliminar: ${deleteButtons.length}\\n`;
+                    result.textContent += `• 🔄 Reactivar: ${reactivateButtons.length}\\n`;
+                    
+                    if (joinButtons.length === 0) {
+                        result.textContent += '\\n❌ PROBLEMA IDENTIFICADO: No se generaron botones "Entrar"\\n';
+                        result.textContent += '🔍 Revisa los logs de debugging para ver la lógica condicional\\n';
+                        result.className = 'result error';
+                    } else {
+                        result.textContent += '\\n✅ Botones "Entrar" generados correctamente\\n';
+                        result.className = 'result success';
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                result.textContent += '\\n❌ Error en test: ' + error.message;
+                result.className = 'result error';
+            }
+        }
+        
+        function checkModalContent() {
+            const modal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirmMessage');
+            
+            if (!modal || !confirmMessage) {
+                updateResult('admin-flow-result', '❌ Modal elements not found', 'error');
+                return;
+            }
+            
+            const modalHTML = confirmMessage.innerHTML;
+            const joinBtnCount = (modalHTML.match(/admin-join-btn/g) || []).length;
+            const deleteBtnCount = (modalHTML.match(/admin-delete-btn/g) || []).length;
+            
+            let analysis = `🔍 ANÁLISIS DEL MODAL HTML:\\n`;
+            analysis += `📄 Longitud HTML: ${modalHTML.length} caracteres\\n`;
+            analysis += `🚪 Referencias "admin-join-btn": ${joinBtnCount}\\n`;
+            analysis += `🗑️ Referencias "admin-delete-btn": ${deleteBtnCount}\\n\\n`;
+            
+            if (joinBtnCount === 0) {
+                analysis += `❌ PROBLEMA: No se está generando HTML para botones "Entrar"\\n`;
+                analysis += `🔍 Esto indica que la condición isActive && !isExpired es false\\n`;
+            } else {
+                analysis += `✅ HTML de botones "Entrar" está siendo generado\\n`;
+            }
+            
+            // Mostrar una muestra del HTML
+            analysis += `\\n📝 Muestra HTML (primeros 500 chars):\\n`;
+            analysis += modalHTML.substring(0, 500) + '...';
+            
+            updateResult('admin-flow-result', analysis, joinBtnCount > 0 ? 'success' : 'error');
+        }
+        
+        function checkEventListeners() {
+            const joinButtons = document.querySelectorAll('.admin-join-btn');
+            const deleteButtons = document.querySelectorAll('.admin-delete-btn');
+            
+            let analysis = `👂 ANÁLISIS DE EVENT LISTENERS:\\n`;
+            analysis += `🚪 Botones "Entrar" encontrados: ${joinButtons.length}\\n`;
+            analysis += `🗑️ Botones "Eliminar" encontrados: ${deleteButtons.length}\\n\\n`;
+            
+            // Verificar si las funciones existen
+            analysis += `🔧 FUNCIONES DISPONIBLES:\\n`;
+            analysis += `• adminJoinExistingRoom: ${typeof app?.adminJoinExistingRoom === 'function' ? '✅' : '❌'}\\n`;
+            analysis += `• adminDeleteRoom: ${typeof app?.adminDeleteRoom === 'function' ? '✅' : '❌'}\\n`;
+            analysis += `• setupAdminRoomActionListeners: ${typeof app?.setupAdminRoomActionListeners === 'function' ? '✅' : '❌'}\\n\\n`;
+            
+            // Test de click simulado
+            if (joinButtons.length > 0) {
+                analysis += `🧪 Testing click simulado en primer botón "Entrar"...\\n`;
+                try {
+                    const firstBtn = joinButtons[0];
+                    const roomId = firstBtn.getAttribute('data-room-id');
+                    analysis += `📍 Room ID: ${roomId}\\n`;
+                    analysis += `✅ Botón clickeable - Event listener configurado\\n`;
+                } catch (error) {
+                    analysis += `❌ Error en test de click: ${error.message}\\n`;
+                }
+            } else {
+                analysis += `⚠️ No hay botones "Entrar" para testear\\n`;
+            }
+            
+            updateResult('admin-flow-result', analysis, joinButtons.length > 0 ? 'success' : 'warning');
+        }
+        
+        function setupLogCapture() {
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            function captureLog(level, args) {
+                const timestamp = new Date().toLocaleTimeString();
+                const message = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' ');
+                
+                logCapture.push({
+                    timestamp,
+                    level,
+                    message
+                });
+                
+                // Mantener solo los últimos 50 logs
+                if (logCapture.length > 50) {
+                    logCapture.shift();
+                }
+                
+                updateLogsDisplay();
+            }
+            
+            console.log = function(...args) {
+                captureLog('LOG', args);
+                originalLog.apply(console, args);
+            };
+            
+            console.error = function(...args) {
+                captureLog('ERROR', args);
+                originalError.apply(console, args);
+            };
+            
+            console.warn = function(...args) {
+                captureLog('WARN', args);
+                originalWarn.apply(console, args);
+            };
+        }
+        
+        function updateLogsDisplay() {
+            const container = document.getElementById('logs-container');
+            const relevantLogs = logCapture.filter(log => 
+                log.message.includes('🔍 SALA') || 
+                log.message.includes('DEBUG BOTONES') ||
+                log.message.includes('adminJoinExistingRoom') ||
+                log.message.includes('Event listeners configurados') ||
+                log.message.includes('ADMIN') ||
+                log.message.includes('ERROR')
+            );
+            
+            container.innerHTML = relevantLogs
+                .slice(-20) // Últimos 20 logs relevantes
+                .map(log => `[${log.timestamp}] ${log.level}: ${log.message}`)
+                .join('\\n');
+            
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function clearLogs() {
+            logCapture = [];
+            document.getElementById('logs-container').innerHTML = '📝 Logs cleared - ready for new capture';
+        }
+        
+        function captureConsole() {
+            updateResult('logs-container', '📝 Console capture está activo. Los logs aparecerán aquí automáticamente.\\n🔍 Ejecuta el test del flujo admin para ver logs de debugging.', 'info');
+        }
+        
+        function analyzeIssue() {
+            const result = document.getElementById('analysis-result');
+            result.textContent = 'Analizando problema...\\n';
+            
+            // Análisis completo
+            let analysis = `🔬 ANÁLISIS COMPLETO DEL PROBLEMA:\\n\\n`;
+            
+            // 1. Verificar app state
+            analysis += `1️⃣ ESTADO DE LA APLICACIÓN:\\n`;
+            analysis += `• App loaded: ${!!app}\\n`;
+            analysis += `• Admin state: ${app?.state?.isAdmin}\\n`;
+            analysis += `• Current room: ${app?.state?.currentRoom?.id || 'None'}\\n\\n`;
+            
+            // 2. Verificar salas en storage
+            const roomKeys = Object.keys(localStorage).filter(k => k.startsWith('room_'));
+            analysis += `2️⃣ SALAS EN LOCALSTORAGE:\\n`;
+            analysis += `• Total rooms: ${roomKeys.length}\\n`;
+            
+            roomKeys.forEach(key => {
+                try {
+                    const room = JSON.parse(localStorage.getItem(key));
+                    const isExpired = new Date() > new Date(room.expiresAt);
+                    const isActive = room.isActive !== false;
+                    analysis += `• ${room.id}: Active=${isActive}, Expired=${isExpired}, ShouldShowButton=${isActive && !isExpired}\\n`;
+                } catch (e) {
+                    analysis += `• ${key}: Error parsing\\n`;
+                }
+            });
+            
+            // 3. Verificar funciones
+            analysis += `\\n3️⃣ FUNCIONES ADMIN DISPONIBLES:\\n`;
+            const functions = ['adminJoinExistingRoom', 'adminDeleteRoom', 'showAdminRoomsModal', 'setupAdminRoomActionListeners'];
+            functions.forEach(fn => {
+                analysis += `• ${fn}: ${typeof app?.[fn] === 'function' ? '✅' : '❌'}\\n`;
+            });
+            
+            // 4. Verificar modal state
+            analysis += `\\n4️⃣ ESTADO DEL MODAL:\\n`;
+            const modal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirmMessage');
+            analysis += `• Modal exists: ${!!modal}\\n`;
+            analysis += `• ConfirmMessage exists: ${!!confirmMessage}\\n`;
+            analysis += `• Modal visible: ${modal?.style.display !== 'none'}\\n`;
+            
+            // 5. Conclusiones
+            analysis += `\\n🎯 POSIBLES CAUSAS:\\n`;
+            if (roomKeys.length === 0) {
+                analysis += `❌ No hay salas de test - crear con el botón de arriba\\n`;
+            }
+            
+            const joinButtons = document.querySelectorAll('.admin-join-btn');
+            if (joinButtons.length === 0) {
+                analysis += `❌ Condición isActive && !isExpired devuelve false\\n`;
+                analysis += `💡 Solución: Verificar lógica de expiración en isRoomExpired()\\n`;
+            } else {
+                analysis += `✅ Botones generados correctamente\\n`;
+            }
+            
+            updateResult('analysis-result', analysis, joinButtons.length > 0 ? 'success' : 'warning');
+        }
+        
+        function generateReport() {
+            const timestamp = new Date().toISOString();
+            const report = {
+                timestamp,
+                environment: {
+                    userAgent: navigator.userAgent,
+                    url: window.location.href,
+                    localStorage: Object.keys(localStorage).length + ' items'
+                },
+                appState: {
+                    loaded: !!app,
+                    isAdmin: app?.state?.isAdmin,
+                    currentRoom: app?.state?.currentRoom?.id
+                },
+                roomsAnalysis: {},
+                functionsCheck: {},
+                modalState: {},
+                recommendations: []
+            };
+            
+            // Análisis detallado de salas
+            const roomKeys = Object.keys(localStorage).filter(k => k.startsWith('room_'));
+            roomKeys.forEach(key => {
+                try {
+                    const room = JSON.parse(localStorage.getItem(key));
+                    const isExpired = new Date() > new Date(room.expiresAt);
+                    const isActive = room.isActive !== false;
+                    report.roomsAnalysis[room.id] = {
+                        isActive,
+                        isExpired,
+                        shouldShowEnterButton: isActive && !isExpired,
+                        createdAt: room.createdAt,
+                        expiresAt: room.expiresAt
+                    };
+                } catch (e) {
+                    report.roomsAnalysis[key] = { error: e.message };
+                }
+            });
+            
+            // Check de funciones
+            const functions = ['adminJoinExistingRoom', 'adminDeleteRoom', 'showAdminRoomsModal', 'setupAdminRoomActionListeners'];
+            functions.forEach(fn => {
+                report.functionsCheck[fn] = typeof app?.[fn] === 'function';
+            });
+            
+            // Estado del modal
+            const modal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const joinButtons = document.querySelectorAll('.admin-join-btn');
+            
+            report.modalState = {
+                modalExists: !!modal,
+                confirmMessageExists: !!confirmMessage,
+                modalVisible: modal?.style.display !== 'none',
+                joinButtonsCount: joinButtons.length,
+                modalHTMLLength: confirmMessage?.innerHTML?.length || 0
+            };
+            
+            // Recomendaciones
+            if (Object.keys(report.roomsAnalysis).length === 0) {
+                report.recommendations.push('Crear salas de test con createTestRoom()');
+            }
+            
+            if (report.modalState.joinButtonsCount === 0) {
+                report.recommendations.push('Verificar lógica condicional isActive && !isExpired');
+                report.recommendations.push('Revisar función isRoomExpired() para debugging');
+            }
+            
+            if (!report.functionsCheck.adminJoinExistingRoom) {
+                report.recommendations.push('Implementar función adminJoinExistingRoom faltante');
+            }
+            
+            updateResult('analysis-result', `📄 REPORTE GENERADO:\\n\\n${JSON.stringify(report, null, 2)}`, 'info');
+        }
+    </script>
+</body>
+</html>
