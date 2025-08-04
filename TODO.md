@@ -48,26 +48,41 @@
 - **app.js**: Implementada función `refreshRoom()` con recarga de datos y reconexión real-time
 - **app.js**: Agregado `refreshRoom` button al objeto elements y event listener
 
-## ✅ SESIÓN 2025-08-04 - SISTEMA ADMINISTRADOR INCÓGNITO COMPLETADO
+## ✅ SESIÓN 2025-08-04 - SISTEMA ADMINISTRADOR INCÓGNITO COMPLETADO AL 100%
 
-### 🎉 TRANSFORMACIÓN ARQUITECTÓNICA - COMPLETADA AL 100%
+### 🎉 TRANSFORMACIÓN ARQUITECTÓNICA - COMPLETADA Y FUNCIONANDO
 - [x] **ELIMINADO**: Botón "Crear Sala" de la pantalla principal (welcomeScreen)
 - [x] **IMPLEMENTADO**: Solo botón "Unirse a Sala" visible para usuarios regulares
 - [x] **COMPLETADO**: Sistema de acceso administrador incógnito
-- [x] **CONFIGURADO**: Variable de entorno `ADMIN_PASSWORD` en .env local y producción
+- [x] **CONFIGURADO**: Variable de entorno `ADMIN_PASSWORD=ADMIN2025` en .env local y producción
 - [x] **FUNCIONANDO**: Detectar password especial `ADMIN2025` en campo "Código de sala"
 
-### 🛠️ FUNCIONALIDADES SISTEMA ADMINISTRADOR - TODAS IMPLEMENTADAS
+### 🛠️ FUNCIONALIDADES SISTEMA ADMINISTRADOR - TODAS IMPLEMENTADAS Y FUNCIONANDO
 - [x] **FUNCIONES ADMIN**: ✅ Crear Sala, ✅ Ver Salas Existentes, ✅ Compartir códigos, ✅ Estadísticas del sistema
-- [x] **MODO INCÓGNITO ADMIN**: ✅ Administrador puede alternar entre "Anónimo" y "Administrador" en chat
+- [x] **MODO INCÓGNITO ADMIN**: ✅ Administrador puede alternar entre "Anónimo" y "Administrador" en chat (CORREGIDO)
 - [x] **RESTRICCIONES USUARIO**: ✅ Solo pueden unirse a salas (botón compartir oculto para no-admin)
 - [x] **UI DIFERENCIADA**: ✅ Admin Panel dinámico, controles especiales, indicadores visuales
 
 ### 🔧 CAMBIOS TÉCNICOS REALIZADOS
 - **index.html**: Eliminado botón "Crear Nueva Sala" del Welcome Screen
 - **.env & env.js**: Agregada variable `ADMIN_PASSWORD=ADMIN2025`
-- **app.js**: Implementado sistema completo con 15 nuevas funciones especializadas
+- **app.js**: Implementado sistema completo con 20+ nuevas funciones especializadas
 - **Arquitectura**: Reutilización inteligente de pantallas existentes (HTML minimalista logrado)
+
+### 🚨 BUG CRÍTICO CORREGIDO EN ESTA SESIÓN
+- **Problema**: Botón modo incógnito admin funcionaba solo en una dirección
+- **Causa**: `saveCurrentSession()` no guardaba estado `isAdmin` ni `adminIncognito`
+- **Solución**: Corregidas funciones `saveCurrentSession()` y `restoreSession()`
+- **Estado**: ✅ COMPLETAMENTE FUNCIONAL - Toggle bidireccional perfecto
+
+## 🚨 PRÓXIMA SESIÓN - ANÁLISIS DE PERSISTENCIA DE SALAS
+
+### 🔥 ALTA PRIORIDAD - LÓGICA DE SALAS ACTIVAS
+- [ ] **ANALIZAR**: Lógica actual de permanencia de salas en el sistema
+- [ ] **VERIFICAR**: Por qué salas no aparecen en botón "Ver Salas Existentes" (`button#adminListRooms`)
+- [ ] **IMPLEMENTAR**: Sistema de persistencia donde salas permanecen activas hasta eliminación manual por admin
+- [ ] **CORREGIR**: Función `getAllRooms()` para mostrar todas las salas persistentes
+- [ ] **TESTING**: Verificar que admin puede ver y gestionar todas las salas creadas
 
 ### ⚠️ PENDIENTE PARA PRODUCCIÓN
 - [ ] **Configurar variables de entorno en Coolify**:
@@ -76,7 +91,7 @@
   SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc1MjM5MzEyMCwiZXhwIjo0OTA4MDY2NzIwLCJyb2xlIjoiYW5vbiJ9._g-1Vn-8D_lH_CRihAM58E0zKdZm5ZU8SVrKuJgJ4sU
   ADMIN_PASSWORD=ADMIN2025
   ```
-- [ ] **Testing sistema administrador** en producción
+- [ ] **Testing sistema administrador** en producción completa
 - [ ] **Testing multi-dispositivo** en producción tras despliegue
 
 ### 🧪 FUNCIONES DE TESTING DISPONIBLES

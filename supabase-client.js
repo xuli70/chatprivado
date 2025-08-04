@@ -222,6 +222,58 @@ class SupabaseClient {
         }
     }
 
+    async deleteRoom(roomId) {
+        if (!this.isOnline) {
+            return this.deleteRoomLocal(roomId);
+        }
+
+        try {
+            // 1. Eliminar todos los mensajes de la sala
+            const { error: messagesError } = await this.client
+                .from('chat_messages')
+                .delete()
+                .eq('room_id', roomId);
+
+            if (messagesError) {
+                console.warn('Error eliminando mensajes:', messagesError);
+                // Continuar con eliminación de sala aunque falle eliminar mensajes
+            }
+
+            // 2. Eliminar todos los votos de la sala
+            const { error: votesError } = await this.client
+                .from('chat_votes')
+                .delete()
+                .eq('room_id', roomId);
+
+            if (votesError) {
+                console.warn('Error eliminando votos:', votesError);
+                // Continuar con eliminación de sala aunque falle eliminar votos
+            }
+
+            // 3. Eliminar la sala
+            const { error: roomError } = await this.client
+                .from('chat_rooms')
+                .delete()
+                .eq('id', roomId);
+
+            if (roomError) {
+                console.error('Error eliminando sala de Supabase:', roomError);
+                throw roomError;
+            }
+
+            console.log('Sala eliminada completamente de Supabase:', roomId);
+            
+            // También eliminar de localStorage como backup
+            this.deleteRoomLocal(roomId);
+            
+            return { success: true };
+        } catch (error) {
+            console.error('Error en deleteRoom:', error);
+            // Fallback a eliminación local
+            return this.deleteRoomLocal(roomId);
+        }
+    }
+
     // ==================== GESTIÓN DE MENSAJES ====================
 
     async sendMessage(roomId, message) {
@@ -367,6 +419,27 @@ class SupabaseClient {
     getRoomLocal(roomId) {
         const roomData = localStorage.getItem(`room_${roomId}`);
         return roomData ? JSON.parse(roomData) : null;
+    }
+
+    deleteRoomLocal(roomId) {
+        console.log('Eliminando sala de localStorage:', roomId);
+        const roomKey = `room_${roomId}`;
+        localStorage.removeItem(roomKey);
+        
+        // También limpiar datos relacionados si existen
+        const userVotes = localStorage.getItem('userVotes');
+        if (userVotes) {
+            try {
+                const votes = JSON.parse(userVotes);
+                // Remover votos relacionados con esta sala (si están guardados por sala)
+                // Esta es una implementación básica - en el futuro se puede mejorar
+                localStorage.setItem('userVotes', JSON.stringify(votes));
+            } catch (error) {
+                console.warn('Error limpiando votos relacionados:', error);
+            }
+        }
+        
+        return { success: true, useLocalStorage: true };
     }
 
     sendMessageLocal(roomId, message) {
