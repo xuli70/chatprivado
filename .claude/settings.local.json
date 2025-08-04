@@ -29,7 +29,8 @@
       "Bash(start C:UsersSebastian000chatprivadodebug-admin.html)",
       "Bash(start C:UsersSebastian000chatprivadoindex.html)",
       "Bash(start C:UsersSebastian000chatprivadodebug-simple.html)",
-      "Bash(start test-voting.html)"
+      "Bash(start test-voting.html)",
+      "Bash(start test-admin-join.html)"
     ]
   },
   "enabledMcpjsonServers": [

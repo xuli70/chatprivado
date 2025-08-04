@@ -495,13 +495,25 @@ class AnonymousChatApp {
                     <div class="room-actions">
                 `;
                 
-                if (isActive) {
+                if (isActive && !isExpired) {
+                    // Sala activa y no expirada - Mostrar botón Entrar y Eliminar
+                    roomsHTML += `
+                        <button class="btn btn--primary btn--sm admin-join-btn" data-room-id="${room.id}">
+                            🚪 Entrar
+                        </button>
+                        <button class="btn btn--danger btn--sm admin-delete-btn" data-room-id="${room.id}">
+                            🗑️ Eliminar
+                        </button>
+                    `;
+                } else if (isActive && isExpired) {
+                    // Sala activa pero expirada - Solo eliminar
                     roomsHTML += `
                         <button class="btn btn--danger btn--sm admin-delete-btn" data-room-id="${room.id}">
                             🗑️ Eliminar
                         </button>
                     `;
                 } else {
+                    // Sala eliminada - Solo reactivar
                     roomsHTML += `
                         <button class="btn btn--primary btn--sm admin-reactivate-btn" data-room-id="${room.id}">
                             🔄 Reactivar
@@ -573,6 +585,19 @@ class AnonymousChatApp {
                 if (roomId) {
                     console.log('🔄 Click reactivar sala:', roomId);
                     this.adminReactivateRoom(roomId);
+                }
+            });
+        });
+        
+        // Event listeners para botones de entrar (NUEVA funcionalidad)
+        const joinButtons = document.querySelectorAll('.admin-join-btn');
+        joinButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const roomId = button.getAttribute('data-room-id');
+                if (roomId) {
+                    console.log('🚪 Click entrar a sala:', roomId);
+                    await this.adminJoinExistingRoom(roomId);
                 }
             });
         });
@@ -749,6 +774,59 @@ class AnonymousChatApp {
         }
     }
 
+    // 🚪 NUEVA FUNCIÓN: Admin entra directamente a sala existente
+    async adminJoinExistingRoom(roomId) {
+        console.log('🚪 Admin: Entrando a sala existente', roomId);
+        
+        try {
+            // 1. Cargar la sala desde Supabase/localStorage
+            const room = await this.loadRoom(roomId);
+            
+            if (!room) {
+                this.showToast(`Sala ${roomId} no encontrada`, 'error');
+                return;
+            }
+            
+            // 2. Verificar que la sala no haya expirado
+            if (this.isRoomExpired(room)) {
+                this.showToast(`Sala ${roomId} ha expirado`, 'error');
+                return;
+            }
+            
+            // 3. Verificar que la sala esté activa
+            if (room.isActive === false) {
+                this.showToast(`Sala ${roomId} está eliminada. Reactívala primero.`, 'error');
+                return;
+            }
+            
+            console.log('✅ Sala válida, configurando estado admin...');
+            
+            // 4. Configurar estado del administrador
+            this.state.currentRoom = room;
+            this.state.currentUser = {
+                name: 'Administrador',
+                isCreator: false, // El admin NO es el creador original
+                adminIncognito: false // Por defecto visible como Administrador
+            };
+            this.state.isAdmin = true; // Mantener estado admin
+            
+            // 5. Cerrar modal de salas y guardar sesión
+            this.hideModal();
+            this.saveCurrentSession();
+            
+            // 6. Ir directamente al chat
+            this.startChat();
+            
+            // 7. Mostrar confirmación
+            this.showToast(`Entraste como admin a sala ${roomId}`, 'success');
+            console.log('🚪 Admin entró exitosamente a sala:', roomId);
+            
+        } catch (error) {
+            console.error('Error entrando a sala:', error);
+            this.showToast('Error al entrar a la sala', 'error');
+        }
+    }
+
     // 📊 FUNCIONES ADMINISTRADOR - Estadísticas del sistema
     async adminShowStats() {
         console.log('📊 Admin: Mostrar estadísticas');
@@ -790,6 +868,7 @@ class AnonymousChatApp {
 
 🎮 Comandos disponibles:
    • adminListRooms() - Ver todas las salas
+   • adminJoinExistingRoom("ID") - Entrar directamente a sala existente
    • adminDeleteRoom("ID") - Eliminar sala (soft delete)
    • adminReactivateRoom("ID") - Reactivar sala eliminada`;
             
@@ -969,7 +1048,7 @@ class AnonymousChatApp {
             {
                 name: 'Funciones administrador',
                 test: () => {
-                    const functions = ['showAdminPanel', 'adminCreateRoom', 'adminListRooms', 'adminShowStats', 'toggleAdminIncognito'];
+                    const functions = ['showAdminPanel', 'adminCreateRoom', 'adminListRooms', 'adminJoinExistingRoom', 'adminShowStats', 'toggleAdminIncognito'];
                     let allExist = true;
                     functions.forEach(fn => {
                         const exists = typeof this[fn] === 'function';
