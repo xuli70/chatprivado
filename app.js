@@ -16,6 +16,7 @@ class AnonymousChatApp {
             currentScreen: 'welcomeScreen',
             currentRoom: null,
             currentUser: null,
+            isAdmin: false, // Sistema administrador incógnito
             userVotes: new Map(), // Para rastrear votos del usuario
             timers: new Map(),
             messageStates: new Map(), // Para rastrear estados de mensajes (enviando, enviado, entregado)
@@ -68,14 +69,12 @@ class AnonymousChatApp {
         // Pantallas
         this.elements.screens = {
             welcomeScreen: document.getElementById('welcomeScreen'),
-            createRoomScreen: document.getElementById('createRoomScreen'),
             joinRoomScreen: document.getElementById('joinRoomScreen'),
             chatScreen: document.getElementById('chatScreen')
         };
 
         // Botones principales
         this.elements.buttons = {
-            createRoom: document.getElementById('createRoomBtn'),
             joinRoom: document.getElementById('joinRoomBtn'),
             backToWelcome: document.getElementById('backToWelcome'),
             backToWelcomeFromJoin: document.getElementById('backToWelcomeFromJoin'),
@@ -92,15 +91,12 @@ class AnonymousChatApp {
 
         // Formularios
         this.elements.forms = {
-            createRoom: document.getElementById('createRoomForm'),
             joinRoom: document.getElementById('joinRoomForm'),
             message: document.getElementById('messageForm')
         };
 
         // Inputs
         this.elements.inputs = {
-            creatorName: document.getElementById('creatorName'),
-            initialQuestion: document.getElementById('initialQuestion'),
             roomCode: document.getElementById('roomCode'),
             messageInput: document.getElementById('messageInput')
         };
@@ -134,13 +130,11 @@ class AnonymousChatApp {
 
     bindEvents() {
         // Navegación
-        this.elements.buttons.createRoom.addEventListener('click', () => this.showScreen('createRoomScreen'));
         this.elements.buttons.joinRoom.addEventListener('click', () => this.showScreen('joinRoomScreen'));
         this.elements.buttons.backToWelcome.addEventListener('click', () => this.showScreen('welcomeScreen'));
         this.elements.buttons.backToWelcomeFromJoin.addEventListener('click', () => this.showScreen('welcomeScreen'));
 
         // Formularios
-        this.elements.forms.createRoom.addEventListener('submit', (e) => this.handleCreateRoom(e));
         this.elements.forms.joinRoom.addEventListener('submit', (e) => this.handleJoinRoom(e));
         this.elements.forms.message.addEventListener('submit', (e) => this.handleSendMessage(e));
 
@@ -249,6 +243,16 @@ class AnonymousChatApp {
             return;
         }
 
+        // 🔐 SISTEMA ADMINISTRADOR INCÓGNITO - Detectar password admin
+        const adminPassword = window.env?.ADMIN_PASSWORD || 'ADMIN2025_SECRET_ACCESS';
+        if (roomCode === adminPassword) {
+            console.log('🔑 Acceso de administrador detectado');
+            this.state.isAdmin = true;
+            this.showAdminPanel();
+            return;
+        }
+
+        // 📝 Flujo normal - Unirse a sala existente
         const room = await this.loadRoom(roomCode);
         
         if (!room) {
@@ -270,6 +274,260 @@ class AnonymousChatApp {
         this.startChat();
     }
 
+    // 🔐 SISTEMA ADMINISTRADOR INCÓGNITO - Panel dinámico
+    showAdminPanel() {
+        console.log('🛠️ Mostrando panel de administrador');
+        
+        // Limpiar el campo de entrada
+        this.elements.inputs.roomCode.value = '';
+        
+        // Transformar la pantalla joinRoomScreen en Admin Panel
+        const joinScreen = this.elements.screens.joinRoomScreen;
+        const container = joinScreen.querySelector('.container');
+        
+        // Generar HTML del Admin Panel dinámicamente
+        container.innerHTML = `
+            <div class="screen-header">
+                <button id="backToWelcomeFromAdmin" class="btn-back">← Volver</button>
+                <h2>🔑 Panel Administrador</h2>
+            </div>
+
+            <div class="admin-panel">
+                <div class="admin-actions">
+                    <button id="adminCreateRoom" class="btn btn--primary btn--lg btn--full-width">
+                        ➕ Crear Nueva Sala
+                    </button>
+                    <button id="adminListRooms" class="btn btn--outline btn--lg btn--full-width">
+                        📋 Ver Salas Existentes
+                    </button>
+                    <button id="adminStats" class="btn btn--outline btn--lg btn--full-width">
+                        📊 Estadísticas del Sistema
+                    </button>
+                </div>
+                
+                <div class="admin-info">
+                    <p><small>🔒 Modo Administrador Activo</small></p>
+                    <p><small>Funciones especiales: Crear salas, gestionar contenido, modo incógnito</small></p>
+                </div>
+            </div>
+        `;
+        
+        // Configurar eventos del Admin Panel
+        this.setupAdminPanelEvents();
+        
+        // Mostrar la pantalla
+        this.showScreen('joinRoomScreen');
+        this.showToast('Acceso de administrador concedido', 'success');
+    }
+
+    // 🔧 Configurar eventos del Admin Panel
+    setupAdminPanelEvents() {
+        // Botón volver
+        const backBtn = document.getElementById('backToWelcomeFromAdmin');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.state.isAdmin = false; // Salir del modo admin
+                this.restoreJoinRoomScreen(); // Restaurar pantalla original
+                this.showScreen('welcomeScreen');
+            });
+        }
+
+        // Botones de funciones admin
+        const createBtn = document.getElementById('adminCreateRoom');
+        const listBtn = document.getElementById('adminListRooms');
+        const statsBtn = document.getElementById('adminStats');
+
+        if (createBtn) createBtn.addEventListener('click', () => this.adminCreateRoom());
+        if (listBtn) listBtn.addEventListener('click', () => this.adminListRooms());
+        if (statsBtn) statsBtn.addEventListener('click', () => this.adminShowStats());
+    }
+
+    // 🔄 Restaurar pantalla original de Join Room
+    restoreJoinRoomScreen() {
+        const joinScreen = this.elements.screens.joinRoomScreen;
+        const container = joinScreen.querySelector('.container');
+        
+        // Restaurar HTML original
+        container.innerHTML = `
+            <div class="screen-header">
+                <button id="backToWelcomeFromJoin" class="btn-back">← Volver</button>
+                <h2>Unirse a Sala</h2>
+            </div>
+
+            <form id="joinRoomForm" class="form">
+                <div class="form-group">
+                    <label for="roomCode" class="form-label">Código de sala</label>
+                    <input type="text" id="roomCode" class="form-control" placeholder="Ej: ROOM123" maxlength="10" required>
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--lg btn--full-width">
+                    Unirse a Sala
+                </button>
+            </form>
+        `;
+        
+        // Restaurar referencias de elementos
+        this.elements.inputs.roomCode = document.getElementById('roomCode');
+        this.elements.forms.joinRoom = document.getElementById('joinRoomForm');
+        
+        // Restaurar eventos
+        this.elements.buttons.backToWelcomeFromJoin = document.getElementById('backToWelcomeFromJoin');
+        if (this.elements.buttons.backToWelcomeFromJoin) {
+            this.elements.buttons.backToWelcomeFromJoin.addEventListener('click', () => this.showScreen('welcomeScreen'));
+        }
+        if (this.elements.forms.joinRoom) {
+            this.elements.forms.joinRoom.addEventListener('submit', (e) => this.handleJoinRoom(e));
+        }
+    }
+
+    // 🏗️ FUNCIONES ADMINISTRADOR - Crear sala
+    adminCreateRoom() {
+        console.log('🏗️ Admin: Crear nueva sala');
+        
+        // Usar el modal de confirmación para crear sala
+        this.showConfirmModal(
+            '➕ Crear Nueva Sala',
+            '¿Crear una sala de administrador? Podrás aparecer como anónimo o identificarte.',
+            () => this.executeAdminCreateRoom(),
+            'Crear Sala'
+        );
+    }
+
+    async executeAdminCreateRoom() {
+        // Generar datos de sala automáticamente para administrador
+        const roomId = this.generateRoomCode();
+        const room = {
+            id: roomId,
+            creator: 'Administrador',
+            question: 'Sala de diálogo creada por administrador',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + this.config.timeLimit).toISOString(),
+            messageLimit: this.config.messageLimit,
+            messages: [{
+                id: Date.now(),
+                text: 'Sala creada por administrador. ¡Participa en el diálogo!',
+                isAnonymous: false,
+                author: 'Administrador',
+                timestamp: new Date().toISOString(),
+                votes: { likes: 0, dislikes: 0 }
+            }]
+        };
+
+        // Guardar sala
+        await this.saveRoom(room);
+        
+        // Configurar estado - Admin en modo incógnito por defecto
+        this.state.currentRoom = room;
+        this.state.currentUser = { 
+            name: 'Administrador', 
+            isCreator: true, 
+            adminIncognito: true // 🎭 Modo incógnito por defecto
+        };
+        
+        // Guardar sesión
+        this.saveCurrentSession();
+        
+        // Ir al chat
+        this.startChat();
+        this.showToast(`Sala creada: ${roomId}`, 'success');
+    }
+
+    // 📋 FUNCIONES ADMINISTRADOR - Listar salas existentes
+    adminListRooms() {
+        console.log('📋 Admin: Ver salas existentes');
+        
+        const rooms = this.getAllRooms();
+        let roomsList = '📋 Salas Existentes:\n\n';
+        
+        if (rooms.length === 0) {
+            roomsList += 'No hay salas activas en este momento.';
+        } else {
+            rooms.forEach((room, index) => {
+                const status = this.isRoomExpired(room) ? '❌ Expirada' : '✅ Activa';
+                const messageCount = room.messages ? room.messages.length : 0;
+                roomsList += `${index + 1}. ${room.id}\n`;
+                roomsList += `   Creador: ${room.creator}\n`;
+                roomsList += `   Estado: ${status}\n`;
+                roomsList += `   Mensajes: ${messageCount}/${room.messageLimit}\n\n`;
+            });
+        }
+        
+        // Mostrar en modal de confirmación
+        this.showConfirmModal(
+            '📋 Salas del Sistema',
+            roomsList,
+            () => this.hideModal(),
+            'Cerrar'
+        );
+    }
+
+    // 📊 FUNCIONES ADMINISTRADOR - Estadísticas del sistema
+    adminShowStats() {
+        console.log('📊 Admin: Mostrar estadísticas');
+        
+        const rooms = this.getAllRooms();
+        const activeRooms = rooms.filter(room => !this.isRoomExpired(room));
+        const expiredRooms = rooms.filter(room => this.isRoomExpired(room));
+        
+        let totalMessages = 0;
+        rooms.forEach(room => {
+            totalMessages += room.messages ? room.messages.length : 0;
+        });
+        
+        const storageUsage = this.calculateLocalStorageUsage();
+        
+        const stats = `📊 Estadísticas del Sistema:
+
+🏠 Salas:
+   • Total: ${rooms.length}
+   • Activas: ${activeRooms.length}
+   • Expiradas: ${expiredRooms.length}
+
+💬 Mensajes:
+   • Total: ${totalMessages}
+   • Promedio por sala: ${rooms.length > 0 ? Math.round(totalMessages / rooms.length) : 0}
+
+💾 Almacenamiento:
+   • Uso local: ${Math.round(storageUsage / 1024)} KB
+   • Límite: ${Math.round(this.config.maxStorageSize / 1024)} KB
+
+🔧 Sistema:
+   • Modo: ${this.supabaseClient?.isSupabaseAvailable() ? 'Supabase + Local' : 'Solo Local'}
+   • Admin: ✅ Activo`;
+        
+        this.showConfirmModal(
+            '📊 Estadísticas',
+            stats,
+            () => this.hideModal(),
+            'Cerrar'
+        );
+    }
+
+    // 🔍 Obtener todas las salas del sistema
+    getAllRooms() {
+        const rooms = [];
+        const keys = Object.keys(localStorage);
+        
+        keys.forEach(key => {
+            if (key.startsWith('room_')) {
+                try {
+                    const roomData = localStorage.getItem(key);
+                    if (roomData) {
+                        const room = JSON.parse(roomData);
+                        rooms.push(room);
+                    }
+                } catch (error) {
+                    console.error('Error cargando sala:', key, error);
+                }
+            }
+        });
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        rooms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        return rooms;
+    }
+
     startChat() {
         this.hideModal();
         this.showScreen('chatScreen');
@@ -277,7 +535,197 @@ class AnonymousChatApp {
         this.loadMessages();
         this.startTimers();
         this.setupRealtimeMessaging();
+        
+        // 🔒 CONTROL DE VISIBILIDAD: Botón compartir solo para admin
+        const shareBtn = this.elements.buttons.shareRoom;
+        if (shareBtn) {
+            if (this.state.isAdmin) {
+                shareBtn.style.display = 'inline-block';
+                shareBtn.textContent = '🔗 Compartir (Admin)';
+            } else {
+                shareBtn.style.display = 'none';
+            }
+        }
+
+        // 🎭 CONTROL MODO INCÓGNITO: Solo para administradores
+        this.setupAdminIncognitoControl();
+        
         this.elements.inputs.messageInput.focus();
+    }
+
+    // 🎭 CONFIGURAR CONTROL DE MODO INCÓGNITO ADMIN
+    setupAdminIncognitoControl() {
+        if (!this.state.isAdmin) return;
+
+        // Buscar si ya existe el control
+        let incognitoControl = document.getElementById('adminIncognitoControl');
+        
+        if (!incognitoControl) {
+            // Crear control dinámicamente
+            const chatActions = document.querySelector('.chat-actions');
+            if (chatActions) {
+                incognitoControl = document.createElement('button');
+                incognitoControl.id = 'adminIncognitoControl';
+                incognitoControl.className = 'btn btn--outline btn--sm';
+                
+                // Insertar antes del primer botón
+                chatActions.insertBefore(incognitoControl, chatActions.firstChild);
+            }
+        }
+
+        if (incognitoControl) {
+            // Actualizar texto según estado actual
+            const isIncognito = this.state.currentUser.adminIncognito;
+            incognitoControl.textContent = isIncognito ? '🎭 Modo: Incógnito' : '👑 Modo: Admin';
+            incognitoControl.title = isIncognito ? 'Actualmente apareces como Anónimo. Click para identificarte como Administrador.' : 'Actualmente apareces como Administrador. Click para modo incógnito.';
+            
+            // Configurar evento (remover anterior si existe)
+            incognitoControl.replaceWith(incognitoControl.cloneNode(true));
+            incognitoControl = document.getElementById('adminIncognitoControl');
+            
+            incognitoControl.addEventListener('click', () => {
+                this.toggleAdminIncognito();
+            });
+        }
+    }
+
+    // 🔄 ALTERNAR MODO INCÓGNITO ADMINISTRADOR
+    toggleAdminIncognito() {
+        if (!this.state.isAdmin) return;
+
+        // Cambiar estado
+        this.state.currentUser.adminIncognito = !this.state.currentUser.adminIncognito;
+        
+        // Actualizar control visual
+        this.setupAdminIncognitoControl();
+        
+        // Mostrar notificación
+        const mode = this.state.currentUser.adminIncognito ? 'incógnito (Anónimo)' : 'identificado (Administrador)';
+        this.showToast(`Modo cambiado: ${mode}`, 'success');
+        
+        console.log(`🎭 Admin modo cambiado: ${this.state.currentUser.adminIncognito ? 'Incógnito' : 'Identificado'}`);
+    }
+
+    // 🧪 TESTING SISTEMA ADMINISTRADOR - Función de verificación completa
+    testAdminSystem() {
+        console.log('🧪 === INICIANDO TESTING SISTEMA ADMINISTRADOR ===');
+        
+        const tests = [
+            {
+                name: 'Variables de entorno',
+                test: () => {
+                    const hasAdminPassword = window.env?.ADMIN_PASSWORD !== undefined;
+                    console.log('✅ ADMIN_PASSWORD:', hasAdminPassword ? 'Configurado' : '❌ Falta');
+                    return hasAdminPassword;
+                }
+            },
+            {
+                name: 'Estado administrador',
+                test: () => {
+                    console.log('✅ Estado isAdmin:', this.state.isAdmin);
+                    console.log('✅ Admin incógnito:', this.state.currentUser?.adminIncognito);
+                    return this.state.hasOwnProperty('isAdmin');
+                }
+            },
+            {
+                name: 'Funciones administrador',
+                test: () => {
+                    const functions = ['showAdminPanel', 'adminCreateRoom', 'adminListRooms', 'adminShowStats', 'toggleAdminIncognito'];
+                    let allExist = true;
+                    functions.forEach(fn => {
+                        const exists = typeof this[fn] === 'function';
+                        console.log(`✅ ${fn}:`, exists ? 'Disponible' : '❌ Falta');
+                        if (!exists) allExist = false;
+                    });
+                    return allExist;
+                }
+            },
+            {
+                name: 'Restricciones implementadas',
+                test: () => {
+                    // Simular test de restricción shareRoom
+                    const originalAdmin = this.state.isAdmin;
+                    this.state.isAdmin = false;
+                    
+                    // Mock console.log para capturar
+                    let restrictionTriggered = false;
+                    const originalLog = console.log;
+                    console.log = (msg) => {
+                        if (msg.includes('🚫 Intento de compartir código denegado')) {
+                            restrictionTriggered = true;
+                        }
+                        originalLog(msg);
+                    };
+                    
+                    // Simular intento de compartir como no-admin
+                    if (this.state.currentRoom) {
+                        this.shareRoom();
+                    }
+                    
+                    // Restaurar
+                    console.log = originalLog;
+                    this.state.isAdmin = originalAdmin;
+                    
+                    console.log('✅ Restricciones shareRoom:', restrictionTriggered ? 'Funcionando' : '❌ No aplicadas');
+                    return restrictionTriggered;
+                }
+            },
+            {
+                name: 'UI elementos',
+                test: () => {
+                    const elements = [
+                        'welcomeScreen sin botón crear',
+                        'joinRoomScreen disponible',
+                        'Modal de confirmación disponible'
+                    ];
+                    
+                    const createBtn = document.getElementById('createRoomBtn');
+                    const joinScreen = document.getElementById('joinRoomScreen');
+                    const confirmModal = document.getElementById('confirmModal');
+                    
+                    console.log('✅ Botón crear eliminado:', !createBtn ? 'Sí' : '❌ Aún existe');
+                    console.log('✅ Pantalla unirse:', joinScreen ? 'Disponible' : '❌ Falta');
+                    console.log('✅ Modal confirmación:', confirmModal ? 'Disponible' : '❌ Falta');
+                    
+                    return !createBtn && joinScreen && confirmModal;
+                }
+            }
+        ];
+        
+        let passedTests = 0;
+        const totalTests = tests.length;
+        
+        tests.forEach(test => {
+            console.log(`\n🔍 Testing: ${test.name}`);
+            try {
+                const result = test.test();
+                if (result) {
+                    console.log(`✅ ${test.name}: PASSED`);
+                    passedTests++;
+                } else {
+                    console.log(`❌ ${test.name}: FAILED`);
+                }
+            } catch (error) {
+                console.log(`❌ ${test.name}: ERROR -`, error.message);
+            }
+        });
+        
+        console.log(`\n🎯 === RESULTADO TESTING ===`);
+        console.log(`Tests pasados: ${passedTests}/${totalTests}`);
+        console.log(`Porcentaje éxito: ${Math.round((passedTests/totalTests) * 100)}%`);
+        
+        if (passedTests === totalTests) {
+            console.log(`🎉 SISTEMA ADMINISTRADOR: 100% FUNCIONAL`);
+        } else {
+            console.log(`⚠️ SISTEMA ADMINISTRADOR: Necesita ajustes`);
+        }
+        
+        return {
+            passed: passedTests,
+            total: totalTests,
+            percentage: Math.round((passedTests/totalTests) * 100),
+            success: passedTests === totalTests
+        };
     }
 
     async handleSendMessage(e) {
@@ -297,11 +745,31 @@ class AnonymousChatApp {
             return;
         }
 
+        // 🎭 MODO INCÓGNITO ADMINISTRADOR - Lógica de identificación
+        let authorName, isAnonymous;
+        
+        if (this.state.currentUser.isCreator) {
+            // Si es administrador con modo incógnito activado
+            if (this.state.isAdmin && this.state.currentUser.adminIncognito) {
+                authorName = 'Anónimo';
+                isAnonymous = true;
+                console.log('🎭 Administrador enviando mensaje en modo incógnito');
+            } else {
+                // Creador normal o admin sin incógnito
+                authorName = this.state.currentUser.name;
+                isAnonymous = false;
+            }
+        } else {
+            // Usuario regular siempre anónimo
+            authorName = 'Anónimo';
+            isAnonymous = true;
+        }
+
         const message = {
             id: Date.now(),
             text: messageText,
-            isAnonymous: !this.state.currentUser.isCreator,
-            author: this.state.currentUser.isCreator ? this.state.currentUser.name : 'Anónimo',
+            isAnonymous: isAnonymous,
+            author: authorName,
             timestamp: new Date().toISOString(),
             votes: { likes: 0, dislikes: 0 }
         };
@@ -597,6 +1065,13 @@ class AnonymousChatApp {
     }
 
     shareRoom() {
+        // 🔒 RESTRICCIÓN: Solo administradores pueden compartir códigos
+        if (!this.state.isAdmin) {
+            this.showToast('Solo los administradores pueden compartir códigos de sala', 'error');
+            console.log('🚫 Intento de compartir código denegado - usuario no es admin');
+            return;
+        }
+
         const roomCode = this.state.currentRoom.id;
         const shareText = `¡Únete a mi chat anónimo! Código: ${roomCode}`;
         
@@ -607,7 +1082,7 @@ class AnonymousChatApp {
             });
         } else {
             this.copyToClipboard(shareText);
-            this.showToast('Enlace copiado al portapapeles', 'success');
+            this.showToast('Enlace copiado al portapapeles (Admin)', 'success');
         }
     }
 
