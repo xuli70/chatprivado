@@ -909,11 +909,6 @@ class SupabaseClient {
         
         console.log(`🔄 Notificando cambio de estado: ${status}`, details);
     }
-            console.warn('🔄 Múltiples heartbeats fallidos - iniciando reconexión');
-            this.isOnline = false;
-            this.startReconnectionProcess();
-        }
-    }
 
     // Obtener estado de reconexión para debugging
     getReconnectionState() {
