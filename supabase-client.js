@@ -412,16 +412,39 @@ class SupabaseClient {
                     .eq('message_id', messageId)
                     .eq('user_fingerprint', this.userFingerprint);
 
-                // Decrementar el contador anterior
-                const { error: decrementError } = await this.client
-                    .from('chat_messages')
-                    .update({ [currentVote]: this.client.rpc('decrement_vote', { message_id: messageId, vote_type: currentVote }) })
-                    .eq('id', messageId);
+                // Decrementar el contador anterior usando RPC
+                const { error: decrementError } = await this.client.rpc('decrement_vote', { 
+                    message_id: messageId, 
+                    vote_type: currentVote 
+                });
+                
+                if (decrementError) {
+                    console.error('Error decrementando voto:', decrementError);
+                }
             }
 
             // Si es el mismo voto, solo eliminar
             if (currentVote === voteType) {
-                return { success: true, removed: true };
+                // Obtener los contadores actualizados después de decrementar
+                const { data: updatedMessage, error: fetchError } = await this.client
+                    .from('chat_messages')  
+                    .select('likes, dislikes')
+                    .eq('id', messageId)
+                    .single();
+
+                if (fetchError) {
+                    console.error('Error obteniendo contadores actualizados:', fetchError);
+                    return { success: true, removed: true };
+                }
+
+                return { 
+                    success: true, 
+                    removed: true,
+                    updatedVotes: {
+                        likes: updatedMessage.likes,
+                        dislikes: updatedMessage.dislikes
+                    }
+                };
             }
 
             // Agregar nuevo voto
@@ -439,18 +462,36 @@ class SupabaseClient {
                 return this.voteMessageLocal(messageId, voteType, currentVote);
             }
 
-            // Incrementar contador
-            const column = voteType === 'like' ? 'likes' : 'dislikes';
-            const { error: incrementError } = await this.client
-                .from('chat_messages')
-                .update({ [column]: this.client.rpc('increment_vote', { message_id: messageId, vote_type: voteType }) })
-                .eq('id', messageId);
+            // Incrementar contador usando RPC
+            const { error: incrementError } = await this.client.rpc('increment_vote', { 
+                message_id: messageId, 
+                vote_type: voteType 
+            });
 
             if (incrementError) {
-                console.error('Error actualizando contador:', incrementError);
+                console.error('Error incrementando voto:', incrementError);
             }
 
-            return { success: true, newVote: voteType };
+            // Obtener los contadores actualizados
+            const { data: updatedMessage, error: fetchError } = await this.client
+                .from('chat_messages')
+                .select('likes, dislikes')
+                .eq('id', messageId)
+                .single();
+
+            if (fetchError) {
+                console.error('Error obteniendo contadores actualizados:', fetchError);
+                return { success: true, newVote: voteType };
+            }
+
+            return { 
+                success: true, 
+                newVote: voteType,
+                updatedVotes: {
+                    likes: updatedMessage.likes,
+                    dislikes: updatedMessage.dislikes
+                }
+            };
         } catch (error) {
             console.error('Error en voteMessage:', error);
             return this.voteMessageLocal(messageId, voteType, currentVote);

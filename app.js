@@ -1260,13 +1260,9 @@ class AnonymousChatApp {
                     this.state.userVotes.set(userVoteKey, result.newVote);
                 }
                 
-                // Recargar la sala para obtener los contadores actualizados
-                const updatedRoom = await this.loadRoom(this.state.currentRoom.id);
-                if (updatedRoom) {
-                    const updatedMessage = updatedRoom.messages.find(m => m.id === messageId);
-                    if (updatedMessage) {
-                        message.votes = updatedMessage.votes;
-                    }
+                // Actualizar contadores con los valores devueltos por Supabase
+                if (result.updatedVotes) {
+                    message.votes = result.updatedVotes;
                 }
             }
         } else {
