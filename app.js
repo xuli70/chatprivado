@@ -539,7 +539,7 @@ class AnonymousChatApp {
         
         try {
             // NUEVA LÓGICA: Usar soft delete de Supabase
-            if (this.supabaseClient && this.supabaseClient.isConnected()) {
+            if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
                 const result = await this.supabaseClient.deleteRoom(roomId);
                 if (result.success) {
                     console.log('✅ Sala marcada como inactiva en Supabase:', roomId);
@@ -623,7 +623,7 @@ class AnonymousChatApp {
         
         try {
             // Reactivar usando Supabase
-            if (this.supabaseClient && this.supabaseClient.isConnected()) {
+            if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
                 const result = await this.supabaseClient.reactivateRoom(roomId);
                 if (result.success) {
                     console.log('✅ Sala reactivada en Supabase:', roomId);
@@ -688,7 +688,7 @@ class AnonymousChatApp {
    • Límite: ${Math.round(this.config.maxStorageSize / 1024)} KB
 
 🔧 Sistema:
-   • Modo: ${this.supabaseClient?.isConnected() ? 'Supabase + Local' : 'Solo Local'}
+   • Modo: ${this.supabaseClient?.isSupabaseAvailable() ? 'Supabase + Local' : 'Solo Local'}
    • Persistencia: ✅ Columna is_active implementada
    • Admin: ✅ Activo
 
@@ -715,7 +715,7 @@ class AnonymousChatApp {
         console.log(`📋 getAllRooms llamado con adminView: ${adminView}`);
         
         // Usar Supabase si está disponible
-        if (this.supabaseClient && this.supabaseClient.isConnected()) {
+        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
             try {
                 if (adminView) {
                     // Admin: obtener TODAS las salas (activas + inactivas)
