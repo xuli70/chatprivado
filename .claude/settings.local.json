@@ -22,7 +22,13 @@
       "Bash(start http://localhost:8000)",
       "Bash(start debug-admin.html)",
       "Bash(start debug-simple.html)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "mcp__filesystem__read_file",
+      "mcp__filesystem__search_files",
+      "Bash(start C:UsersSebastian000chatprivadotest-admin-rooms.html)",
+      "Bash(start C:UsersSebastian000chatprivadodebug-admin.html)",
+      "Bash(start C:UsersSebastian000chatprivadoindex.html)",
+      "Bash(start C:UsersSebastian000chatprivadodebug-simple.html)"
     ]
   },
   "enabledMcpjsonServers": [

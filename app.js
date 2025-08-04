@@ -435,11 +435,13 @@ class AnonymousChatApp {
 
     // 📋 FUNCIONES ADMINISTRADOR - Listar salas existentes
     async adminListRooms() {
-        console.log('📋 Admin: Ver salas existentes');
+        console.log('📋 [DEBUG] Admin: Ver salas existentes - INICIO');
         
         try {
             // NUEVA LÓGICA: Usar vista admin con soporte is_active
+            console.log('📋 [DEBUG] Obteniendo todas las salas...');
             const rooms = await this.getAllRooms(true); // adminView = true
+            console.log('📋 [DEBUG] Salas obtenidas:', rooms.length);
             
             if (rooms.length === 0) {
                 this.showConfirmModal(
@@ -462,7 +464,17 @@ class AnonymousChatApp {
 
     // 📋 NUEVA FUNCIÓN: Modal personalizado para listado de salas admin
     showAdminRoomsModal(rooms) {
-        console.log('📋 Mostrando modal personalizado con', rooms.length, 'salas');
+        console.log('📋 [DEBUG] Mostrando modal personalizado con', rooms.length, 'salas');
+        console.log('📋 [DEBUG] Estado inicial del modal:', {
+            modalVisible: !document.getElementById('confirmModal').classList.contains('hidden'),
+            messageContent: document.getElementById('confirmMessage').innerHTML.length
+        });
+        
+        // LIMPIAR MODAL ANTES DE USAR (crítico para evitar contenido anterior)
+        this.cleanupModal();
+        console.log('📋 [DEBUG] Modal limpiado, estado:', {
+            messageContent: document.getElementById('confirmMessage').innerHTML.length
+        });
         
         // Generar HTML dinámico para cada sala
         let roomsHTML = '<div class="admin-rooms-list">';
@@ -494,13 +506,13 @@ class AnonymousChatApp {
                 
                 if (isActive) {
                     roomsHTML += `
-                        <button class="btn btn--danger btn--sm" onclick="app.adminDeleteRoom('${room.id}')">
+                        <button class="btn btn--danger btn--sm admin-delete-btn" data-room-id="${room.id}">
                             🗑️ Eliminar
                         </button>
                     `;
                 } else {
                     roomsHTML += `
-                        <button class="btn btn--primary btn--sm" onclick="app.adminReactivateRoom('${room.id}')">
+                        <button class="btn btn--primary btn--sm admin-reactivate-btn" data-room-id="${room.id}">
                             🔄 Reactivar
                         </button>
                     `;
@@ -518,7 +530,11 @@ class AnonymousChatApp {
         // Insertar HTML dinámico en el modal
         const confirmMessage = document.getElementById('confirmMessage');
         if (confirmMessage) {
+            console.log('📋 [DEBUG] Insertando HTML, longitud:', roomsHTML.length);
             confirmMessage.innerHTML = roomsHTML;
+            console.log('📋 [DEBUG] HTML insertado, contenido actual:', confirmMessage.innerHTML.length, 'chars');
+        } else {
+            console.error('📋 [ERROR] No se encontró confirmMessage element');
         }
         
         // Configurar modal
@@ -537,8 +553,48 @@ class AnonymousChatApp {
             confirmBtn.className = 'btn btn--outline btn--lg';
         }
         
+        console.log('📋 [DEBUG] Mostrando modal...');
         // Mostrar modal
         this.showModal('confirm');
+        
+        console.log('📋 [DEBUG] Configurando event listeners...');
+        // Agregar event listeners a los botones de acción después de mostrar el modal
+        this.setupAdminRoomActionListeners();
+        
+        console.log('📋 [DEBUG] showAdminRoomsModal completado');
+    }
+    
+    // 👂 NUEVA FUNCIÓN: Configurar event listeners para botones de acción admin
+    setupAdminRoomActionListeners() {
+        console.log('👂 [DEBUG] Configurando event listeners para botones admin');
+        
+        // Event listeners para botones de eliminar
+        const deleteButtons = document.querySelectorAll('.admin-delete-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const roomId = button.getAttribute('data-room-id');
+                if (roomId) {
+                    console.log('🗑️ Click eliminar sala:', roomId);
+                    this.adminDeleteRoom(roomId);
+                }
+            });
+        });
+        
+        // Event listeners para botones de reactivar
+        const reactivateButtons = document.querySelectorAll('.admin-reactivate-btn');
+        reactivateButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const roomId = button.getAttribute('data-room-id');
+                if (roomId) {
+                    console.log('🔄 Click reactivar sala:', roomId);
+                    this.adminReactivateRoom(roomId);
+                }
+            });
+        });
+        
+        console.log(`✅ [DEBUG] Event listeners configurados: ${deleteButtons.length} eliminar, ${reactivateButtons.length} reactivar`);
     }
 
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
@@ -614,13 +670,8 @@ class AnonymousChatApp {
                 this.showToast(`Sala ${roomId} eliminada (se puede reactivar)`, 'success');
             }
             
-            // Cerrar modal y refrescar listado
+            // Cerrar modal
             this.hideModal();
-            
-            // Refrescar el listado de salas después de 1 segundo
-            setTimeout(() => {
-                this.adminListRooms();
-            }, 1000);
             
         } catch (error) {
             console.error('Error eliminando sala:', error);
@@ -697,11 +748,6 @@ class AnonymousChatApp {
             
             this.showToast(`Sala ${roomId} reactivada exitosamente`, 'success');
             this.hideModal();
-            
-            // Refrescar el listado de salas después de 1 segundo
-            setTimeout(() => {
-                this.adminListRooms();
-            }, 1000);
             
         } catch (error) {
             console.error('Error reactivando sala:', error);
@@ -1543,6 +1589,39 @@ class AnonymousChatApp {
         Object.values(this.elements.modals).forEach(modal => {
             modal.classList.add('hidden');
         });
+        
+        // Limpiar contenido del modal para evitar conflictos en siguientes usos
+        this.cleanupModal();
+    }
+    
+    // 🧹 NUEVA FUNCIÓN: Limpiar contenido del modal para evitar conflictos
+    cleanupModal() {
+        console.log('🧹 Limpiando contenido del modal');
+        
+        // Restaurar contenido original del modal de confirmación
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmBtn = document.getElementById('confirmBtn');
+        
+        if (confirmTitle) {
+            confirmTitle.textContent = 'Confirmar acción';
+        }
+        
+        if (confirmMessage) {
+            // Restaurar a contenido de texto simple, no HTML
+            confirmMessage.innerHTML = '';
+            confirmMessage.textContent = '¿Estás seguro?';
+        }
+        
+        if (confirmBtn) {
+            confirmBtn.textContent = 'Confirmar';
+            confirmBtn.className = 'btn btn--primary btn--lg';
+        }
+        
+        // Limpiar callback anterior
+        this.confirmCallback = null;
+        
+        console.log('✅ Modal limpiado correctamente');
     }
 
     showConfirmModal(title, message, confirmCallback, buttonText = 'Confirmar', buttonStyle = 'primary') {

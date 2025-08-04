@@ -3,32 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug Admin - Chat Anónimo</title>
+    <title>🔍 Debug Admin Modal - Análisis Detallado</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Debug Sistema Administrador</h1>
-    
-    <div>
-        <h2>Crear salas de prueba</h2>
-        <button onclick="crearSalaDePrueba()">🏗️ Crear Sala de Prueba</button>
-        <button onclick="crearVariasSalas()">🏗️ Crear 3 Salas</button>
+    <div class="container">
+        <h1>🔍 Debug: "Ver Salas Existentes"</h1>
+        
+        <div class="debug-section">
+            <h2>Estado Actual del Sistema</h2>
+            <div id="systemStatus" class="status-display"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>🧪 Test Paso a Paso</h2>
+            <button onclick="step1_CreateTestData()" class="btn btn--primary">1️⃣ Crear Datos Test</button>
+            <button onclick="step2_InitializeApp()" class="btn btn--primary">2️⃣ Inicializar App</button>
+            <button onclick="step3_ActivateAdmin()" class="btn btn--primary">3️⃣ Activar Admin</button>
+            <button onclick="step4_FirstClick()" class="btn btn--secondary">4️⃣ Primer Click "Ver Salas"</button>
+            <button onclick="step5_SecondClick()" class="btn btn--secondary">5️⃣ Segundo Click "Ver Salas"</button>
+            <button onclick="step6_ThirdClick()" class="btn btn--secondary">6️⃣ Tercer Click "Ver Salas"</button>
+        </div>
+        
+        <div class="debug-section">
+            <h2>📊 Modal State Inspector</h2>
+            <button onclick="inspectModal()" class="btn btn--outline">🔍 Inspeccionar Modal</button>
+            <button onclick="inspectEventListeners()" class="btn btn--outline">👂 Ver Event Listeners</button>
+            <button onclick="manualCleanup()" class="btn btn--danger">🧹 Limpieza Manual</button>
+        </div>
+        
+        <div id="debugLog" class="debug-log"></div>
     </div>
-    
-    <div>
-        <h2>Testing funciones admin</h2>
-        <button onclick="testGetAllRooms()">🔍 Test getAllRooms()</button>
-        <button onclick="testGetAllRoomsAdmin()">🔍 Test getAllRooms(true)</button>
-        <button onclick="testAdminListRooms()">📋 Test adminListRooms()</button>
-    </div>
-    
-    <div>
-        <h2>Información del sistema</h2>
-        <button onclick="mostrarLocalStorage()">💾 Mostrar localStorage</button>
-        <button onclick="limpiarTodo()">🗑️ Limpiar Todo</button>
-    </div>
-    
-    <div id="output" style="margin-top: 20px; padding: 10px; background: #f0f0f0; white-space: pre-wrap; font-family: monospace;"></div>
 
+    <!-- Modal exacto del index.html -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirmar acción</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">¿Estás seguro?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelBtn" class="btn btn--outline">Cancelar</button>
+                <button id="confirmBtn" class="btn btn--primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="env.js"></script>
+    <script src="supabase-client.js"></script>
     <script src="app.js"></script>
     <script>
         // Crear instancia de la app para testing
@@ -122,5 +146,80 @@
             mostrarLocalStorage();
         }, 1000);
     </script>
+    
+    <style>
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .status-display {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .debug-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+        
+        .debug-entry {
+            margin: 2px 0;
+            padding: 1px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step-number {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-right: 5px;
+            min-width: 40px;
+        }
+        
+        .timestamp {
+            color: #888;
+            font-size: 0.9em;
+            margin-right: 8px;
+            min-width: 80px;
+        }
+        
+        .content {
+            flex: 1;
+        }
+        
+        .debug-info { color: #00ff00; }
+        .debug-success { color: #00ff88; font-weight: bold; }
+        .debug-error { color: #ff4444; font-weight: bold; }
+        
+        button {
+            margin: 5px;
+        }
+        
+        h1 {
+            color: #007bff;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+    </style>
 </body>
 </html>

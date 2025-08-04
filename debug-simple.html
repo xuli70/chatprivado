@@ -20,10 +20,33 @@
     <button onclick="probarGetAllRooms()">📋 Test getAllRooms()</button>
     <button onclick="probarGetAllRoomsAdmin()">📋 Test getAllRooms(true)</button>
     
-    <h2>Paso 3: Limpiar</h2>
+    <h2>Paso 3: Testing Modal (EL PROBLEMA)</h2>
+    <button onclick="activarAdmin()">🔑 Activar Admin</button>
+    <button onclick="testModalClick1()">1️⃣ Primer Click Modal</button>
+    <button onclick="testModalClick2()">2️⃣ Segundo Click Modal</button>
+    <button onclick="testModalClick3()">3️⃣ Tercer Click Modal</button>
+    <button onclick="inspeccionarModal()">🔍 Inspeccionar Modal</button>
+    
+    <h2>Paso 4: Limpiar</h2>
     <button onclick="limpiar()">🗑️ Limpiar Todo</button>
     
     <div id="output"></div>
+
+    <!-- Modal copiado del index.html -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirmar acción</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">¿Estás seguro?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelBtn" class="btn btn--outline">Cancelar</button>
+                <button id="confirmBtn" class="btn btn--primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="env.js"></script>
     <script src="supabase-client.js"></script>
@@ -143,6 +166,73 @@
             roomKeys.forEach(key => localStorage.removeItem(key));
             log(`🗑️ Eliminadas ${roomKeys.length} salas`);
             output.textContent = '';
+        }
+        
+        // NUEVAS FUNCIONES PARA TESTING DEL MODAL
+        function activarAdmin() {
+            log('\n🔑 Activando modo administrador...')
+            app.state.isAdmin = true;
+            log('✅ Modo administrador activado');
+        }
+        
+        async function testModalClick1() {
+            log('\n👆 PRIMER CLICK EN adminListRooms()...');
+            try {
+                await app.adminListRooms();
+                log('✅ Primer click completado');
+                setTimeout(() => {
+                    inspeccionarModal();
+                }, 1000);
+            } catch (error) {
+                log(`❌ Error en primer click: ${error.message}`);
+            }
+        }
+        
+        async function testModalClick2() {
+            log('\n👆 SEGUNDO CLICK EN adminListRooms()...');
+            try {
+                await app.adminListRooms();
+                log('✅ Segundo click completado');
+                setTimeout(() => {
+                    inspeccionarModal();
+                }, 1000);
+            } catch (error) {
+                log(`❌ Error en segundo click: ${error.message}`);
+            }
+        }
+        
+        async function testModalClick3() {
+            log('\n👆 TERCER CLICK EN adminListRooms()...');
+            try {
+                await app.adminListRooms();
+                log('✅ Tercer click completado');
+                setTimeout(() => {
+                    inspeccionarModal();
+                }, 1000);
+            } catch (error) {
+                log(`❌ Error en tercer click: ${error.message}`);
+            }
+        }
+        
+        function inspeccionarModal() {
+            const modal = document.getElementById('confirmModal');
+            const message = document.getElementById('confirmMessage');
+            const title = document.getElementById('confirmTitle');
+            
+            log('\n🔍 INSPECCIÓN DEL MODAL:');
+            log(`   Modal visible: ${!modal.classList.contains('hidden')}`);
+            log(`   Título: "${title.textContent}"`);
+            log(`   Contenido length: ${message.innerHTML.length} chars`);
+            log(`   Primeros 150 chars: "${message.innerHTML.substring(0, 150)}"`);
+            
+            const deleteButtons = document.querySelectorAll('.admin-delete-btn');
+            const reactivateButtons = document.querySelectorAll('.admin-reactivate-btn');
+            log(`   Botones eliminar encontrados: ${deleteButtons.length}`);
+            log(`   Botones reactivar encontrados: ${reactivateButtons.length}`);
+            
+            if (message.innerHTML.length < 50) {
+                log('🚨 PROBLEMA DETECTADO: Contenido del modal muy corto!');
+            }
         }
         
         // Auto-mostrar estado inicial
