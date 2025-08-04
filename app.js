@@ -435,13 +435,11 @@ class AnonymousChatApp {
 
     // 📋 FUNCIONES ADMINISTRADOR - Listar salas existentes
     async adminListRooms() {
-        console.log('📋 [DEBUG] Admin: Ver salas existentes - INICIO');
+        console.log('📋 Admin: Ver salas existentes');
         
         try {
             // NUEVA LÓGICA: Usar vista admin con soporte is_active
-            console.log('📋 [DEBUG] Obteniendo todas las salas...');
             const rooms = await this.getAllRooms(true); // adminView = true
-            console.log('📋 [DEBUG] Salas obtenidas:', rooms.length);
             
             if (rooms.length === 0) {
                 this.showConfirmModal(
@@ -464,17 +462,10 @@ class AnonymousChatApp {
 
     // 📋 NUEVA FUNCIÓN: Modal personalizado para listado de salas admin
     showAdminRoomsModal(rooms) {
-        console.log('📋 [DEBUG] Mostrando modal personalizado con', rooms.length, 'salas');
-        console.log('📋 [DEBUG] Estado inicial del modal:', {
-            modalVisible: !document.getElementById('confirmModal').classList.contains('hidden'),
-            messageContent: document.getElementById('confirmMessage').innerHTML.length
-        });
+        console.log('📋 Mostrando modal personalizado con', rooms.length, 'salas');
         
         // LIMPIAR MODAL ANTES DE USAR (crítico para evitar contenido anterior)
         this.cleanupModal();
-        console.log('📋 [DEBUG] Modal limpiado, estado:', {
-            messageContent: document.getElementById('confirmMessage').innerHTML.length
-        });
         
         // Generar HTML dinámico para cada sala
         let roomsHTML = '<div class="admin-rooms-list">';
@@ -530,11 +521,7 @@ class AnonymousChatApp {
         // Insertar HTML dinámico en el modal
         const confirmMessage = document.getElementById('confirmMessage');
         if (confirmMessage) {
-            console.log('📋 [DEBUG] Insertando HTML, longitud:', roomsHTML.length);
             confirmMessage.innerHTML = roomsHTML;
-            console.log('📋 [DEBUG] HTML insertado, contenido actual:', confirmMessage.innerHTML.length, 'chars');
-        } else {
-            console.error('📋 [ERROR] No se encontró confirmMessage element');
         }
         
         // Configurar modal
@@ -553,20 +540,16 @@ class AnonymousChatApp {
             confirmBtn.className = 'btn btn--outline btn--lg';
         }
         
-        console.log('📋 [DEBUG] Mostrando modal...');
         // Mostrar modal
         this.showModal('confirm');
         
-        console.log('📋 [DEBUG] Configurando event listeners...');
         // Agregar event listeners a los botones de acción después de mostrar el modal
         this.setupAdminRoomActionListeners();
-        
-        console.log('📋 [DEBUG] showAdminRoomsModal completado');
     }
     
     // 👂 NUEVA FUNCIÓN: Configurar event listeners para botones de acción admin
     setupAdminRoomActionListeners() {
-        console.log('👂 [DEBUG] Configurando event listeners para botones admin');
+        console.log('👂 Configurando event listeners para botones admin');
         
         // Event listeners para botones de eliminar
         const deleteButtons = document.querySelectorAll('.admin-delete-btn');
@@ -594,7 +577,7 @@ class AnonymousChatApp {
             });
         });
         
-        console.log(`✅ [DEBUG] Event listeners configurados: ${deleteButtons.length} eliminar, ${reactivateButtons.length} reactivar`);
+        console.log(`✅ Event listeners configurados: ${deleteButtons.length} eliminar, ${reactivateButtons.length} reactivar`);
     }
 
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
