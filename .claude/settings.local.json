@@ -17,7 +17,9 @@
       "Bash(claude mcp:*)",
       "mcp__supabase-mcp__list-tables",
       "mcp__supabase-mcp__query",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(start http://localhost:8000)"
     ]
   },
   "enabledMcpjsonServers": [

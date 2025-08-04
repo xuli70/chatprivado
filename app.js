@@ -679,6 +679,16 @@ class AnonymousChatApp {
         this.state.timers.forEach(timer => clearInterval(timer));
         this.state.timers.clear();
         
+        // Limpiar suscripciones de real-time
+        this.cleanupRealtimeMessaging();
+
+        // Limpiar estados de UX
+        this.stopTypingIndicator();
+        this.state.messageStates.clear();
+        
+        // Limpiar sesión guardada
+        this.clearCurrentSession();
+        
         this.state.currentRoom = null;
         this.state.currentUser = null;
         this.showScreen('welcomeScreen');
