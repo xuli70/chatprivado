@@ -245,12 +245,6 @@ class AnonymousChatApp {
 
         // 🔐 SISTEMA ADMINISTRADOR INCÓGNITO - Detectar password admin
         const adminPassword = window.env?.ADMIN_PASSWORD || 'ADMIN2025';
-        console.log('🔍 Verificando acceso admin:', { 
-            roomCode, 
-            adminPassword, 
-            windowEnv: window.env,
-            match: roomCode === adminPassword 
-        });
         
         if (roomCode === adminPassword) {
             console.log('🔑 Acceso de administrador detectado');
@@ -586,19 +580,12 @@ class AnonymousChatApp {
             incognitoControl.textContent = isIncognito ? '🎭 Modo: Incógnito' : '👑 Modo: Admin';
             incognitoControl.title = isIncognito ? 'Actualmente apareces como Anónimo. Click para identificarte como Administrador.' : 'Actualmente apareces como Administrador. Click para modo incógnito.';
             
-            console.log('🔧 setupAdminIncognitoControl - Estado:', {
-                isAdmin: this.state.isAdmin,
-                currentUser: this.state.currentUser,
-                adminIncognito: isIncognito,
-                buttonText: incognitoControl.textContent
-            });
             
             // Configurar evento (remover anterior si existe)
             incognitoControl.replaceWith(incognitoControl.cloneNode(true));
             incognitoControl = document.getElementById('adminIncognitoControl');
             
             incognitoControl.addEventListener('click', () => {
-                console.log('🖱️ Click en botón modo incógnito');
                 this.toggleAdminIncognito();
             });
         }
@@ -606,23 +593,10 @@ class AnonymousChatApp {
 
     // 🔄 ALTERNAR MODO INCÓGNITO ADMINISTRADOR
     toggleAdminIncognito() {
-        if (!this.state.isAdmin) {
-            console.log('❌ toggleAdminIncognito: Usuario no es admin');
-            return;
-        }
-
-        console.log('🔄 ANTES del toggle:', {
-            isAdmin: this.state.isAdmin,
-            currentUser: this.state.currentUser,
-            adminIncognito: this.state.currentUser.adminIncognito
-        });
+        if (!this.state.isAdmin) return;
 
         // Cambiar estado
         this.state.currentUser.adminIncognito = !this.state.currentUser.adminIncognito;
-        
-        console.log('🔄 DESPUÉS del toggle:', {
-            adminIncognito: this.state.currentUser.adminIncognito
-        });
         
         // Actualizar control visual
         this.setupAdminIncognitoControl();
@@ -631,7 +605,7 @@ class AnonymousChatApp {
         const mode = this.state.currentUser.adminIncognito ? 'incógnito (Anónimo)' : 'identificado (Administrador)';
         this.showToast(`Modo cambiado: ${mode}`, 'success');
         
-        console.log(`🎭 Admin modo cambiado: ${this.state.currentUser.adminIncognito ? 'Incógnito' : 'Identificado'}`);
+        console.log(`🎭 Admin modo: ${this.state.currentUser.adminIncognito ? 'Incógnito' : 'Identificado'}`);
     }
 
     // 🧪 TESTING SISTEMA ADMINISTRADOR - Función de verificación completa
@@ -783,14 +757,17 @@ class AnonymousChatApp {
             userName: this.state.currentUser.name
         });
         
-        if (this.state.currentUser.isCreator) {
-            // Si es administrador con modo incógnito activado
+        // 🔐 LÓGICA MEJORADA: Usar isAdmin O isCreator para detectar administrador
+        const isAdministrator = this.state.isAdmin || this.state.currentUser.isCreator;
+        
+        if (isAdministrator) {
+            // Si es administrador (por isAdmin o isCreator) con modo incógnito activado
             if (this.state.isAdmin && this.state.currentUser.adminIncognito) {
                 authorName = 'Anónimo';
                 isAnonymous = true;
                 console.log('🎭 Administrador enviando mensaje en modo incógnito');
             } else {
-                // Creador normal o admin sin incógnito
+                // Administrador sin incógnito
                 authorName = this.state.currentUser.name;
                 isAnonymous = false;
                 console.log('👑 Administrador enviando mensaje identificado como:', authorName);
@@ -1396,8 +1373,10 @@ class AnonymousChatApp {
             roomId: this.state.currentRoom.id,
             user: {
                 name: this.state.currentUser.name,
-                isCreator: this.state.currentUser.isCreator
+                isCreator: this.state.currentUser.isCreator,
+                adminIncognito: this.state.currentUser.adminIncognito || false
             },
+            isAdmin: this.state.isAdmin || false, // 🔐 Guardar estado admin
             timestamp: new Date().toISOString()
         };
 
@@ -1446,8 +1425,12 @@ class AnonymousChatApp {
             // Restaurar estado
             this.state.currentRoom = room;
             this.state.currentUser = session.user;
+            this.state.isAdmin = session.isAdmin || false; // 🔐 Restaurar estado admin
 
-            console.log('Sesión restaurada exitosamente');
+            console.log('Sesión restaurada exitosamente:', {
+                isAdmin: this.state.isAdmin,
+                user: this.state.currentUser
+            });
             return true;
 
         } catch (error) {
