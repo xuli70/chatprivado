@@ -423,12 +423,12 @@ class AnonymousChatApp {
         // Guardar sala
         await this.saveRoom(room);
         
-        // Configurar estado - Admin en modo incógnito por defecto
+        // Configurar estado - Admin inicia en modo identificado
         this.state.currentRoom = room;
         this.state.currentUser = { 
             name: 'Administrador', 
             isCreator: true, 
-            adminIncognito: true // 🎭 Modo incógnito por defecto
+            adminIncognito: false // 🎭 Modo identificado por defecto, puede cambiar
         };
         
         // Guardar sesión
@@ -582,15 +582,23 @@ class AnonymousChatApp {
 
         if (incognitoControl) {
             // Actualizar texto según estado actual
-            const isIncognito = this.state.currentUser.adminIncognito;
+            const isIncognito = this.state.currentUser?.adminIncognito || false;
             incognitoControl.textContent = isIncognito ? '🎭 Modo: Incógnito' : '👑 Modo: Admin';
             incognitoControl.title = isIncognito ? 'Actualmente apareces como Anónimo. Click para identificarte como Administrador.' : 'Actualmente apareces como Administrador. Click para modo incógnito.';
+            
+            console.log('🔧 setupAdminIncognitoControl - Estado:', {
+                isAdmin: this.state.isAdmin,
+                currentUser: this.state.currentUser,
+                adminIncognito: isIncognito,
+                buttonText: incognitoControl.textContent
+            });
             
             // Configurar evento (remover anterior si existe)
             incognitoControl.replaceWith(incognitoControl.cloneNode(true));
             incognitoControl = document.getElementById('adminIncognitoControl');
             
             incognitoControl.addEventListener('click', () => {
+                console.log('🖱️ Click en botón modo incógnito');
                 this.toggleAdminIncognito();
             });
         }
@@ -598,10 +606,23 @@ class AnonymousChatApp {
 
     // 🔄 ALTERNAR MODO INCÓGNITO ADMINISTRADOR
     toggleAdminIncognito() {
-        if (!this.state.isAdmin) return;
+        if (!this.state.isAdmin) {
+            console.log('❌ toggleAdminIncognito: Usuario no es admin');
+            return;
+        }
+
+        console.log('🔄 ANTES del toggle:', {
+            isAdmin: this.state.isAdmin,
+            currentUser: this.state.currentUser,
+            adminIncognito: this.state.currentUser.adminIncognito
+        });
 
         // Cambiar estado
         this.state.currentUser.adminIncognito = !this.state.currentUser.adminIncognito;
+        
+        console.log('🔄 DESPUÉS del toggle:', {
+            adminIncognito: this.state.currentUser.adminIncognito
+        });
         
         // Actualizar control visual
         this.setupAdminIncognitoControl();
@@ -755,6 +776,13 @@ class AnonymousChatApp {
         // 🎭 MODO INCÓGNITO ADMINISTRADOR - Lógica de identificación
         let authorName, isAnonymous;
         
+        console.log('💬 ENVIANDO MENSAJE - Estado actual:', {
+            isAdmin: this.state.isAdmin,
+            isCreator: this.state.currentUser.isCreator,
+            adminIncognito: this.state.currentUser.adminIncognito,
+            userName: this.state.currentUser.name
+        });
+        
         if (this.state.currentUser.isCreator) {
             // Si es administrador con modo incógnito activado
             if (this.state.isAdmin && this.state.currentUser.adminIncognito) {
@@ -765,12 +793,16 @@ class AnonymousChatApp {
                 // Creador normal o admin sin incógnito
                 authorName = this.state.currentUser.name;
                 isAnonymous = false;
+                console.log('👑 Administrador enviando mensaje identificado como:', authorName);
             }
         } else {
             // Usuario regular siempre anónimo
             authorName = 'Anónimo';
             isAnonymous = true;
+            console.log('👤 Usuario regular enviando mensaje anónimo');
         }
+        
+        console.log('💬 RESULTADO - Mensaje será enviado como:', { authorName, isAnonymous });
 
         const message = {
             id: Date.now(),
