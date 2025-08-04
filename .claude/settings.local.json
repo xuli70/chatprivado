@@ -10,10 +10,16 @@
       "Bash(docker rm:*)",
       "Bash(env)",
       "Bash(ls:*)",
-      "Bash(start index.html)"
+      "Bash(start index.html)",
+      "Bash(claude mcp)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp:*)",
+      "mcp__supabase-mcp__list-tables",
+      "mcp__supabase-mcp__query"
     ]
   },
-  "disabledMcpjsonServers": [
+  "enabledMcpjsonServers": [
     "filesystem",
     "supabase-mcp",
     "supabase2-mcp",

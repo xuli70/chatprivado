@@ -23,6 +23,7 @@ COPY app.js .
 COPY supabase-client.js .
 COPY style.css .
 COPY README.md .
+# NO copiar env.js - se genera dinámicamente
 
 # Configurar Caddy para servir en puerto 8080
 RUN echo -e ":${PORT:-8080} {\n\
