@@ -6,6 +6,7 @@ import { escapeHtml, generateRoomCode, copyToClipboard, calculateLocalStorageUsa
 import { cacheElements, showScreen, updateCharacterCount, updateCounters } from './js/modules/dom-manager.js';
 import { showModal, hideModal, cleanupModal, showConfirmModal, handleConfirm, showToast, showEmptyState } from './js/modules/ui-manager.js';
 import { saveRoom, loadRoom, saveUserVotes, loadFromStorage, isRoomExpired, cleanupExpiredRooms, getStorageStats, cleanupCorruptedData } from './js/modules/storage-manager.js';
+import { saveCurrentSession, restoreSession, clearCurrentSession, getCurrentSession, getSessionStats, validateSession, cleanupExpiredSessions, updateSessionTimestamp } from './js/modules/session-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -1612,86 +1613,28 @@ class AnonymousChatApp {
     // ==================== GESTIÓN DE SESIÓN ====================
 
     saveCurrentSession() {
-        if (!this.state.currentRoom || !this.state.currentUser) {
-            // No hay sesión activa para guardar
-            localStorage.removeItem('currentSession');
-            return;
-        }
-
-        const sessionData = {
-            roomId: this.state.currentRoom.id,
-            user: {
-                name: this.state.currentUser.name,
-                isCreator: this.state.currentUser.isCreator,
-                adminIncognito: this.state.currentUser.adminIncognito || false
-            },
-            isAdmin: this.state.isAdmin || false, // 🔐 Guardar estado admin
-            timestamp: new Date().toISOString()
-        };
-
-        localStorage.setItem('currentSession', JSON.stringify(sessionData));
-        console.log('Sesión guardada:', sessionData);
+        return saveCurrentSession(this.state.currentRoom, this.state.currentUser, this.state.isAdmin);
     }
 
     async restoreSession() {
-        const sessionData = localStorage.getItem('currentSession');
-        if (!sessionData) {
-            console.log('No hay sesión guardada para restaurar');
-            return false;
-        }
+        const result = await restoreSession(
+            (roomId) => this.loadRoom(roomId),
+            (room) => this.isRoomExpired(room)
+        );
 
-        try {
-            const session = JSON.parse(sessionData);
-            console.log('Intentando restaurar sesión:', session);
-
-            // Verificar que la sesión no sea muy antigua (más de 24 horas)
-            const sessionTime = new Date(session.timestamp);
-            const now = new Date();
-            const timeDiff = now - sessionTime;
-            const maxSessionTime = 24 * 60 * 60 * 1000; // 24 horas
-
-            if (timeDiff > maxSessionTime) {
-                console.log('Sesión expirada, eliminando');
-                localStorage.removeItem('currentSession');
-                return false;
-            }
-
-            // Cargar la sala
-            const room = await this.loadRoom(session.roomId);
-            if (!room) {
-                console.log('Sala no encontrada, eliminando sesión');
-                localStorage.removeItem('currentSession');
-                return false;
-            }
-
-            // Verificar que la sala no haya expirado
-            if (this.isRoomExpired(room)) {
-                console.log('Sala expirada, eliminando sesión');
-                localStorage.removeItem('currentSession');
-                return false;
-            }
-
-            // Restaurar estado
-            this.state.currentRoom = room;
-            this.state.currentUser = session.user;
-            this.state.isAdmin = session.isAdmin || false; // 🔐 Restaurar estado admin
-
-            console.log('Sesión restaurada exitosamente:', {
-                isAdmin: this.state.isAdmin,
-                user: this.state.currentUser
-            });
+        if (result.success) {
+            // Restaurar estado en la aplicación
+            this.state.currentRoom = result.sessionData.currentRoom;
+            this.state.currentUser = result.sessionData.currentUser;
+            this.state.isAdmin = result.sessionData.isAdmin;
             return true;
-
-        } catch (error) {
-            console.error('Error restaurando sesión:', error);
-            localStorage.removeItem('currentSession');
-            return false;
         }
+
+        return false;
     }
 
     clearCurrentSession() {
-        localStorage.removeItem('currentSession');
-        console.log('Sesión actual eliminada');
+        return clearCurrentSession();
     }
 
     cleanup() {
