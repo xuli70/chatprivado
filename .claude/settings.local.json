@@ -42,7 +42,8 @@
       "Bash(powershell:*)",
       "Bash(dir:*)",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-fase3.html\")",
-      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-modulos-completo.html\")"
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-modulos-completo.html\")",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-fase4.html\")"
     ]
   },
   "enabledMcpjsonServers": [

@@ -5,6 +5,7 @@
 import { escapeHtml, generateRoomCode, copyToClipboard, calculateLocalStorageUsage } from './js/modules/utils.js';
 import { cacheElements, showScreen, updateCharacterCount, updateCounters } from './js/modules/dom-manager.js';
 import { showModal, hideModal, cleanupModal, showConfirmModal, handleConfirm, showToast, showEmptyState } from './js/modules/ui-manager.js';
+import { saveRoom, loadRoom, saveUserVotes, loadFromStorage, isRoomExpired, cleanupExpiredRooms, getStorageStats, cleanupCorruptedData } from './js/modules/storage-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -1572,39 +1573,11 @@ class AnonymousChatApp {
 
     // Gestión de almacenamiento
     async saveRoom(room) {
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            try {
-                await this.supabaseClient.createRoom(room);
-            } catch (error) {
-                console.error('Error guardando sala en Supabase:', error);
-                // Fallback a localStorage
-                localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
-            }
-        } else {
-            // Fallback a localStorage
-            localStorage.setItem(`room_${room.id}`, JSON.stringify(room));
-        }
-        this.saveUserVotes();
-        
-        // Guardar sesión actual para persistencia
-        this.saveCurrentSession();
+        return await saveRoom(room, this.supabaseClient, () => this.saveCurrentSession());
     }
 
     async loadRoom(roomId) {
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            try {
-                const room = await this.supabaseClient.getRoom(roomId);
-                if (room) {
-                    return room;
-                }
-            } catch (error) {
-                console.error('Error cargando sala de Supabase:', error);
-            }
-        }
-        
-        // Fallback a localStorage
-        const roomData = localStorage.getItem(`room_${roomId}`);
-        return roomData ? JSON.parse(roomData) : null;
+        return await loadRoom(roomId, this.supabaseClient);
     }
 
     async sendMessage(roomId, message) {
@@ -1620,68 +1593,20 @@ class AnonymousChatApp {
     }
 
     saveUserVotes() {
-        const votesData = Object.fromEntries(this.state.userVotes);
-        localStorage.setItem('userVotes', JSON.stringify(votesData));
+        saveUserVotes(this.state.userVotes);
     }
 
     loadFromStorage() {
-        // Cargar votos del usuario
-        const votesData = localStorage.getItem('userVotes');
-        if (votesData) {
-            const votes = JSON.parse(votesData);
-            this.state.userVotes = new Map(Object.entries(votes));
-        }
-
-        // Limpiar salas expiradas automáticamente
-        if (this.config.autoCleanup) {
-            this.cleanupExpiredRooms();
-        }
+        const result = loadFromStorage(this.config);
+        this.state.userVotes = result.userVotes;
     }
 
     isRoomExpired(room) {
-        // 🚫 DESHABILITADO: Las salas NO expiran automáticamente
-        // Solo el administrador puede desactivar salas manualmente
-        return false;
-        
-        /* Código original comentado para referencia:
-        const now = new Date();
-        const expiresAt = new Date(room.expiresAt);
-        const isExpired = now > expiresAt;
-        
-        // 🔍 DEBUG: Log detallado de expiración
-        if (room.id && room.id.startsWith('TEST')) {
-            console.log(`🕐 EXPIRATION CHECK para ${room.id}:`, {
-                now: now.toISOString(),
-                expiresAt: room.expiresAt,
-                expiresAtDate: expiresAt.toISOString(),
-                isExpired: isExpired,
-                timeUntilExpiry: Math.round((expiresAt - now) / 1000 / 60) + ' minutos'
-            });
-        }
-        
-        return isExpired;
-        */
+        return isRoomExpired(room);
     }
 
     cleanupExpiredRooms() {
-        // 🚫 DESHABILITADO: No limpiamos salas "expiradas" automáticamente
-        // Las salas solo se eliminan por acción manual del administrador
-        return;
-        
-        /* Código original comentado:
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-            if (key.startsWith('room_')) {
-                const roomData = localStorage.getItem(key);
-                if (roomData) {
-                    const room = JSON.parse(roomData);
-                    if (this.isRoomExpired(room)) {
-                        localStorage.removeItem(key);
-                    }
-                }
-            }
-        });
-        */
+        return cleanupExpiredRooms();
     }
 
     // ==================== GESTIÓN DE SESIÓN ====================
