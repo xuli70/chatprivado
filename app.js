@@ -2680,3 +2680,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('\n🎯 === FIN DEL TEST ===\n');
         }, 1000);
     };
+    
+    console.log('🎯 TESTING: Usa testAdminEnterButton() para test completo del flujo admin');
+});
+
+// Inicializar aplicación cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Iniciando aplicación Chat Anónimo Móvil v3.0 (Sistema de Fluidez Ultra-Avanzado)...');
+    window.chatApp = new AnonymousChatApp();
+});
+
+// Exportar clase para acceso global (opcional)
+window.AnonymousChatApp = AnonymousChatApp;
