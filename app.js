@@ -1221,15 +1221,39 @@ class AnonymousChatApp {
     }
 
     async handleVote(e) {
-        const messageId = parseInt(e.currentTarget.getAttribute('data-message-id'));
-        const voteType = e.currentTarget.getAttribute('data-vote-type');
-        
-        const userVoteKey = `${this.state.currentRoom.id}-${messageId}`;
-        const currentVote = this.state.userVotes.get(userVoteKey);
+        try {
+            // Debug: Confirmar que se ejecuta handleVote
+            console.debug('🎯 handleVote ejecutado', { 
+                target: e.currentTarget,
+                messageId: e.currentTarget.getAttribute('data-message-id'),
+                voteType: e.currentTarget.getAttribute('data-vote-type')
+            });
 
-        // Encontrar el mensaje
-        const message = this.state.currentRoom.messages.find(m => m.id === messageId);
-        if (!message) return;
+            const messageId = parseInt(e.currentTarget.getAttribute('data-message-id'));
+            const voteType = e.currentTarget.getAttribute('data-vote-type');
+            
+            // Validaciones de entrada
+            if (!messageId || !voteType) {
+                console.error('❌ handleVote: Datos faltantes', { messageId, voteType });
+                return;
+            }
+            
+            if (!this.state.currentRoom) {
+                console.error('❌ handleVote: No hay sala actual');
+                return;
+            }
+            
+            const userVoteKey = `${this.state.currentRoom.id}-${messageId}`;
+            const currentVote = this.state.userVotes.get(userVoteKey);
+
+            // Encontrar el mensaje
+            const message = this.state.currentRoom.messages.find(m => m.id === messageId);
+            if (!message) {
+                console.error('❌ handleVote: Mensaje no encontrado', { messageId });
+                return;
+            }
+            
+            console.debug('✅ handleVote: Datos válidos', { messageId, voteType, currentVote });
 
         // Usar Supabase para gestionar el voto
         if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
@@ -1266,8 +1290,22 @@ class AnonymousChatApp {
             await this.saveRoom(this.state.currentRoom);
         }
 
-        this.updateMessageVoteDisplay(messageId, message.votes);
-        this.updateVoteButtonStates(messageId, this.state.userVotes.get(userVoteKey));
+            this.updateMessageVoteDisplay(messageId, message.votes);
+            this.updateVoteButtonStates(messageId, this.state.userVotes.get(userVoteKey));
+            
+            console.debug('✅ handleVote: Votación completada exitosamente');
+            
+        } catch (error) {
+            console.error('❌ Error en handleVote:', error);
+            
+            // Mostrar error al usuario
+            this.showToast('Error al procesar voto. Inténtalo de nuevo.', 'error');
+            
+            // En desarrollo, mostrar más detalles
+            if (window.location.hostname === 'localhost') {
+                console.error('Stack trace completo:', error.stack);
+            }
+        }
     }
 
     updateMessageVoteDisplay(messageId, votes) {
@@ -1302,6 +1340,7 @@ class AnonymousChatApp {
 
     loadMessages() {
         const callbacks = {
+            handleVote: (e) => this.handleVote(e),
             showEmptyState: () => this.showEmptyState(),
             updateVoteButtonStates: (messageId, userVote) => this.updateVoteButtonStates(messageId, userVote),
             getUserVote: (roomId, messageId) => {
@@ -2264,6 +2303,48 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.chatApp) {
             console.log('Estado del polling:', window.chatApp.getPollingDebugInfo());
         }
+    };
+    
+    // Nueva función para debug del sistema de votación
+    window.debugVoting = () => {
+        if (!window.chatApp) {
+            console.error('❌ window.chatApp no existe');
+            return;
+        }
+        
+        const app = window.chatApp;
+        console.log('🔍 DEBUG SISTEMA DE VOTACIÓN');
+        console.log('=====================================');
+        console.log('📊 Estado actual:', {
+            currentRoom: app.state.currentRoom?.id || 'No hay sala',
+            messagesCount: app.state.currentRoom?.messages?.length || 0,
+            userVotes: Array.from(app.state.userVotes.entries()),
+        });
+        
+        // Verificar botones en DOM
+        const voteButtons = document.querySelectorAll('.vote-btn');
+        console.log(`🎯 Botones de votación en DOM: ${voteButtons.length}`);
+        
+        voteButtons.forEach((btn, index) => {
+            const messageId = btn.getAttribute('data-message-id');
+            const voteType = btn.getAttribute('data-vote-type');
+            const hasClickListener = btn.onclick !== null;
+            
+            console.log(`  Botón ${index + 1}:`, {
+                messageId,
+                voteType,
+                hasClickListener,
+                classes: btn.className
+            });
+        });
+        
+        // Verificar callbacks
+        console.log('🔗 Verificación de callbacks:');
+        console.log('  handleVote existe:', typeof app.handleVote === 'function');
+        console.log('  updateMessageVoteDisplay existe:', typeof app.updateMessageVoteDisplay === 'function');
+        console.log('  updateVoteButtonStates existe:', typeof app.updateVoteButtonStates === 'function');
+        
+        console.log('=====================================');
     };
     
     window.testPolling = () => {

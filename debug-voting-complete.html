@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Completo: Sistema de Votación + MIME + Módulos ES6</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .debug-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .debug-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .debug-section.critical {
+            border-left: 6px solid #DC2626;
+            background: linear-gradient(135deg, #FEF2F2, #FECACA);
+        }
+        
+        .debug-section.warning {
+            border-left: 6px solid #D97706;
+            background: linear-gradient(135deg, #FFFBEB, #FED7AA);
+        }
+        
+        .debug-section.success {
+            border-left: 6px solid #059669;
+            background: linear-gradient(135deg, #ECFDF5, #A7F3D0);
+        }
+        
+        .debug-section.info {
+            border-left: 6px solid #0284C7;
+            background: linear-gradient(135deg, #F0F9FF, #BAE6FD);
+        }
+        
+        .debug-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .debug-button {
+            background: linear-gradient(135deg, #3B82F6, #1E40AF);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .debug-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .debug-button.danger {
+            background: linear-gradient(135deg, #DC2626, #991B1B);
+        }
+        
+        .debug-button.success {
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+        
+        .debug-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .debug-result.error {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #DC2626;
+        }
+        
+        .debug-result.success {
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            color: #047857;
+        }
+        
+        .debug-result.info {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            color: #0284C7;
+        }
+        
+        .test-messages {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #F9FAFB;
+        }
+        
+        .message-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .vote-btn {
+            padding: 8px 16px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .like-btn {
+            border-color: #10B981;
+            color: #10B981;
+        }
+        
+        .like-btn:hover, .like-btn.voted-like {
+            background: #10B981;
+            color: white;
+        }
+        
+        .dislike-btn {
+            border-color: #EF4444;
+            color: #EF4444;
+        }
+        
+        .dislike-btn:hover, .dislike-btn.voted-dislike {
+            background: #EF4444;
+            color: white;
+        }
+        
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #1F2937;
+            color: #F9FAFB;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+        }
+        
+        .log-entry.error { color: #FCA5A5; }
+        .log-entry.warning { color: #FBBF24; }
+        .log-entry.success { color: #6EE7B7; }
+        .log-entry.info { color: #93C5FD; }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1 style="text-align: center; color: #1F2937; margin-bottom: 30px;">
+            🔧 Debug Completo: Sistema de Votación + MIME + Módulos ES6
+        </h1>
+        
+        <!-- SECCIÓN 1: VERIFICACIÓN MÓDULOS ES6 -->
+        <div class="debug-section critical">
+            <div class="debug-title">
+                🚨 CRÍTICO: Verificación Módulos ES6 y MIME Types
+            </div>
+            <p>Verificación fundamental para funcionamiento de event listeners:</p>
+            
+            <button class="debug-button" onclick="checkES6Modules()">
+                🔍 Verificar Carga Módulos ES6
+            </button>
+            
+            <button class="debug-button" onclick="checkMIMETypes()">
+                📄 Verificar MIME Types
+            </button>
+            
+            <button class="debug-button" onclick="checkImportPaths()">
+                📁 Verificar Paths de Importación
+            </button>
+            
+            <div id="es6-results" class="debug-result"></div>
+        </div>
+        
+        <!-- SECCIÓN 2: VERIFICACIÓN EVENT LISTENERS -->
+        <div class="debug-section warning">
+            <div class="debug-title">
+                ⚠️ PROBLEMA PRINCIPAL: Event Listeners de Votación
+            </div>
+            <p>Diagnosticar por qué los botones de like/dislike no responden:</p>
+            
+            <button class="debug-button" onclick="checkEventListeners()">
+                🎯 Verificar Event Listeners
+            </button>
+            
+            <button class="debug-button" onclick="checkCallbacks()">
+                🔗 Verificar Callbacks
+            </button>
+            
+            <button class="debug-button" onclick="testDirectBinding()">
+                🧪 Test Binding Directo
+            </button>
+            
+            <div id="listeners-results" class="debug-result"></div>
+        </div>
+        
+        <!-- SECCIÓN 3: TEST SIMULADO DE VOTACIÓN -->
+        <div class="debug-section info">
+            <div class="debug-title">
+                🧪 Test Simulado: Sistema de Votación
+            </div>
+            <p>Mensajes de prueba para diagnosticar botones de votación:</p>
+            
+            <button class="debug-button success" onclick="createTestMessages()">
+                ➕ Crear Mensajes de Test
+            </button>
+            
+            <button class="debug-button" onclick="clearTestMessages()">
+                🗑️ Limpiar Mensajes
+            </button>
+            
+            <div id="test-messages-container" class="test-messages" style="display: none;">
+                <h3>📝 Mensajes de Prueba</h3>
+                <div id="test-messages-list"></div>
+            </div>
+        </div>
+        
+        <!-- SECCIÓN 4: LOGS EN TIEMPO REAL -->
+        <div class="debug-section success">
+            <div class="debug-title">
+                📊 Logs en Tiempo Real
+            </div>
+            <p>Monitoreo de eventos y errores durante las pruebas:</p>
+            
+            <button class="debug-button" onclick="clearLogs()">
+                🧹 Limpiar Logs
+            </button>
+            
+            <button class="debug-button" onclick="startLogging()">
+                ▶️ Iniciar Logging
+            </button>
+            
+            <button class="debug-button danger" onclick="stopLogging()">
+                ⏹️ Detener Logging
+            </button>
+            
+            <div id="log-container" class="log-container"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // ============================================
+        // SISTEMA DE LOGGING AVANZADO
+        // ============================================
+        
+        let isLogging = false;
+        let logCount = 0;
+        
+        function debugLog(message, type = 'info') {
+            if (!isLogging) return;
+            
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            logCount++;
+            if (logCount > 100) {
+                logContainer.removeChild(logContainer.firstChild);
+                logCount--;
+            }
+        }
+        
+        // Interceptar errores globales
+        window.addEventListener('error', (e) => {
+            debugLog(`Global Error: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        // Interceptar errores de módulos
+        window.addEventListener('unhandledrejection', (e) => {
+            debugLog(`Unhandled Promise Rejection: ${e.reason}`, 'error');
+        });
+        
+        // ============================================
+        // FUNCIONES DE DIAGNÓSTICO PRINCIPAL
+        // ============================================
+        
+        window.checkES6Modules = function() {
+            const resultsDiv = document.getElementById('es6-results');
+            let results = "=== VERIFICACIÓN MÓDULOS ES6 ===\n\n";
+            
+            try {
+                // Verificar si los módulos se importaron correctamente
+                const script = document.querySelector('script[type="module"]');
+                results += script ? 
+                    "✅ ENCONTRADO: <script type='module'> en HTML\n" : 
+                    "❌ ERROR: No se encontró <script type='module'>\n";
+                
+                // Verificar si window.chatApp existe (debería existir si app.js cargó)
+                results += window.chatApp ? 
+                    "✅ ENCONTRADO: window.chatApp está definido\n" : 
+                    "❌ ERROR: window.chatApp no está definido\n";
+                
+                // Verificar errores en console relacionados a módulos
+                const hasModuleErrors = performance.getEntriesByType('navigation').length > 0;
+                results += "📊 INFO: Verificar Console DevTools para errores de módulos\n";
+                
+                resultsDiv.className = 'debug-result info';
+                resultsDiv.textContent = results;
+                
+                debugLog("Verificación de módulos ES6 completada", 'info');
+                
+            } catch (error) {
+                results += `❌ ERROR CRÍTICO: ${error.message}\n`;
+                resultsDiv.className = 'debug-result error';
+                resultsDiv.textContent = results;
+                debugLog(`Error en checkES6Modules: ${error.message}`, 'error');
+            }
+        };
+        
+        window.checkMIMETypes = function() {
+            const resultsDiv = document.getElementById('es6-results');
+            let results = "=== VERIFICACIÓN MIME TYPES ===\n\n";
+            
+            try {
+                // Verificar recursos cargados
+                const resources = performance.getEntriesByType('resource');
+                const jsFiles = resources.filter(r => r.name.includes('.js'));
+                
+                results += `📊 Archivos JS encontrados: ${jsFiles.length}\n\n`;
+                
+                jsFiles.forEach(file => {
+                    const fileName = file.name.split('/').pop();
+                    const status = file.responseStatus || 'unknown';
+                    const transferSize = file.transferSize || 0;
+                    
+                    results += `📄 ${fileName}:\n`;
+                    results += `   Status: ${status}\n`;
+                    results += `   Size: ${transferSize} bytes\n`;
+                    results += `   Duration: ${file.duration.toFixed(2)}ms\n\n`;
+                });
+                
+                // Verificar si hay errores 404 o MIME
+                const failed = jsFiles.filter(f => f.responseStatus >= 400);
+                if (failed.length > 0) {
+                    results += "❌ ARCHIVOS CON ERRORES:\n";
+                    failed.forEach(f => results += `   - ${f.name.split('/').pop()}\n`);
+                } else {
+                    results += "✅ Todos los archivos JS se cargaron correctamente\n";
+                }
+                
+                resultsDiv.className = failed.length > 0 ? 'debug-result error' : 'debug-result success';
+                resultsDiv.textContent = results;
+                
+                debugLog(`Verificación MIME completada - ${failed.length} errores`, failed.length > 0 ? 'warning' : 'success');
+                
+            } catch (error) {
+                results += `❌ ERROR: ${error.message}\n`;
+                resultsDiv.className = 'debug-result error';
+                resultsDiv.textContent = results;
+                debugLog(`Error en checkMIMETypes: ${error.message}`, 'error');
+            }
+        };
+        
+        window.checkImportPaths = function() {
+            const resultsDiv = document.getElementById('es6-results');
+            let results = "=== VERIFICACIÓN PATHS DE IMPORTACIÓN ===\n\n";
+            
+            // Paths que deberían existir según la estructura modular
+            const expectedPaths = [
+                './js/modules/utils.js',
+                './js/modules/dom-manager.js',
+                './js/modules/ui-manager.js',
+                './js/modules/storage-manager.js',
+                './js/modules/session-manager.js',
+                './js/modules/message-manager.js'
+            ];
+            
+            results += "🔍 Verificando paths esperados:\n\n";
+            
+            expectedPaths.forEach(path => {
+                // Intentar crear un elemento script para verificar si el path existe
+                fetch(path)
+                    .then(response => {
+                        const status = response.ok ? "✅ EXISTE" : "❌ NO ENCONTRADO";
+                        results += `${status}: ${path}\n`;
+                        resultsDiv.textContent = results;
+                    })
+                    .catch(() => {
+                        results += `❌ ERROR: ${path}\n`;
+                        resultsDiv.textContent = results;
+                    });
+            });
+            
+            resultsDiv.className = 'debug-result info';
+            resultsDiv.textContent = results + "\n⏳ Verificando paths...\n";
+            
+            debugLog("Iniciando verificación de paths de importación", 'info');
+        };
+        
+        // ============================================
+        // FUNCIONES DE DIAGNÓSTICO EVENT LISTENERS
+        // ============================================
+        
+        window.checkEventListeners = function() {
+            const resultsDiv = document.getElementById('listeners-results');
+            let results = "=== VERIFICACIÓN EVENT LISTENERS ===\n\n";
+            
+            try {
+                // Buscar botones de votación existentes
+                const voteButtons = document.querySelectorAll('.vote-btn');
+                results += `🎯 Botones de votación encontrados: ${voteButtons.length}\n\n`;
+                
+                if (voteButtons.length === 0) {
+                    results += "⚠️  No hay botones de votación en el DOM actual\n";
+                    results += "💡 Tip: Crear mensajes de test primero\n\n";
+                } else {
+                    voteButtons.forEach((btn, index) => {
+                        const messageId = btn.getAttribute('data-message-id');
+                        const voteType = btn.getAttribute('data-vote-type');
+                        const hasListener = btn.onclick !== null;
+                        
+                        results += `📝 Botón ${index + 1}:\n`;
+                        results += `   Message ID: ${messageId || 'FALTANTE'}\n`;
+                        results += `   Vote Type: ${voteType || 'FALTANTE'}\n`;
+                        results += `   Tiene Listener: ${hasListener ? 'SÍ' : 'NO'}\n\n`;
+                    });
+                }
+                
+                // Verificar si AnonymousChatApp existe
+                results += window.chatApp ? 
+                    "✅ window.chatApp existe\n" : 
+                    "❌ window.chatApp no existe\n";
+                
+                if (window.chatApp && typeof window.chatApp.handleVote === 'function') {
+                    results += "✅ handleVote function existe\n";
+                } else {
+                    results += "❌ handleVote function no encontrada\n";
+                }
+                
+                resultsDiv.className = 'debug-result info';
+                resultsDiv.textContent = results;
+                
+                debugLog(`Event listeners check completado - ${voteButtons.length} botones encontrados`, 'info');
+                
+            } catch (error) {
+                results += `❌ ERROR: ${error.message}\n`;
+                resultsDiv.className = 'debug-result error';
+                resultsDiv.textContent = results;
+                debugLog(`Error en checkEventListeners: ${error.message}`, 'error');
+            }
+        };
+        
+        window.checkCallbacks = function() {
+            const resultsDiv = document.getElementById('listeners-results');
+            let results = "=== VERIFICACIÓN CALLBACKS ===\n\n";
+            
+            try {
+                // Intentar importar y verificar los módulos
+                import('./js/modules/message-manager.js').then(module => {
+                    results += "✅ message-manager.js importado correctamente\n";
+                    results += `📦 Funciones exportadas: ${Object.keys(module).join(', ')}\n\n`;
+                    
+                    if (module.addMessageToChat) {
+                        results += "✅ addMessageToChat función encontrada\n";
+                    } else {
+                        results += "❌ addMessageToChat función no encontrada\n";
+                    }
+                    
+                    resultsDiv.textContent = results;
+                    debugLog("Módulo message-manager verificado correctamente", 'success');
+                    
+                }).catch(error => {
+                    results += `❌ ERROR importando message-manager.js: ${error.message}\n`;
+                    resultsDiv.className = 'debug-result error';
+                    resultsDiv.textContent = results;
+                    debugLog(`Error importando message-manager: ${error.message}`, 'error');
+                });
+                
+                resultsDiv.className = 'debug-result info';
+                resultsDiv.textContent = results + "⏳ Verificando imports...\n";
+                
+            } catch (error) {
+                results += `❌ ERROR: ${error.message}\n`;
+                resultsDiv.className = 'debug-result error';
+                resultsDiv.textContent = results;
+                debugLog(`Error en checkCallbacks: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testDirectBinding = function() {
+            const resultsDiv = document.getElementById('listeners-results');
+            let results = "=== TEST BINDING DIRECTO ===\n\n";
+            
+            try {
+                // Crear un botón de test temporal
+                const testButton = document.createElement('button');
+                testButton.className = 'vote-btn like-btn';
+                testButton.setAttribute('data-message-id', '999');
+                testButton.setAttribute('data-vote-type', 'like');
+                testButton.innerHTML = '👍 <span class="vote-count">0</span>';
+                
+                // Test 1: Event listener básico
+                testButton.addEventListener('click', function(e) {
+                    results += "✅ Event listener básico funciona\n";
+                    results += `📊 Data: message-id=${e.currentTarget.getAttribute('data-message-id')}, vote-type=${e.currentTarget.getAttribute('data-vote-type')}\n`;
+                    resultsDiv.textContent = results;
+                    debugLog("Test de event listener básico exitoso", 'success');
+                });
+                
+                // Agregar temporalmente al DOM y hacer click
+                document.body.appendChild(testButton);
+                testButton.click();
+                
+                // Limpiar
+                setTimeout(() => {
+                    document.body.removeChild(testButton);
+                }, 1000);
+                
+                results += "\n🧪 Test completado - revisar logs arriba\n";
+                resultsDiv.className = 'debug-result success';
+                resultsDiv.textContent = results;
+                
+            } catch (error) {
+                results += `❌ ERROR: ${error.message}\n`;
+                resultsDiv.className = 'debug-result error';
+                resultsDiv.textContent = results;
+                debugLog(`Error en testDirectBinding: ${error.message}`, 'error');
+            }
+        };
+        
+        // ============================================
+        // FUNCIONES DE TEST DE MENSAJES
+        // ============================================
+        
+        window.createTestMessages = function() {
+            const container = document.getElementById('test-messages-container');
+            const messagesList = document.getElementById('test-messages-list');
+            
+            // Limpiar mensajes anteriores
+            messagesList.innerHTML = '';
+            
+            // Crear 3 mensajes de test
+            const testMessages = [
+                { id: 1001, text: "Este es un mensaje de prueba 1", votes: { likes: 0, dislikes: 0 } },
+                { id: 1002, text: "Mensaje de prueba 2 para testing", votes: { likes: 2, dislikes: 1 } },
+                { id: 1003, text: "Tercer mensaje para verificar botones", votes: { likes: 5, dislikes: 0 } }
+            ];
+            
+            testMessages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'test-message';
+                messageDiv.setAttribute('data-message-id', message.id);
+                
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <strong>ID ${message.id}:</strong> ${message.text}
+                    </div>
+                    <div class="message-actions">
+                        <button class="vote-btn like-btn" data-message-id="${message.id}" data-vote-type="like">
+                            👍 <span class="vote-count">${message.votes.likes}</span>
+                        </button>
+                        <button class="vote-btn dislike-btn" data-message-id="${message.id}" data-vote-type="dislike">
+                            👎 <span class="vote-count">${message.votes.dislikes}</span>
+                        </button>
+                    </div>
+                `;
+                
+                messagesList.appendChild(messageDiv);
+            });
+            
+            // Mostrar container
+            container.style.display = 'block';
+            
+            // Intentar agregar event listeners usando el patrón de la app
+            const voteButtons = messagesList.querySelectorAll('.vote-btn');
+            voteButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const messageId = e.currentTarget.getAttribute('data-message-id');
+                    const voteType = e.currentTarget.getAttribute('data-vote-type');
+                    
+                    debugLog(`¡CLICK DETECTADO! Mensaje: ${messageId}, Tipo: ${voteType}`, 'success');
+                    
+                    // Simular cambio visual
+                    btn.classList.toggle('voted-' + voteType);
+                    
+                    // Incrementar contador para test visual
+                    const countSpan = btn.querySelector('.vote-count');
+                    const currentCount = parseInt(countSpan.textContent);
+                    countSpan.textContent = currentCount + 1;
+                    
+                    debugLog(`Contador actualizado a: ${currentCount + 1}`, 'info');
+                });
+            });
+            
+            debugLog(`Creados ${testMessages.length} mensajes de test con event listeners`, 'success');
+        };
+        
+        window.clearTestMessages = function() {
+            const container = document.getElementById('test-messages-container');
+            const messagesList = document.getElementById('test-messages-list');
+            
+            messagesList.innerHTML = '';
+            container.style.display = 'none';
+            
+            debugLog("Mensajes de test eliminados", 'info');
+        };
+        
+        // ============================================
+        // FUNCIONES DE LOGGING
+        // ============================================
+        
+        window.startLogging = function() {
+            isLogging = true;
+            debugLog("Sistema de logging iniciado", 'success');
+        };
+        
+        window.stopLogging = function() {
+            isLogging = false;
+            debugLog("Sistema de logging detenido", 'warning');
+        };
+        
+        window.clearLogs = function() {
+            const logContainer = document.getElementById('log-container');
+            logContainer.innerHTML = '';
+            logCount = 0;
+            debugLog("Logs limpiados", 'info');
+        };
+        
+        // Iniciar logging automáticamente
+        startLogging();
+        
+        debugLog("Debug Completo inicializado correctamente", 'success');
+        
+    </script>
+</body>
+</html>

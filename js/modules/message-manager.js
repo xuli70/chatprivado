@@ -114,6 +114,16 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
         voteButtons.forEach(btn => {
             btn.addEventListener('click', callbacks.handleVote);
         });
+        
+        // Debug: Confirmar que se agregaron los event listeners
+        if (process?.env?.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
+            console.debug(`✅ Event listeners agregados a ${voteButtons.length} botones para mensaje ${message.id}`);
+        }
+    } else {
+        // Debug: Advertir si no hay callback para votación
+        if (process?.env?.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
+            console.warn(`⚠️ Sin callback handleVote para mensaje ${message.id} - botones de votación no funcionarán`);
+        }
     }
 
     return messageEl;
