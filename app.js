@@ -2,7 +2,7 @@
 // Gestión completa de funcionalidades frontend
 
 // Importar utilidades modularizadas
-import { escapeHtml, generateRoomCode, copyToClipboard, calculateLocalStorageUsage } from './js/modules/utils.js';
+import { escapeHtml, generateRoomCode, copyToClipboard, calculateLocalStorageUsage, getUserIdentifierForFingerprint, cleanupOldIdentifierMappings } from './js/modules/utils.js';
 import { cacheElements, showScreen, updateCharacterCount, updateCounters } from './js/modules/dom-manager.js';
 import { showModal, hideModal, cleanupModal, showConfirmModal, handleConfirm, showToast, showEmptyState } from './js/modules/ui-manager.js';
 import { saveRoom, loadRoom, saveUserVotes, loadFromStorage, isRoomExpired, cleanupExpiredRooms, getStorageStats, cleanupCorruptedData } from './js/modules/storage-manager.js';
@@ -1158,7 +1158,7 @@ class AnonymousChatApp {
             adminIncognito: this.state.currentUser.adminIncognito || false
         };
         
-        const message = processMessage(messageText, user, this.state.currentRoom.id);
+        const message = processMessage(messageText, user, this.state.currentRoom.id, this.supabaseClient);
 
         // Guardar referencia del último mensaje enviado para evitar ecos
         this.lastSentMessage = {

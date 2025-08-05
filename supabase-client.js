@@ -129,6 +129,118 @@ class SupabaseClient {
         return Math.abs(hash).toString(36);
     }
 
+    // Generar identificador único legible para usuario anónimo (ej: A1B2C3)
+    generateUserIdentifier(fingerprint = null) {
+        const fp = fingerprint || this.userFingerprint;
+        
+        // Usar el fingerprint como semilla para generar un ID consistente
+        let hash = 0;
+        for (let i = 0; i < fp.length; i++) {
+            const char = fp.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        
+        // Convertir a base36 y tomar los primeros 6 caracteres
+        const identifier = Math.abs(hash).toString(36).toUpperCase().substring(0, 6);
+        
+        // Asegurar que tenga exactamente 6 caracteres (rellenar con caracteres si es necesario)
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = identifier;
+        while (result.length < 6) {
+            const extraHash = Math.abs(hash * result.length).toString(36);
+            result += chars[Math.abs(extraHash.charCodeAt(0)) % chars.length];
+        }
+        
+        return result.substring(0, 6);
+    }
+
+    // Obtener o generar identificador de usuario desde localStorage
+    getUserIdentifier() {
+        const storageKey = 'anonymousChat_userIdentifier';
+        const mappingKey = 'anonymousChat_identifierMapping';
+        
+        // Intentar obtener desde localStorage
+        let identifier = localStorage.getItem(storageKey);
+        let mapping = {};
+        
+        try {
+            const storedMapping = localStorage.getItem(mappingKey);
+            if (storedMapping) {
+                mapping = JSON.parse(storedMapping);
+            }
+        } catch (error) {
+            console.warn('Error parsing identifier mapping:', error);
+            localStorage.removeItem(mappingKey);
+        }
+        
+        // Si ya existe un identifier para este fingerprint, usarlo
+        if (mapping[this.userFingerprint]) {
+            identifier = mapping[this.userFingerprint];
+            localStorage.setItem(storageKey, identifier);
+            return identifier;
+        }
+        
+        // Si no existe, generar uno nuevo
+        if (!identifier) {
+            identifier = this.generateUserIdentifier();
+        }
+        
+        // Guardar mapping fingerprint -> identifier
+        mapping[this.userFingerprint] = identifier;
+        
+        try {
+            localStorage.setItem(storageKey, identifier);
+            localStorage.setItem(mappingKey, JSON.stringify(mapping));
+        } catch (error) {
+            console.warn('Error saving user identifier to localStorage:', error);
+        }
+        
+        return identifier;
+    }
+
+    // Obtener o crear identificador de usuario usando Supabase
+    async getOrCreateUserIdentifierFromSupabase() {
+        if (!this.isOnline || !this.client) {
+            return this.getUserIdentifier(); // Fallback a localStorage
+        }
+        
+        try {
+            // Usar la función SQL para obtener o crear identifier
+            const { data, error } = await this.client
+                .rpc('get_or_create_user_identifier', {
+                    fingerprint_hash: this.userFingerprint
+                });
+                
+            if (error) {
+                console.warn('Error getting identifier from Supabase:', error);
+                return this.getUserIdentifier(); // Fallback a localStorage
+            }
+            
+            // Guardar también en localStorage para acceso rápido
+            const identifier = data;
+            localStorage.setItem('anonymousChat_userIdentifier', identifier);
+            
+            // Actualizar mapping local
+            const mappingKey = 'anonymousChat_identifierMapping';
+            let mapping = {};
+            try {
+                const storedMapping = localStorage.getItem(mappingKey);
+                if (storedMapping) {
+                    mapping = JSON.parse(storedMapping);
+                }
+            } catch (e) { /* ignore */ }
+            
+            mapping[this.userFingerprint] = identifier;
+            localStorage.setItem(mappingKey, JSON.stringify(mapping));
+            
+            return identifier;
+        } catch (error) {
+            console.warn('Error in getOrCreateUserIdentifierFromSupabase:', error);
+            return this.getUserIdentifier(); // Fallback a localStorage
+        }
+    }
+
     // ==================== GESTIÓN DE SALAS ====================
 
     async createRoom(room) {
@@ -209,6 +321,7 @@ class SupabaseClient {
                     text: msg.text,
                     isAnonymous: msg.is_anonymous,
                     author: msg.author,
+                    userIdentifier: msg.user_identifier,
                     timestamp: msg.created_at,
                     votes: {
                         likes: msg.likes || 0,
@@ -360,6 +473,7 @@ class SupabaseClient {
                 text: message.text,
                 is_anonymous: message.isAnonymous,
                 author: message.author,
+                user_identifier: message.userIdentifier,
                 created_at: message.timestamp,
                 likes: 0,
                 dislikes: 0
@@ -381,6 +495,7 @@ class SupabaseClient {
                 text: data[0].text,
                 isAnonymous: data[0].is_anonymous,
                 author: data[0].author,
+                userIdentifier: data[0].user_identifier,
                 timestamp: data[0].created_at,
                 votes: {
                     likes: data[0].likes,
@@ -854,6 +969,7 @@ class SupabaseClient {
                             text: payload.new.text,
                             isAnonymous: payload.new.is_anonymous,
                             author: payload.new.author,
+                            userIdentifier: payload.new.user_identifier,
                             timestamp: payload.new.created_at,
                             votes: {
                                 likes: payload.new.likes || 0,

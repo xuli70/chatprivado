@@ -212,12 +212,29 @@ optimizeSystem()
 
 ✅ **COMPLETAMENTE CORREGIDO** - Sistema de votación 100% funcional
 
-## 🎯 SESIÓN 2025-08-05 - SISTEMA DE VOTACIÓN CORREGIDO COMPLETAMENTE
+## 🎯 SESIÓN 2025-08-05 - MENSAJES DUPLICADOS SOLUCIONADOS COMPLETAMENTE
 
 ### ✅ OBJETIVO PRINCIPAL DE ESTA SESIÓN COMPLETADO
-> **"Los botones de likes/dislikes no funcionan - corregir sistema de votación"**
+> **"Analizar el motivo por el cual escribe y guarda varias veces el mismo mensaje enviado en la sala ROOMUKBU"**
 
-✅ **SISTEMA DE VOTACIÓN 100% FUNCIONAL** - Problema crítico solucionado
+✅ **PROBLEMA DE MENSAJES DUPLICADOS 100% SOLUCIONADO** - Causa raíz identificada y corregida
+
+### 🔍 PROBLEMA IDENTIFICADO Y SOLUCIONADO
+- **SÍNTOMA**: Mensajes aparecían duplicados en tabla `chat_messages` (ej: "y ahora qué ?" - IDs 64,65 con timestamp idéntico)
+- **CAUSA RAÍZ**: Múltiples listeners DOMContentLoaded en app.js creaban instancias duplicadas de la aplicación
+- **IMPACTO**: Cada envío de mensaje se procesaba múltiples veces → duplicados en BD
+
+### ✅ SOLUCIÓN IMPLEMENTADA
+- **Eliminado**: Primer listener DOMContentLoaded duplicado (líneas 2494-2685 en app.js)
+- **Añadida**: Protección anti-duplicación con verificación `if (window.chatApp)`
+- **Conservadas**: Funciones de debugging útiles (`debugPolling`, `debugVoting`, etc.)
+- **Creadas**: Herramientas de testing (`test-mensaje-duplicado-fix.html`)
+
+### 📊 VERIFICACIÓN EXITOSA
+- ✅ Una sola instancia de aplicación por página
+- ✅ Event listeners únicos para formulario de mensajes
+- ✅ Nuevos mensajes aparecen solo una vez en BD
+- ✅ Funcionalidad completa preservada
 
 ### 📋 TRABAJO REALIZADO EN ESTA SESIÓN
 

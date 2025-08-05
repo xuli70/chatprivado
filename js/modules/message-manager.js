@@ -2,7 +2,7 @@
 // Gestión completa de mensajería (envío, renderizado, carga, procesamiento)
 
 // Importar funciones necesarias de otros módulos
-import { escapeHtml } from './utils.js';
+import { escapeHtml, getUserIdentifierForFingerprint } from './utils.js';
 import { createPDFPreviewHTML } from './pdf-manager.js';
 
 export async function sendMessage(roomId, message, supabaseClient) {
@@ -144,7 +144,7 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
     return messageEl;
 }
 
-export function processMessage(messageText, user, roomId) {
+export function processMessage(messageText, user, roomId, supabaseClient = null) {
     if (!messageText || !user || !roomId) {
         return null;
     }
@@ -155,12 +155,29 @@ export function processMessage(messageText, user, roomId) {
         return null;
     }
 
+    // Obtener identificador único del usuario
+    let userIdentifier = null;
+    if (supabaseClient && supabaseClient.userFingerprint) {
+        userIdentifier = getUserIdentifierForFingerprint(supabaseClient.userFingerprint);
+    }
+
+    // Determinar el nombre a mostrar
+    let authorName;
+    if (!user.isCreator || user.adminIncognito) {
+        // Usuario anónimo - mostrar con identificador único
+        authorName = userIdentifier ? `Anónimo #${userIdentifier}` : 'Anónimo';
+    } else {
+        // Creador identificado
+        authorName = user.name;
+    }
+
     // Crear objeto mensaje
     const message = {
         id: Date.now(), // Timestamp como ID único
         text: cleanedText,
         isAnonymous: !user.isCreator || user.adminIncognito,
-        author: (!user.isCreator || user.adminIncognito) ? 'Anónimo' : user.name,
+        author: authorName,
+        userIdentifier: userIdentifier, // Nuevo campo para BD
         timestamp: new Date().toISOString(),
         votes: {
             likes: 0,

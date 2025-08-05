@@ -54,7 +54,8 @@
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-bucket-fix.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\quick-bucket-test.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\index.html\")",
-      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-mensaje-duplicado-fix.html\")"
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-mensaje-duplicado-fix.html\")",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-user-identifiers.html\")"
     ]
   },
   "enabledMcpjsonServers": [
