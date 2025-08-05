@@ -25,6 +25,7 @@ The application is now **fully modularized** with a delegation pattern:
 - **storage-manager.js**: Dual storage system (Supabase + localStorage with cleanup)
 - **session-manager.js**: Session persistence (save/restore/clear with 24h expiry)
 - **message-manager.js**: Complete messaging system (send, load, render, process, search, stats)
+- **pdf-manager.js**: PDF upload/download/preview system (validation, Storage integration, UI components)
 
 ### Key Data Structures
 
@@ -92,12 +93,14 @@ No installation, build, test, or lint commands are required.
 - All participants except the initial creator post as "Anónimo"
 
 ### Storage Strategy
-- **Primary**: Supabase backend with PostgreSQL database
+- **Primary**: Supabase backend with PostgreSQL database + Storage
 - **Fallback**: localStorage for offline/development mode
-- **Tables**: `chat_rooms`, `chat_messages`, `chat_votes`
-- **Multi-device sync**: Rooms and messages shared across all devices
+- **Tables**: `chat_rooms`, `chat_messages`, `chat_votes`, `chat_attachments`
+- **Storage**: Supabase Storage bucket `chat-pdfs` for PDF files
+- **Multi-device sync**: Rooms, messages, and PDFs shared across all devices
 - **Voting system**: Prevents duplicate votes using user fingerprinting
-- Automatic cleanup of expired rooms in both Supabase and localStorage
+- **PDF System**: Upload/preview/download with 10MB limit, public access
+- Automatic cleanup of expired rooms and attachments in both Supabase and localStorage
 
 ### Real-time Messaging v3.0 (ULTRA-FLUID IMPLEMENTATION)
 - **Adaptive Polling**: 500ms→1s→2s→5s based on activity (vs 3s fixed)
@@ -137,10 +140,20 @@ No installation, build, test, or lint commands are required.
 
 ## File Structure
 
-- `index.html` - All UI screens and modals
-- `style.css` - Complete styling with CSS variables, responsive design, and v3.0 animations
-- `app.js` - Main application class with v3.0 fluidity system
-- `supabase-client.js` - Advanced Supabase client with adaptive polling and reconnection
+- `index.html` - All UI screens and modals (includes PDF upload button and preview modal)
+- `style.css` - Complete styling with CSS variables, responsive design, and PDF components
+- `app.js` - Main application class with v3.0 fluidity system and PDF methods
+- `supabase-client.js` - Advanced Supabase client with storage functions for PDFs
+- `js/modules/pdf-manager.js` - **NEW**: Complete PDF management (upload, validation, preview)
+- `js/modules/message-manager.js` - Extended to support PDF attachments in messages
+- `sql/03-add-pdf-support.sql` - **NEW**: Database schema for PDF attachments
+- `sql/04-create-storage-bucket.sql` - **NEW**: Storage bucket configuration
+- `sql/05-simple-bucket-setup.sql` - **NEW**: Simplified bucket setup
+- `test-pdf-system.html` - **NEW**: Complete testing suite for PDF functionality
+- `debug-storage-bucket.html` - **NEW**: Advanced diagnostic tool for Storage issues
+- `test-bucket-fix.html` - **NEW**: Quick bucket fix and validation tool
+- `CONFIGURAR_STORAGE_PDF.md` - **NEW**: Step-by-step storage configuration guide
+- `SOLUCION_BUCKET_ERROR.md` - **NEW**: Complete troubleshooting guide for bucket issues
 - `env.js` - Environment variables for frontend (auto-generated in production)
 - `.env` - Local environment variables (NOT committed to git)
 - `Dockerfile` - Container configuration with environment variable support
@@ -150,30 +163,31 @@ No installation, build, test, or lint commands are required.
 
 ## Deployment Status - v3.0 COMPLETE
 
-### Recent Changes (2025-08-03 - FLUIDITY SYSTEM v3.0 COMPLETED)
-- **✅ COMPLETED**: Adaptive polling system (500ms-5s based on activity)
-- **✅ COMPLETED**: Network detection and automatic reconnection
-- **✅ COMPLETED**: Heartbeat system with health monitoring
-- **✅ COMPLETED**: Message states (Sending→Sent→Delivered)
-- **✅ COMPLETED**: Typing indicators with animations
-- **✅ COMPLETED**: Enhanced connection status indicators
-- **✅ COMPLETED**: Edge case testing suite
-- **✅ COMPLETED**: Performance optimization and memory management
-- **✅ COMPLETED**: Comprehensive debugging tools
+### Recent Changes (2025-08-05 - PDF SYSTEM COMPLETED)
+- **✅ COMPLETED**: PDF upload/preview/download system fully implemented
+- **✅ COMPLETED**: Supabase Storage integration with fallback to localStorage
+- **✅ COMPLETED**: Complete diagnostic tools for Storage bucket issues
+- **✅ COMPLETED**: PDF validation, progress tracking, and error handling
+- **✅ COMPLETED**: UI integration with chat system (📎 button, preview modal)
+- **✅ COMPLETED**: Database schema for PDF attachments
+- **✅ COMPLETED**: Comprehensive testing and validation tools
+- **✅ COMPLETED**: All previous v3.0 fluidity features maintained
 
 ### Backend Requirements
 1. **Supabase Setup**: Execute **Step 1B** from `SUPABASE_SETUP.md` (RLS + policies)
-2. **Environment Variables**: Configure in Coolify/VPS:
+2. **PDF Storage**: Create bucket `chat-pdfs` in Supabase Storage (marked as public)
+3. **Environment Variables**: Configure in Coolify/VPS:
    - `SUPABASE_URL=https://supmcp.axcsol.com`
    - `SUPABASE_ANON_KEY=real_anon_key_from_supabase`
 
 ### Deployment Process - CURRENT STATUS
-1. ✅ System v3.0 fully implemented and deployed
-2. ✅ All fluidity features working in localStorage mode
-3. ⚠️ **CURRENT ISSUE**: Supabase connection failing in production
-4. **IMMEDIATE NEXT**: Execute Step 1B SQL in Supabase
-5. **IMMEDIATE NEXT**: Configure real ANON_KEY in Coolify
-6. **THEN**: Verify `🟢 Tiempo Real` status (not `🔴 Modo Local`)
+1. ✅ System v3.0 + PDF system fully implemented
+2. ✅ All features working in localStorage mode (including PDF simulation)
+3. ✅ **PDF CODE READY**: Complete implementation with diagnostic tools
+4. ⚠️ **CURRENT ISSUE**: Storage bucket `chat-pdfs` not configured in Supabase
+5. **IMMEDIATE NEXT**: Create bucket `chat-pdfs` in Supabase Dashboard → Storage
+6. **THEN**: Validate with `test-bucket-fix.html` tool
+7. **FINALLY**: Deploy to production with full PDF functionality
 
 ### Testing Multi-Device - v3.0 CAPABILITIES
 - ✅ Create room on Device A → Join with code on Device B
@@ -274,19 +288,19 @@ optimizeSystem()
 - **Focus states**: Estados más llamativos con animaciones
 - **Fondo bienvenida**: Gradientes radiales multicolores
 
-### 🚀 ESTADO ACTUAL - SESIÓN 2025-08-05 COMPLETADA (SISTEMA DE VOTACIÓN CORREGIDO)
-**SISTEMA COMPLETAMENTE FUNCIONAL CON CORRECCIONES CRÍTICAS**:
+### 🚀 ESTADO ACTUAL - SESIÓN 2025-08-05 COMPLETADA (SISTEMA PDF IMPLEMENTADO)
+**SISTEMA COMPLETAMENTE FUNCIONAL CON NUEVA FUNCIONALIDAD PDF**:
 - ✅ Sistema de fluidez v3.0 operativo
 - ✅ Sistema administrador incógnito funcional con seguridad mejorada
 - ✅ Persistencia de salas implementada
 - ✅ Interfaz vibrante y alegre completada
-- ✅ **CORREGIDO**: Sistema de votación 100% funcional - botones like/dislike operativos
-- ✅ **CORREGIDO**: Error ReferenceError process eliminado
-- ✅ **MEJORADO**: Seguridad admin - no auto-restaura sesión
-- ✅ **IMPLEMENTADO**: Debugging avanzado y error handling robusto
-- ✅ **COMPLETADO**: Modularización completa de app.js - 40 funciones migradas a 6 módulos ES6
-- ✅ **COMPLETADO**: Arquitectura de delegación implementada
-- ✅ **READY**: Sistema preparado para deploy en Coolify
-- 🚀 **PRÓXIMO**: Deploy final en producción
+- ✅ Sistema de votación 100% funcional - botones like/dislike operativos
+- ✅ **NUEVO**: Sistema completo de PDFs implementado - upload, preview, download
+- ✅ **IMPLEMENTADO**: Módulo pdf-manager.js con validaciones y gestión completa
+- ✅ **INTEGRADO**: UI completa con botón 📎, sección adjuntos, modal preview
+- ✅ **CONFIGURADO**: Base de datos con tabla chat_attachments
+- ✅ **CREADO**: Suite de testing completa (test-pdf-system.html)
+- ⚠️ **PENDIENTE**: Resolver error "Bucket not found" en Supabase Storage
+- 🚀 **PRÓXIMO**: Configurar bucket correctamente y deploy final
 
-**ESTADO**: Proyecto completamente funcional, corregido y listo para deploy. Todos los problemas críticos solucionados.
+**ESTADO**: Sistema PDF 100% implementado en código, solo requiere configuración correcta del bucket en Supabase.

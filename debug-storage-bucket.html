@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Storage Bucket - Chat Anónimo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            padding: 2rem;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text-1);
+        }
+        
+        .debug-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .debug-section {
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-24);
+            margin-bottom: var(--space-24);
+        }
+        
+        .debug-title {
+            color: var(--color-primary);
+            margin-bottom: var(--space-16);
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .debug-button {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: var(--space-8) var(--space-16);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            margin-right: var(--space-8);
+            margin-bottom: var(--space-8);
+        }
+        
+        .debug-button:hover {
+            background: var(--color-primary-hover);
+        }
+        
+        .debug-button.success {
+            background: var(--color-success);
+        }
+        
+        .debug-button.error {
+            background: var(--color-error);
+        }
+        
+        .debug-results {
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: var(--space-12);
+            margin-top: var(--space-16);
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: var(--space-8);
+        }
+        
+        .status-success { background: var(--color-success); }
+        .status-error { background: var(--color-error); }
+        .status-warning { background: var(--color-warning); }
+        .status-info { background: var(--color-primary); }
+        
+        .code-block {
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: var(--space-16);
+            margin: var(--space-16) 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Debug Storage Bucket - Chat Anónimo</h1>
+        <p>Herramienta de diagnóstico para resolver el error "Bucket not found" en el sistema de PDFs.</p>
+        
+        <!-- Estado de Conexión -->
+        <div class="debug-section">
+            <h2 class="debug-title">🔗 Estado de Conexión Supabase</h2>
+            <div id="connectionStatus">
+                <p><span class="status-indicator status-info"></span>Verificando conexión...</p>
+            </div>
+            <button class="debug-button" onclick="testSupabaseConnection()">🔄 Test Conexión</button>
+        </div>
+        
+        <!-- Diagnóstico de Buckets -->
+        <div class="debug-section">
+            <h2 class="debug-title">🗃️ Diagnóstico de Storage Buckets</h2>
+            <div id="bucketsStatus">
+                <p>Haz clic en "Listar Buckets" para ver el estado actual</p>
+            </div>
+            <button class="debug-button" onclick="listAllBuckets()">📋 Listar Buckets</button>
+            <button class="debug-button" onclick="testSpecificBucket()">🎯 Test Bucket 'chat-pdfs'</button>
+            <button class="debug-button" onclick="testBucketPermissions()">🔐 Test Permisos</button>
+        </div>
+        
+        <!-- Test de Upload -->
+        <div class="debug-section">
+            <h2 class="debug-title">⬆️ Test de Upload</h2>
+            <div id="uploadStatus">
+                <p>Usa estos tests para verificar la funcionalidad de upload</p>
+            </div>
+            <button class="debug-button" onclick="testDirectUpload()">📤 Test Upload Directo</button>
+            <button class="debug-button" onclick="testPDFManagerUpload()">📄 Test PDF Manager</button>
+            <button class="debug-button" onclick="simulateUploadFlow()">🎭 Simular Flujo Completo</button>
+        </div>
+        
+        <!-- Información del Sistema -->
+        <div class="debug-section">
+            <h2 class="debug-title">ℹ️ Información del Sistema</h2>
+            <div id="systemInfo">
+                <p>Cargando información del sistema...</p>
+            </div>
+            <button class="debug-button" onclick="getSystemInfo()">🔄 Actualizar Info</button>
+        </div>
+        
+        <!-- Soluciones Sugeridas -->
+        <div class="debug-section">
+            <h2 class="debug-title">💡 Soluciones Sugeridas</h2>
+            <div id="suggestedFixes">
+                <h4>Pasos para resolver "Bucket not found":</h4>
+                <ol>
+                    <li><strong>Verificar nombre del bucket</strong>: Debe ser exactamente "chat-pdfs" (minúsculas, con guión)</li>
+                    <li><strong>Verificar que sea público</strong>: El bucket debe estar marcado como "Public"</li>
+                    <li><strong>Limpiar caché</strong>: Refrescar página completamente (Ctrl+F5)</li>
+                    <li><strong>Verificar políticas</strong>: Las políticas RLS deben permitir acceso público</li>
+                </ol>
+                
+                <h4>SQL para crear bucket (si es necesario):</h4>
+                <div class="code-block">
+-- Crear bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('chat-pdfs', 'chat-pdfs', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de acceso
+CREATE POLICY "chat_pdfs_public_read" ON storage.objects FOR SELECT USING (bucket_id = 'chat-pdfs');
+CREATE POLICY "chat_pdfs_public_upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'chat-pdfs');
+CREATE POLICY "chat_pdfs_public_update" ON storage.objects FOR UPDATE USING (bucket_id = 'chat-pdfs');
+CREATE POLICY "chat_pdfs_public_delete" ON storage.objects FOR DELETE USING (bucket_id = 'chat-pdfs');
+                </div>
+            </div>
+            <button class="debug-button" onclick="copyBucketSQL()">📋 Copiar SQL</button>
+        </div>
+        
+        <!-- Log de Resultados -->
+        <div class="debug-section">
+            <h2 class="debug-title">📝 Log de Diagnósticos</h2>
+            <div id="debugLog" class="debug-results">
+Iniciando diagnóstico del sistema de storage...
+            </div>
+            <button class="debug-button" onclick="clearLog()">🧹 Limpiar Log</button>
+            <button class="debug-button" onclick="exportLog()">💾 Exportar Log</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
+    <script src="supabase-client.js"></script>
+    <script type="module">
+        import { validatePDFFile, uploadPDF } from './js/modules/pdf-manager.js';
+        
+        let supabaseClient = null;
+        let debugLog = [];
+        
+        // Inicializar debugging
+        window.addEventListener('DOMContentLoaded', async () => {
+            log('🔍 Iniciando Debug Storage Bucket...');
+            
+            // Inicializar cliente Supabase
+            try {
+                supabaseClient = new SupabaseClient();
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar inicialización
+                log('✅ Cliente Supabase inicializado');
+            } catch (error) {
+                log(`❌ Error inicializando cliente: ${error.message}`);
+            }
+            
+            // Mostrar información inicial del sistema
+            getSystemInfo();
+            
+            // Test automático de conexión
+            setTimeout(() => {
+                testSupabaseConnection();
+            }, 1000);
+        });
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            debugLog.push(logMessage);
+            
+            const logDiv = document.getElementById('debugLog');
+            logDiv.textContent += logMessage + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(logMessage);
+        }
+        
+        window.testSupabaseConnection = async function() {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = '<p><span class="status-indicator status-info"></span>Verificando conexión...</p>';
+            
+            log('🔗 Testing conexión Supabase...');
+            
+            try {
+                if (!supabaseClient) {
+                    throw new Error('Cliente Supabase no inicializado');
+                }
+                
+                // Test configuración
+                log(`URL: ${supabaseClient.supabaseUrl}`);
+                log(`Key: ${supabaseClient.supabaseKey ? supabaseClient.supabaseKey.substr(0, 20) + '...' : 'NO CONFIGURADA'}`);
+                
+                // Test disponibilidad
+                const isAvailable = supabaseClient.isSupabaseAvailable();
+                log(`Cliente disponible: ${isAvailable}`);
+                
+                if (!isAvailable) {
+                    statusDiv.innerHTML = '<p><span class="status-indicator status-error"></span>Supabase no disponible - modo local</p>';
+                    log('❌ Supabase no disponible, funcionando en modo local');
+                    return;
+                }
+                
+                // Test conexión real
+                log('🧪 Testing query de prueba...');
+                const { data, error } = await supabaseClient.client.from('chat_rooms').select('count').limit(1);
+                
+                if (error) {
+                    throw new Error(`Error en query: ${error.message}`);
+                }
+                
+                statusDiv.innerHTML = '<p><span class="status-indicator status-success"></span>Conexión exitosa</p>';
+                log('✅ Conexión a Supabase exitosa');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<p><span class="status-indicator status-error"></span>Error: ${error.message}</p>`;
+                log(`❌ Error conexión: ${error.message}`);
+            }
+        };
+        
+        window.listAllBuckets = async function() {
+            const statusDiv = document.getElementById('bucketsStatus');
+            statusDiv.innerHTML = 'Listando buckets...';
+            
+            log('🗃️ Listando todos los buckets...');
+            
+            try {
+                if (!supabaseClient || !supabaseClient.isSupabaseAvailable()) {
+                    throw new Error('Supabase no disponible');
+                }
+                
+                const { data: buckets, error } = await supabaseClient.client.storage.listBuckets();
+                
+                if (error) {
+                    throw new Error(`Error listando buckets: ${error.message}`);
+                }
+                
+                log(`📋 Encontrados ${buckets.length} buckets:`);
+                
+                let html = `<h4>Buckets encontrados (${buckets.length}):</h4><ul>`;
+                
+                buckets.forEach(bucket => {
+                    const isTargetBucket = bucket.id === 'chat-pdfs';
+                    const icon = isTargetBucket ? '🎯' : '📁';
+                    const style = isTargetBucket ? 'font-weight: bold; color: var(--color-success);' : '';
+                    
+                    html += `<li style="${style}">${icon} <strong>${bucket.id}</strong> - ${bucket.name} (Público: ${bucket.public ? '✅' : '❌'})</li>`;
+                    log(`  ${icon} ${bucket.id} - ${bucket.name} (público: ${bucket.public})`);
+                });
+                
+                html += '</ul>';
+                
+                const chatPdfsBucket = buckets.find(b => b.id === 'chat-pdfs');
+                if (chatPdfsBucket) {
+                    html += '<p><span class="status-indicator status-success"></span><strong>¡Bucket "chat-pdfs" encontrado!</strong></p>';
+                    html += `<p>Configuración: Público = ${chatPdfsBucket.public ? '✅ SÍ' : '❌ NO'}</p>`;
+                    log('✅ Bucket "chat-pdfs" encontrado y configurado');
+                } else {
+                    html += '<p><span class="status-indicator status-error"></span><strong>Bucket "chat-pdfs" NO encontrado</strong></p>';
+                    html += '<p>El bucket necesita ser creado manualmente desde el Dashboard de Supabase</p>';
+                    log('❌ Bucket "chat-pdfs" NO encontrado - necesita ser creado');
+                }
+                
+                statusDiv.innerHTML = html;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<p><span class="status-indicator status-error"></span>Error: ${error.message}</p>`;
+                log(`❌ Error listando buckets: ${error.message}`);
+            }
+        };
+        
+        window.testSpecificBucket = async function() {
+            log('🎯 Testing bucket específico "chat-pdfs"...');
+            
+            try {
+                if (!supabaseClient || !supabaseClient.isSupabaseAvailable()) {
+                    throw new Error('Supabase no disponible');
+                }
+                
+                // Test 1: Listar archivos en el bucket
+                log('📁 Intentando listar archivos en chat-pdfs...');
+                const { data: files, error: listError } = await supabaseClient.client.storage
+                    .from('chat-pdfs')
+                    .list('', { limit: 5 });
+                
+                if (listError) {
+                    if (listError.message.includes('Bucket not found')) {
+                        log('❌ CONFIRMADO: Bucket "chat-pdfs" no existe');
+                        document.getElementById('bucketsStatus').innerHTML += 
+                            `<p><span class="status-indicator status-error"></span><strong>DIAGNÓSTICO: Bucket "chat-pdfs" no existe</strong></p>
+                             <p>Solución: Crear bucket desde Dashboard de Supabase</p>`;
+                    } else {
+                        log(`⚠️ Error listando archivos: ${listError.message}`);
+                    }
+                } else {
+                    log(`✅ Bucket existe - contiene ${files.length} archivos`);
+                    document.getElementById('bucketsStatus').innerHTML += 
+                        `<p><span class="status-indicator status-success"></span>Bucket "chat-pdfs" existe y es accesible</p>`;
+                }
+                
+            } catch (error) {
+                log(`❌ Error testing bucket: ${error.message}`);
+            }
+        };
+        
+        window.testBucketPermissions = async function() {
+            log('🔐 Testing permisos del bucket...');
+            
+            try {
+                if (!supabaseClient || !supabaseClient.isSupabaseAvailable()) {
+                    throw new Error('Supabase no disponible');
+                }
+                
+                // Test obtener URL pública
+                log('🌐 Testing URL pública...');
+                const { data: urlData } = supabaseClient.client.storage
+                    .from('chat-pdfs')
+                    .getPublicUrl('test-file.pdf');
+                
+                if (urlData && urlData.publicUrl) {
+                    log(`✅ URL pública generada: ${urlData.publicUrl}`);
+                } else {
+                    log('⚠️ No se pudo generar URL pública');
+                }
+                
+            } catch (error) {
+                log(`❌ Error testing permisos: ${error.message}`);
+            }
+        };
+        
+        window.testDirectUpload = async function() {
+            log('📤 Testing upload directo a Storage...');
+            
+            try {
+                if (!supabaseClient || !supabaseClient.isSupabaseAvailable()) {
+                    throw new Error('Supabase no disponible');
+                }
+                
+                // Crear archivo de prueba
+                const testContent = 'Test PDF content for debugging';
+                const testFile = new File([testContent], 'debug-test.pdf', { type: 'application/pdf' });
+                
+                log(`📄 Creado archivo de prueba: ${testFile.name} (${testFile.size} bytes)`);
+                
+                // Intentar upload directo
+                const fileName = `debug-${Date.now()}.pdf`;
+                log(`⬆️ Intentando upload como: ${fileName}`);
+                
+                const { data, error } = await supabaseClient.client.storage
+                    .from('chat-pdfs')
+                    .upload(fileName, testFile, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+                
+                if (error) {
+                    if (error.message.includes('Bucket not found')) {
+                        log('❌ CONFIRMADO: Error "Bucket not found" en upload directo');
+                        document.getElementById('uploadStatus').innerHTML = 
+                            `<p><span class="status-indicator status-error"></span><strong>Bucket "chat-pdfs" no existe</strong></p>
+                             <p>El error se reproduce en upload directo</p>`;
+                    } else {
+                        log(`❌ Error upload: ${error.message}`);
+                    }
+                } else {
+                    log(`✅ Upload exitoso: ${data.path}`);
+                    document.getElementById('uploadStatus').innerHTML = 
+                        `<p><span class="status-indicator status-success"></span>Upload directo exitoso</p>`;
+                    
+                    // Limpiar archivo de prueba
+                    setTimeout(async () => {
+                        await supabaseClient.client.storage.from('chat-pdfs').remove([fileName]);
+                        log('🧹 Archivo de prueba eliminado');
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                log(`❌ Error en test upload: ${error.message}`);
+            }
+        };
+        
+        window.testPDFManagerUpload = async function() {
+            log('📄 Testing PDF Manager upload...');
+            
+            try {
+                // Crear archivo de prueba
+                const testContent = 'PDF Manager test content';
+                const testFile = new File([testContent], 'pdf-manager-test.pdf', { type: 'application/pdf' });
+                
+                log(`📄 Testing validación...`);
+                const validation = validatePDFFile(testFile);
+                if (!validation.isValid) {
+                    throw new Error(`Validación falló: ${validation.error}`);
+                }
+                log('✅ Validación OK');
+                
+                log(`⬆️ Testing upload con PDF Manager...`);
+                const result = await uploadPDF(testFile, 'DEBUG_TEST', 'Debug User', supabaseClient);
+                
+                log(`✅ PDF Manager upload exitoso:`);
+                log(`  ID: ${result.id}`);
+                log(`  URL: ${result.url}`);
+                
+                document.getElementById('uploadStatus').innerHTML += 
+                    `<p><span class="status-indicator status-success"></span>PDF Manager upload exitoso</p>`;
+                
+            } catch (error) {
+                if (error.message.includes('Bucket not found')) {
+                    log('❌ CONFIRMADO: PDF Manager también recibe "Bucket not found"');
+                    document.getElementById('uploadStatus').innerHTML += 
+                        `<p><span class="status-indicator status-error"></span>PDF Manager confirma: Bucket no existe</p>`;
+                } else {
+                    log(`❌ Error PDF Manager: ${error.message}`);
+                }
+            }
+        };
+        
+        window.simulateUploadFlow = async function() {
+            log('🎭 Simulando flujo completo de upload...');
+            
+            // Este test simula el flujo sin usar Supabase para verificar que el código funciona
+            try {
+                const testFile = new File(['simulation'], 'simulate.pdf', { type: 'application/pdf' });
+                
+                // Simular con cliente null (forzar modo local)
+                const result = await uploadPDF(testFile, 'SIMULATION', 'Sim User', null);
+                
+                log('✅ Simulación exitosa:');
+                log(`  ID: ${result.id}`);
+                log(`  Path: ${result.file_path}`);
+                log('💡 El código PDF Manager funciona correctamente en modo simulación');
+                
+                document.getElementById('uploadStatus').innerHTML += 
+                    `<p><span class="status-indicator status-success"></span>Simulación de flujo exitosa</p>`;
+                
+            } catch (error) {
+                log(`❌ Error en simulación: ${error.message}`);
+            }
+        };
+        
+        window.getSystemInfo = function() {
+            const infoDiv = document.getElementById('systemInfo');
+            
+            const info = {
+                userAgent: navigator.userAgent,
+                online: navigator.onLine,
+                url: window.location.href,
+                supabaseUrl: supabaseClient?.supabaseUrl || 'No configurada',
+                supabaseKey: supabaseClient?.supabaseKey ? 'Configurada (****)' : 'No configurada',
+                supabaseAvailable: supabaseClient?.isSupabaseAvailable() || false,
+                timestamp: new Date().toISOString()
+            };
+            
+            let html = '<h4>Información del Sistema:</h4><ul>';
+            Object.entries(info).forEach(([key, value]) => {
+                html += `<li><strong>${key}:</strong> ${value}</li>`;
+            });
+            html += '</ul>';
+            
+            infoDiv.innerHTML = html;
+            
+            log('ℹ️ Sistema info actualizada');
+        };
+        
+        window.copyBucketSQL = function() {
+            const sql = `-- Crear bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('chat-pdfs', 'chat-pdfs', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de acceso
+CREATE POLICY "chat_pdfs_public_read" ON storage.objects FOR SELECT USING (bucket_id = 'chat-pdfs');
+CREATE POLICY "chat_pdfs_public_upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'chat-pdfs');
+CREATE POLICY "chat_pdfs_public_update" ON storage.objects FOR UPDATE USING (bucket_id = 'chat-pdfs');
+CREATE POLICY "chat_pdfs_public_delete" ON storage.objects FOR DELETE USING (bucket_id = 'chat-pdfs');`;
+            
+            navigator.clipboard.writeText(sql).then(() => {
+                log('📋 SQL copiado al portapapeles');
+                alert('SQL copiado al portapapeles. Pégalo en el SQL Editor de Supabase.');
+            }).catch(() => {
+                log('❌ Error copiando SQL');
+                alert('Error copiando. SQL mostrado en consola.');
+                console.log(sql);
+            });
+        };
+        
+        window.clearLog = function() {
+            debugLog = [];
+            document.getElementById('debugLog').textContent = 'Log limpiado...\n';
+            log('🧹 Log limpiado');
+        };
+        
+        window.exportLog = function() {
+            const logContent = debugLog.join('\n');
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `storage-debug-${new Date().toISOString().slice(0,16)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            log('💾 Log exportado');
+        };
+        
+        // Hacer disponible globalmente para debugging
+        window.supabaseClient = supabaseClient;
+        window.debugLog = debugLog;
+        
+        log('🔍 Debug Storage Bucket listo');
+    </script>
+</body>
+</html>
