@@ -2490,205 +2490,140 @@ class AnonymousChatApp {
     }
 }
 
-// Inicializar aplicación cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    window.chatApp = new AnonymousChatApp();
-    
-    // Funciones de debugging globales para testing
-    window.debugPolling = () => {
-        if (window.chatApp) {
-            console.log('Estado del polling:', window.chatApp.getPollingDebugInfo());
-        }
-    };
-    
-    // Nueva función para debug del sistema de votación
-    window.debugVoting = () => {
-        if (!window.chatApp) {
-            console.error('❌ window.chatApp no existe');
-            return;
-        }
-        
-        const app = window.chatApp;
-        console.log('🔍 DEBUG SISTEMA DE VOTACIÓN');
-        console.log('=====================================');
-        console.log('📊 Estado actual:', {
-            currentRoom: app.state.currentRoom?.id || 'No hay sala',
-            messagesCount: app.state.currentRoom?.messages?.length || 0,
-            userVotes: Array.from(app.state.userVotes.entries()),
-        });
-        
-        // Verificar botones en DOM
-        const voteButtons = document.querySelectorAll('.vote-btn');
-        console.log(`🎯 Botones de votación en DOM: ${voteButtons.length}`);
-        
-        voteButtons.forEach((btn, index) => {
-            const messageId = btn.getAttribute('data-message-id');
-            const voteType = btn.getAttribute('data-vote-type');
-            const hasClickListener = btn.onclick !== null;
-            
-            console.log(`  Botón ${index + 1}:`, {
-                messageId,
-                voteType,
-                hasClickListener,
-                classes: btn.className
-            });
-        });
-        
-        // Verificar callbacks
-        console.log('🔗 Verificación de callbacks:');
-        console.log('  handleVote existe:', typeof app.handleVote === 'function');
-        console.log('  updateMessageVoteDisplay existe:', typeof app.updateMessageVoteDisplay === 'function');
-        console.log('  updateVoteButtonStates existe:', typeof app.updateVoteButtonStates === 'function');
-        
-        console.log('=====================================');
-    };
-    
-    window.testPolling = () => {
-        if (window.chatApp) {
-            window.chatApp.testPollingSystem();
-        }
-    };
-    
-    window.testReconnection = () => {
-        if (window.chatApp) {
-            window.chatApp.testReconnectionSystem();
-        }
-    };
-    
-    window.runEdgeTests = () => {
-        if (window.chatApp) {
-            window.chatApp.runEdgeCaseTests();
-        }
-    };
-    
-    window.performanceReport = () => {
-        if (window.chatApp) {
-            return window.chatApp.generatePerformanceReport();
-        }
-    };
-    
-    // Mostrar información de debugging cada 15 segundos en modo desarrollo
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        setInterval(() => {
-            if (window.chatApp) {
-                const debugInfo = window.chatApp.getPollingDebugInfo();
-                if (debugInfo.room !== 'No hay sala activa') {
-                    console.log('🔄 Debug Sistema:', debugInfo);
-                }
-            }
-        }, 15000); // Cada 15 segundos para no saturar la consola
-    }
-    
-    // Información de comandos disponibles
-    console.log('🔧 === COMANDOS DE DEBUGGING DISPONIBLES ===');
-    console.log('🔍 ESTADO:');
-    console.log('- debugPolling(): Ver estado actual completo del sistema');
-    console.log('- performanceReport(): Generar reporte de performance detallado');
-    console.log('');
-    console.log('🧪 TESTS INDIVIDUALES:');
-    console.log('- testPolling(): Probar sistema de polling adaptativo');
-    console.log('- testReconnection(): Probar sistema de reconexión automática');
-    console.log('');
-    console.log('🚀 TESTS AVANZADOS:');
-    console.log('- runEdgeTests(): Ejecutar suite completa de tests de casos edge');
-    console.log('');
-    console.log('⚙️ AUTO-DEBUG:');
-    console.log('- Auto-debug activado cada 15s en localhost');
-    console.log('- Limpieza automática de estados cada 30s');
-    console.log('');
-    console.log('🎉 === SISTEMA DE FLUIDEZ CONVERSACIONAL v3.0 ===');
-    console.log('✅ Polling Adaptativo | ✅ Reconexión Auto | ✅ UX Indicators | ✅ Edge Testing');
-    console.log('🚀 ¡LISTO PARA CONVERSACIONES ULTRA-FLUIDAS!');
-    
-    // 🧪 FUNCIÓN TEMPORAL DE TESTING - Crear sala de prueba
-    window.createTestRoom = function() {
-        const roomId = 'TEST' + Math.random().toString(36).substr(2, 4).toUpperCase();
-        const room = {
-            id: roomId,
-            creator: 'Usuario Test',
-            question: '¿Esta es una pregunta de prueba para testing admin?',
-            createdAt: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 horas
-            messageLimit: 50,
-            messages: [{
-                id: Date.now(),
-                text: 'Mensaje inicial de testing',
-                isAnonymous: false,
-                author: 'Usuario Test',
-                timestamp: new Date().toISOString(),
-                votes: { likes: 0, dislikes: 0 }
-            }],
-            isActive: true // Asegurar que está activa
-        };
-        
-        localStorage.setItem(`room_${roomId}`, JSON.stringify(room));
-        console.log(`🧪 Sala de test creada: ${roomId}`);
-        return roomId;
-    };
-    
-    console.log('🧪 TESTING: Usa createTestRoom() para crear salas de prueba');
-    
-    // 🎯 FUNCIÓN DE TESTING DIRECTO - Simular flujo admin completo
-    window.testAdminEnterButton = async function() {
-        console.log('\n🎯 === INICIANDO TEST DIRECTO ADMIN ENTER BUTTON ===\n');
-        
-        // Paso 1: Crear sala de test
-        console.log('🏁 Paso 1: Creando sala de test...');
-        const roomId = window.createTestRoom();
-        
-        // Paso 2: Activar modo admin
-        console.log('🏁 Paso 2: Activando modo admin...');
-        window.chatApp.state.isAdmin = true;
-        
-        // Paso 3: Obtener todas las salas
-        console.log('🏁 Paso 3: Obteniendo todas las salas...');
-        const rooms = await window.chatApp.getAllRooms(true);
-        console.log(`📄 Encontradas ${rooms.length} salas`);
-        
-        // Paso 4: Mostrar modal de salas admin
-        console.log('🏁 Paso 4: Mostrando modal de salas admin...');
-        window.chatApp.showAdminRoomsModal(rooms);
-        
-        // Paso 5: Verificar botones después de un delay
-        setTimeout(() => {
-            console.log('🏁 Paso 5: Verificando botones generados...');
-            const joinButtons = document.querySelectorAll('.admin-join-btn');
-            const deleteButtons = document.querySelectorAll('.admin-delete-btn');
-            const reactivateButtons = document.querySelectorAll('.admin-reactivate-btn');
-            
-            console.log('\n📊 RESULTADO FINAL:');
-            console.log(`🚀 Botón "Entrar": ${joinButtons.length} encontrados`);
-            console.log(`🗑️ Botón "Eliminar": ${deleteButtons.length} encontrados`);
-            console.log(`🔄 Botón "Reactivar": ${reactivateButtons.length} encontrados`);
-            
-            if (joinButtons.length === 0) {
-                console.error('\n❌ ERROR: No se generaron botones "Entrar"');
-                console.log('🔍 Revisa los logs anteriores para ver:');
-                console.log('  - isActive de cada sala');
-                console.log('  - isExpired de cada sala');
-                console.log('  - shouldShowEnterButton de cada sala');
-            } else {
-                console.log('\n✅ ÉXITO: Botones "Entrar" generados correctamente');
-                
-                // Test de click
-                const firstBtn = joinButtons[0];
-                const testRoomId = firstBtn.getAttribute('data-room-id');
-                console.log(`🔥 Haciendo click en botón para sala: ${testRoomId}`);
-                firstBtn.click();
-            }
-            
-            console.log('\n🎯 === FIN DEL TEST ===\n');
-        }, 1000);
-    };
-    
-    console.log('🎯 TESTING: Usa testAdminEnterButton() para test completo del flujo admin');
-});
 
 // Inicializar aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+    // Prevenir múltiples inicializaciones que causan mensajes duplicados
+    if (window.chatApp) {
+        console.warn('⚠️ La aplicación ya fue inicializada, evitando duplicación');
+        return;
+    }
+    
     console.log('🚀 Iniciando aplicación Chat Anónimo Móvil v3.0 (Sistema de Fluidez Ultra-Avanzado)...');
     window.chatApp = new AnonymousChatApp();
+    
+    console.log('✅ Aplicación inicializada correctamente - Event listeners únicos establecidos');
 });
+
+// ==================== FUNCIONES DE DEBUGGING GLOBALES ====================
+
+// Funciones de debugging para testing - disponibles en consola
+window.debugPolling = () => {
+    if (window.chatApp) {
+        console.log('Estado del polling:', window.chatApp.getPollingDebugInfo());
+    } else {
+        console.error('❌ window.chatApp no está disponible');
+    }
+};
+
+window.debugVoting = () => {
+    if (!window.chatApp) {
+        console.error('❌ window.chatApp no existe');
+        return;
+    }
+    
+    const app = window.chatApp;
+    console.log('🔍 DEBUG SISTEMA DE VOTACIÓN');
+    console.log('=====================================');
+    console.log('📊 Estado actual:', {
+        currentRoom: app.state.currentRoom?.id || 'No hay sala',
+        messagesCount: app.state.currentRoom?.messages?.length || 0,
+        userVotes: Array.from(app.state.userVotes.entries()),
+    });
+    
+    // Verificar botones en DOM
+    const voteButtons = document.querySelectorAll('.vote-btn');
+    console.log(`🎯 Botones de votación en DOM: ${voteButtons.length}`);
+    
+    voteButtons.forEach((btn, index) => {
+        const messageId = btn.getAttribute('data-message-id');
+        const voteType = btn.getAttribute('data-vote-type');
+        const hasClickListener = btn.onclick !== null;
+        
+        console.log(`  Botón ${index + 1}:`, {
+            messageId,
+            voteType,
+            hasClickListener,
+            classes: btn.className
+        });
+    });
+    
+    console.log('=====================================');
+};
+
+window.testPolling = () => {
+    if (window.chatApp) {
+        window.chatApp.testPollingSystem();
+    } else {
+        console.error('❌ window.chatApp no está disponible');
+    }
+};
+
+window.testReconnection = () => {
+    if (window.chatApp) {
+        window.chatApp.testReconnectionSystem();
+    } else {
+        console.error('❌ window.chatApp no está disponible');
+    }
+};
+
+window.runEdgeTests = () => {
+    if (window.chatApp) {
+        window.chatApp.runEdgeCaseTests();
+    } else {
+        console.error('❌ window.chatApp no está disponible');
+    }
+};
+
+window.performanceReport = () => {
+    if (window.chatApp) {
+        return window.chatApp.generatePerformanceReport();
+    } else {
+        console.error('❌ window.chatApp no está disponible');
+        return null;
+    }
+};
+
+// Función para crear salas de testing
+window.createTestRoom = function() {
+    const roomId = 'TEST' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    const room = {
+        id: roomId,
+        creator: 'Usuario Test',
+        question: '¿Esta es una pregunta de prueba para testing?',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 horas
+        messageLimit: 50,
+        messages: [{
+            id: Date.now(),
+            text: 'Mensaje inicial de testing',
+            isAnonymous: false,
+            author: 'Usuario Test',
+            timestamp: new Date().toISOString(),
+            votes: { likes: 0, dislikes: 0 }
+        }],
+        isActive: true
+    };
+    
+    localStorage.setItem(`room_${roomId}`, JSON.stringify(room));
+    console.log(`🧪 Sala de test creada: ${roomId}`);
+    return roomId;
+};
+
+// Información de comandos disponibles en desarrollo
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('\n🔧 === COMANDOS DE DEBUGGING DISPONIBLES ===');
+    console.log('🔍 ESTADO:');
+    console.log('- debugPolling(): Ver estado del sistema de polling');
+    console.log('- debugVoting(): Debug del sistema de votación');
+    console.log('- performanceReport(): Generar reporte de performance');
+    console.log('🧪 TESTS:');
+    console.log('- testPolling(): Probar sistema de polling');
+    console.log('- testReconnection(): Probar reconexión automática');
+    console.log('- runEdgeTests(): Ejecutar tests de casos edge');
+    console.log('- createTestRoom(): Crear sala de prueba');
+    console.log('🚀 ¡Sistema listo para debugging!\n');
+}
 
 // Exportar clase para acceso global (opcional)
 window.AnonymousChatApp = AnonymousChatApp;
