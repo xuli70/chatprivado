@@ -15,7 +15,8 @@ export function saveCurrentSession(currentRoom, currentUser, isAdmin = false) {
             isCreator: currentUser.isCreator,
             adminIncognito: currentUser.adminIncognito || false
         },
-        isAdmin: isAdmin || false,
+        // SEGURIDAD: No persistir estado admin para evitar acceso no autorizado
+        isAdmin: false,
         timestamp: new Date().toISOString()
     };
 

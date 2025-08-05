@@ -1604,7 +1604,11 @@ class AnonymousChatApp {
             // Restaurar estado en la aplicación
             this.state.currentRoom = result.sessionData.currentRoom;
             this.state.currentUser = result.sessionData.currentUser;
-            this.state.isAdmin = result.sessionData.isAdmin;
+            
+            // SEGURIDAD: NO restaurar estado admin automáticamente
+            // El admin debe volver a autenticarse en cada sesión
+            this.state.isAdmin = false;
+            
             return true;
         }
 
