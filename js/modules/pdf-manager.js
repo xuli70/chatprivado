@@ -116,6 +116,10 @@ export async function uploadPDF(file, roomId, uploadedBy, supabaseClient, onProg
             });
 
         if (uploadError) {
+            // Verificar si es error de bucket no encontrado
+            if (uploadError.message && uploadError.message.includes('Bucket not found')) {
+                throw new Error('El bucket de almacenamiento no está configurado. Por favor, crea el bucket "chat-pdfs" en Supabase Storage.');
+            }
             throw new Error(`Error subiendo archivo: ${uploadError.message}`);
         }
 
@@ -379,11 +383,13 @@ export function initializePDFEventListeners(app) {
                     
                     showToast('PDF subido exitosamente', 'success');
                     
-                    // Agregar PDF al mensaje actual o crear mensaje con PDF
-                    // Esto se integrará con el message-manager
+                    // Recargar PDFs de la sala
+                    if (app.loadRoomPDFs) {
+                        await app.loadRoomPDFs();
+                    }
                     
                 } catch (error) {
-                    showToast(error.message, 'error');
+                    showToast(error.message || 'Error subiendo PDF', 'error');
                 } finally {
                     // Limpiar input
                     e.target.value = '';
