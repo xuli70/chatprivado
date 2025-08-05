@@ -4,6 +4,7 @@
 // Importar utilidades modularizadas
 import { escapeHtml, generateRoomCode, copyToClipboard, calculateLocalStorageUsage } from './js/modules/utils.js';
 import { cacheElements, showScreen, updateCharacterCount, updateCounters } from './js/modules/dom-manager.js';
+import { showModal, hideModal, cleanupModal, showConfirmModal, handleConfirm, showToast, showEmptyState } from './js/modules/ui-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -1364,12 +1365,7 @@ class AnonymousChatApp {
     }
 
     showEmptyState() {
-        this.elements.displays.chatMessages.innerHTML = `
-            <div class="empty-state">
-                <h3>¡Bienvenido al chat!</h3>
-                <p>Comparte el código <strong>${this.state.currentRoom.id}</strong> para que otros se unan y comenzar la conversación.</p>
-            </div>
-        `;
+        showEmptyState(this.state.currentRoom.id, this.elements);
     }
 
     startTimers() {
@@ -1548,89 +1544,30 @@ class AnonymousChatApp {
     }
 
     showModal(modalType) {
-        const modal = this.elements.modals[modalType];
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
+        showModal(modalType, this.elements);
     }
 
     hideModal() {
-        Object.values(this.elements.modals).forEach(modal => {
-            modal.classList.add('hidden');
-        });
-        
-        // Limpiar contenido del modal para evitar conflictos en siguientes usos
-        this.cleanupModal();
+        hideModal(this.elements);
     }
     
     // 🧹 NUEVA FUNCIÓN: Limpiar contenido del modal para evitar conflictos
     cleanupModal() {
-        console.log('🧹 Limpiando contenido del modal');
-        
-        // Restaurar contenido original del modal de confirmación
-        const confirmTitle = document.getElementById('confirmTitle');
-        const confirmMessage = document.getElementById('confirmMessage');
-        const confirmBtn = document.getElementById('confirmBtn');
-        
-        if (confirmTitle) {
-            confirmTitle.textContent = 'Confirmar acción';
-        }
-        
-        if (confirmMessage) {
-            // Restaurar a contenido de texto simple, no HTML
-            confirmMessage.innerHTML = '';
-            confirmMessage.textContent = '¿Estás seguro?';
-        }
-        
-        if (confirmBtn) {
-            confirmBtn.textContent = 'Confirmar';
-            confirmBtn.className = 'btn btn--primary btn--lg';
-        }
-        
+        cleanupModal();
         // Limpiar callback anterior
         this.confirmCallback = null;
-        
-        console.log('✅ Modal limpiado correctamente');
     }
 
     showConfirmModal(title, message, confirmCallback, buttonText = 'Confirmar', buttonStyle = 'primary') {
-        this.elements.modals.confirmTitle.textContent = title;
-        this.elements.modals.confirmMessage.textContent = message;
-        this.confirmCallback = confirmCallback;
-        
-        // Actualizar texto del botón si se proporciona
-        const confirmBtn = this.elements.buttons.confirm;
-        if (confirmBtn) {
-            confirmBtn.textContent = buttonText;
-            
-            // Actualizar estilo del botón
-            confirmBtn.className = 'btn btn--lg';
-            if (buttonStyle === 'danger') {
-                confirmBtn.classList.add('btn--danger');
-            } else {
-                confirmBtn.classList.add('btn--primary');
-            }
-        }
-        
-        this.showModal('confirm');
+        showConfirmModal(title, message, confirmCallback, buttonText, buttonStyle, this.elements, this);
     }
 
     handleConfirm() {
-        if (this.confirmCallback) {
-            this.confirmCallback();
-            this.confirmCallback = null;
-        }
-        this.hideModal();
+        handleConfirm(this.elements, this);
     }
 
     showToast(message, type = 'info') {
-        this.elements.toast.message.textContent = message;
-        this.elements.toast.container.className = `toast ${type}`;
-        this.elements.toast.container.classList.remove('hidden');
-        
-        setTimeout(() => {
-            this.elements.toast.container.classList.add('hidden');
-        }, 3000);
+        showToast(message, type, this.elements);
     }
 
     // Gestión de almacenamiento
