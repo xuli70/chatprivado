@@ -46,7 +46,9 @@
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-fase4.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-fase5.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-fase6.html\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-simple.html\")",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-vote-buttons.html\")"
     ]
   },
   "enabledMcpjsonServers": [
