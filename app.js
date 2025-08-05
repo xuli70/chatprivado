@@ -7,6 +7,7 @@ import { cacheElements, showScreen, updateCharacterCount, updateCounters } from 
 import { showModal, hideModal, cleanupModal, showConfirmModal, handleConfirm, showToast, showEmptyState } from './js/modules/ui-manager.js';
 import { saveRoom, loadRoom, saveUserVotes, loadFromStorage, isRoomExpired, cleanupExpiredRooms, getStorageStats, cleanupCorruptedData } from './js/modules/storage-manager.js';
 import { saveCurrentSession, restoreSession, clearCurrentSession, getCurrentSession, getSessionStats, validateSession, cleanupExpiredSessions, updateSessionTimestamp } from './js/modules/session-manager.js';
+import { sendMessage, loadMessages, addMessageToChat, processMessage, formatMessage, searchMessages, getMessageStats, validateMessage, sortMessages } from './js/modules/message-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -1146,14 +1147,13 @@ class AnonymousChatApp {
         
         console.log('💬 RESULTADO - Mensaje será enviado como:', { authorName, isAnonymous });
 
-        const message = {
-            id: Date.now(),
-            text: messageText,
-            isAnonymous: isAnonymous,
-            author: authorName,
-            timestamp: new Date().toISOString(),
-            votes: { likes: 0, dislikes: 0 }
+        const user = {
+            name: authorName,
+            isCreator: !isAnonymous,
+            adminIncognito: this.state.currentUser.adminIncognito || false
         };
+        
+        const message = processMessage(messageText, user, this.state.currentRoom.id);
 
         // Guardar referencia del último mensaje enviado para evitar ecos
         this.lastSentMessage = {
@@ -1213,57 +1213,11 @@ class AnonymousChatApp {
     }
 
     addMessageToChat(message, isRealtime = false) {
-        const messageEl = document.createElement('div');
-        messageEl.className = `message ${!message.isAnonymous ? 'creator-message' : ''}`;
-        messageEl.setAttribute('data-message-id', message.id);
-
-        // Agregar clase especial para mensajes en tiempo real
-        if (isRealtime) {
-            messageEl.classList.add('realtime-message');
-        }
-
-        const timeStr = new Date(message.timestamp).toLocaleTimeString('es-ES', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        messageEl.innerHTML = `
-            <div class="message-header">
-                <span class="message-author">${message.author}</span>
-                <span class="message-time">${timeStr}</span>
-                ${isRealtime ? '<span class="realtime-indicator">📡</span>' : ''}
-            </div>
-            <div class="message-content">${this.escapeHtml(message.text)}</div>
-            <div class="message-actions">
-                <button class="vote-btn like-btn" data-message-id="${message.id}" data-vote-type="like">
-                    👍 <span class="vote-count">${message.votes.likes}</span>
-                </button>
-                <button class="vote-btn dislike-btn" data-message-id="${message.id}" data-vote-type="dislike">
-                    👎 <span class="vote-count">${message.votes.dislikes}</span>
-                </button>
-            </div>
-        `;
-
-        this.elements.displays.chatMessages.appendChild(messageEl);
+        const callbacks = {
+            handleVote: (e) => this.handleVote(e)
+        };
         
-        // Scroll suave para mensajes en tiempo real
-        if (isRealtime) {
-            // Resaltar brevemente el mensaje nuevo
-            setTimeout(() => {
-                messageEl.classList.add('message-highlight');
-                setTimeout(() => {
-                    messageEl.classList.remove('message-highlight', 'realtime-indicator');
-                }, 2000);
-            }, 100);
-        }
-        
-        messageEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
-        // Bind voting events
-        const voteButtons = messageEl.querySelectorAll('.vote-btn');
-        voteButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleVote(e));
-        });
+        return addMessageToChat(message, this.elements, isRealtime, callbacks);
     }
 
     async handleVote(e) {
@@ -1347,23 +1301,16 @@ class AnonymousChatApp {
     }
 
     loadMessages() {
-        this.elements.displays.chatMessages.innerHTML = '';
-        
-        if (!this.state.currentRoom.messages.length) {
-            this.showEmptyState();
-            return;
-        }
-
-        this.state.currentRoom.messages.forEach(message => {
-            this.addMessageToChat(message);
-            
-            // Restaurar estado de votos del usuario
-            const userVoteKey = `${this.state.currentRoom.id}-${message.id}`;
-            const userVote = this.state.userVotes.get(userVoteKey);
-            if (userVote) {
-                this.updateVoteButtonStates(message.id, userVote);
+        const callbacks = {
+            showEmptyState: () => this.showEmptyState(),
+            updateVoteButtonStates: (messageId, userVote) => this.updateVoteButtonStates(messageId, userVote),
+            getUserVote: (roomId, messageId) => {
+                const userVoteKey = `${roomId}-${messageId}`;
+                return this.state.userVotes.get(userVoteKey);
             }
-        });
+        };
+        
+        loadMessages(this.state.currentRoom, this.elements, callbacks);
     }
 
     showEmptyState() {
@@ -1582,15 +1529,7 @@ class AnonymousChatApp {
     }
 
     async sendMessage(roomId, message) {
-        if (this.supabaseClient && this.supabaseClient.isSupabaseAvailable()) {
-            try {
-                return await this.supabaseClient.sendMessage(roomId, message);
-            } catch (error) {
-                console.error('Error enviando mensaje a Supabase:', error);
-                return null;
-            }
-        }
-        return null;
+        return await sendMessage(roomId, message, this.supabaseClient);
     }
 
     saveUserVotes() {
