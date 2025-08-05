@@ -1,6 +1,10 @@
 // Aplicación de Chat Anónimo
 // Gestión completa de funcionalidades frontend
 
+// Importar utilidades modularizadas
+import { escapeHtml, generateRoomCode, copyToClipboard, calculateLocalStorageUsage } from './js/modules/utils.js';
+import { cacheElements, showScreen, updateCharacterCount, updateCounters } from './js/modules/dom-manager.js';
+
 class AnonymousChatApp {
     constructor() {
         // Configuración por defecto
@@ -66,66 +70,7 @@ class AnonymousChatApp {
     }
 
     cacheElements() {
-        // Pantallas
-        this.elements.screens = {
-            welcomeScreen: document.getElementById('welcomeScreen'),
-            joinRoomScreen: document.getElementById('joinRoomScreen'),
-            chatScreen: document.getElementById('chatScreen')
-        };
-
-        // Botones principales
-        this.elements.buttons = {
-            joinRoom: document.getElementById('joinRoomBtn'),
-            backToWelcome: document.getElementById('backToWelcome'),
-            backToWelcomeFromJoin: document.getElementById('backToWelcomeFromJoin'),
-            shareRoom: document.getElementById('shareRoomBtn'),
-            refreshRoom: document.getElementById('refreshRoomBtn'),
-            leaveRoom: document.getElementById('leaveRoomBtn'),
-            clearData: document.getElementById('clearDataBtn'),
-            copyCode: document.getElementById('copyCodeBtn'),
-            startChat: document.getElementById('startChatBtn'),
-            closeModal: document.getElementById('closeModal'),
-            confirm: document.getElementById('confirmBtn'),
-            cancel: document.getElementById('cancelBtn')
-        };
-
-        // Formularios
-        this.elements.forms = {
-            joinRoom: document.getElementById('joinRoomForm'),
-            message: document.getElementById('messageForm')
-        };
-
-        // Inputs
-        this.elements.inputs = {
-            roomCode: document.getElementById('roomCode'),
-            messageInput: document.getElementById('messageInput')
-        };
-
-        // Displays
-        this.elements.displays = {
-            roomCode: document.getElementById('roomCodeDisplay'),
-            displayRoomCode: document.getElementById('displayRoomCode'),
-            timeCounter: document.getElementById('timeCounter'),
-            messageCounter: document.getElementById('messageCounter'),
-            chatMessages: document.getElementById('chatMessages'),
-            characterCount: document.querySelector('.character-count'),
-            connectionStatus: document.getElementById('connectionStatus'),
-            connectionText: document.querySelector('.connection-text')
-        };
-
-        // Modales
-        this.elements.modals = {
-            roomCode: document.getElementById('roomCodeModal'),
-            confirm: document.getElementById('confirmModal'),
-            confirmTitle: document.getElementById('confirmTitle'),
-            confirmMessage: document.getElementById('confirmMessage')
-        };
-
-        // Toast
-        this.elements.toast = {
-            container: document.getElementById('toast'),
-            message: document.getElementById('toastMessage')
-        };
+        this.elements = cacheElements();
     }
 
     bindEvents() {
@@ -174,26 +119,11 @@ class AnonymousChatApp {
     }
 
     showScreen(screenId) {
-        // Ocultar todas las pantallas
-        Object.values(this.elements.screens).forEach(screen => {
-            screen.classList.remove('active');
-        });
-
-        // Mostrar la pantalla solicitada
-        const targetScreen = this.elements.screens[screenId];
-        if (targetScreen) {
-            targetScreen.classList.add('active');
-            this.state.currentScreen = screenId;
-        }
+        showScreen(screenId, this.elements, this.state);
     }
 
     generateRoomCode() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = 'ROOM';
-        for (let i = 0; i < 4; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
+        return generateRoomCode();
     }
 
     async handleCreateRoom(e) {
@@ -1465,47 +1395,11 @@ class AnonymousChatApp {
     }
 
     updateCounters() {
-        if (!this.state.currentRoom) return;
-
-        // Contador de mensajes
-        const messageCount = this.state.currentRoom.messages.length;
-        const messageLimit = this.config.messageLimit;
-        this.elements.displays.messageCounter.textContent = `💬 ${messageCount}/${messageLimit}`;
-
-        // Contador de tiempo
-        const now = new Date();
-        const expiresAt = new Date(this.state.currentRoom.expiresAt);
-        const timeLeft = expiresAt.getTime() - now.getTime();
-
-        if (timeLeft <= 0) {
-            this.elements.displays.timeCounter.textContent = '⏱️ Expirado';
-            return;
-        }
-
-        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-        this.elements.displays.timeCounter.textContent = `⏱️ ${hours}:${minutes.toString().padStart(2, '0')}`;
+        updateCounters(this.elements, this.state, this.config);
     }
 
     updateCharacterCount() {
-        const text = this.elements.inputs.messageInput.value;
-        const count = text.length;
-        const limit = 280;
-        
-        this.elements.displays.characterCount.textContent = `${count}/${limit}`;
-        
-        // Actualizar clase según límite
-        this.elements.displays.characterCount.classList.remove('warning', 'error');
-        if (count > limit * 0.8) {
-            this.elements.displays.characterCount.classList.add('warning');
-        }
-        if (count > limit) {
-            this.elements.displays.characterCount.classList.add('error');
-        }
-
-        // Habilitar/deshabilitar botón de envío
-        const sendBtn = this.elements.forms.message.querySelector('.send-btn');
-        sendBtn.disabled = count === 0 || count > limit;
+        updateCharacterCount(this.elements);
     }
 
     shareRoom() {
@@ -1584,17 +1478,7 @@ class AnonymousChatApp {
     }
 
     copyToClipboard(text) {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text);
-        } else {
-            // Fallback para navegadores más antiguos
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-        }
+        return copyToClipboard(text);
     }
 
     confirmLeaveRoom() {
@@ -2103,9 +1987,7 @@ class AnonymousChatApp {
     }
 
     escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return escapeHtml(text);
     }
 
     // ==================== MESSAGE STATES & TYPING INDICATORS ====================
@@ -2527,13 +2409,7 @@ class AnonymousChatApp {
 
     // Calcular uso de localStorage
     calculateLocalStorageUsage() {
-        let total = 0;
-        for (let key in localStorage) {
-            if (localStorage.hasOwnProperty(key)) {
-                total += localStorage[key].length + key.length;
-            }
-        }
-        return Math.round(total / 1024 * 100) / 100; // KB con 2 decimales
+        return calculateLocalStorageUsage();
     }
 
     // Generar recomendaciones de optimización
