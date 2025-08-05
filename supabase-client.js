@@ -1211,6 +1211,209 @@ class SupabaseClient {
         this.reconnectionState.isReconnecting = false;
         this.reconnectionState.reconnectAttempts = 0;
     }
+    
+    // =====================================================
+    // FUNCIONES DE STORAGE PARA PDFs
+    // =====================================================
+    
+    /**
+     * Subir archivo PDF a Supabase Storage
+     * @param {File} file - Archivo PDF
+     * @param {string} roomId - ID de la sala
+     * @param {string} uploadedBy - Usuario que sube el archivo
+     * @returns {Promise<Object>} - Datos del archivo subido
+     */
+    async uploadPDFToStorage(file, roomId, uploadedBy) {
+        if (!this.isSupabaseAvailable()) {
+            throw new Error('Supabase no disponible');
+        }
+        
+        try {
+            // Generar nombre único
+            const timestamp = Date.now();
+            const randomId = Math.random().toString(36).substr(2, 9);
+            const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const uniqueFileName = `${roomId}_${timestamp}_${randomId}_${safeFileName}`;
+            
+            // Subir a Storage
+            const { data: uploadResult, error: uploadError } = await this.client.storage
+                .from('chat-pdfs')
+                .upload(uniqueFileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+            
+            if (uploadError) {
+                throw new Error(`Error subiendo archivo: ${uploadError.message}`);
+            }
+            
+            // Obtener URL pública
+            const { data: urlData } = this.client.storage
+                .from('chat-pdfs')
+                .getPublicUrl(uniqueFileName);
+            
+            // Guardar metadata en BD
+            const attachmentData = {
+                filename: uniqueFileName,
+                original_filename: file.name,
+                file_path: uploadResult.path,
+                file_size: file.size,
+                mime_type: file.type,
+                uploaded_by: uploadedBy,
+                room_id: roomId
+            };
+            
+            const { data: dbResult, error: dbError } = await this.client
+                .from('chat_attachments')
+                .insert([attachmentData])
+                .select()
+                .single();
+            
+            if (dbError) {
+                // Si falla la BD, intentar eliminar el archivo subido
+                await this.client.storage
+                    .from('chat-pdfs')
+                    .remove([uniqueFileName]);
+                throw new Error(`Error guardando metadata: ${dbError.message}`);
+            }
+            
+            return {
+                ...dbResult,
+                url: urlData.publicUrl
+            };
+            
+        } catch (error) {
+            console.error('Error en uploadPDFToStorage:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Obtener PDFs de una sala
+     * @param {string} roomId - ID de la sala
+     * @returns {Promise<Array>} - Lista de PDFs
+     */
+    async getRoomPDFsFromStorage(roomId) {
+        if (!this.isSupabaseAvailable()) {
+            return [];
+        }
+        
+        try {
+            const { data, error } = await this.client
+                .from('chat_attachments')
+                .select('*')
+                .eq('room_id', roomId)
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                throw new Error(`Error obteniendo PDFs: ${error.message}`);
+            }
+            
+            // Agregar URLs públicas
+            return data.map(attachment => ({
+                ...attachment,
+                url: this.client.storage
+                    .from('chat-pdfs')
+                    .getPublicUrl(attachment.filename).data.publicUrl
+            }));
+            
+        } catch (error) {
+            console.error('Error en getRoomPDFsFromStorage:', error);
+            return [];
+        }
+    }
+    
+    /**
+     * Eliminar PDF (soft delete)
+     * @param {string} attachmentId - ID del attachment
+     * @returns {Promise<boolean>} - Éxito de la operación
+     */
+    async deletePDFFromStorage(attachmentId) {
+        if (!this.isSupabaseAvailable()) {
+            return false;
+        }
+        
+        try {
+            const { error } = await this.client
+                .from('chat_attachments')
+                .update({ is_active: false })
+                .eq('id', attachmentId);
+            
+            if (error) {
+                throw new Error(`Error eliminando PDF: ${error.message}`);
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Error en deletePDFFromStorage:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Vincular PDF a un mensaje
+     * @param {string} attachmentId - ID del attachment
+     * @param {string} messageId - ID del mensaje
+     * @returns {Promise<boolean>} - Éxito de la operación
+     */
+    async linkPDFToMessage(attachmentId, messageId) {
+        if (!this.isSupabaseAvailable()) {
+            return false;
+        }
+        
+        try {
+            const { error } = await this.client
+                .from('chat_attachments')
+                .update({ message_id: messageId })
+                .eq('id', attachmentId);
+            
+            if (error) {
+                throw new Error(`Error vinculando PDF a mensaje: ${error.message}`);
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Error en linkPDFToMessage:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Obtener estadísticas de PDFs de una sala
+     * @param {string} roomId - ID de la sala
+     * @returns {Promise<Object>} - Estadísticas
+     */
+    async getRoomPDFStats(roomId) {
+        if (!this.isSupabaseAvailable()) {
+            return { totalFiles: 0, totalSizeMB: 0, mostRecent: null };
+        }
+        
+        try {
+            // Usar función SQL si existe, sino calcular manualmente
+            const { data, error } = await this.client
+                .rpc('get_room_attachments_stats', { room_id_param: roomId });
+            
+            if (error || !data || data.length === 0) {
+                // Fallback: calcular manualmente
+                const pdfs = await this.getRoomPDFsFromStorage(roomId);
+                const totalFiles = pdfs.length;
+                const totalSize = pdfs.reduce((sum, pdf) => sum + pdf.file_size, 0);
+                const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+                const mostRecent = pdfs.length > 0 ? pdfs[0].created_at : null;
+                
+                return { totalFiles, totalSizeMB, mostRecent };
+            }
+            
+            return data[0]; // RPC devuelve array con un elemento
+            
+        } catch (error) {
+            console.error('Error en getRoomPDFStats:', error);
+            return { totalFiles: 0, totalSizeMB: 0, mostRecent: null };
+        }
+    }
 }
 
 // Exportar para uso global

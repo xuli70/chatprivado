@@ -3,6 +3,7 @@
 
 // Importar funciones necesarias de otros módulos
 import { escapeHtml } from './utils.js';
+import { createPDFPreviewHTML } from './pdf-manager.js';
 
 export async function sendMessage(roomId, message, supabaseClient) {
     if (!roomId || !message) {
@@ -74,6 +75,19 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
 
     // Escapar HTML de forma segura
     const escapedText = escapeHtml(message.text);
+    
+    // Generar HTML para attachments de PDF si existen
+    let attachmentsHTML = '';
+    if (message.attachments && message.attachments.length > 0) {
+        const pdfAttachments = message.attachments.filter(att => att.mime_type === 'application/pdf');
+        if (pdfAttachments.length > 0) {
+            attachmentsHTML = `
+                <div class="message-pdf">
+                    ${pdfAttachments.map(pdf => createPDFPreviewHTML(pdf)).join('')}
+                </div>
+            `;
+        }
+    }
 
     messageEl.innerHTML = `
         <div class="message-header">
@@ -82,6 +96,7 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
             ${isRealtime ? '<span class="realtime-indicator">📡</span>' : ''}
         </div>
         <div class="message-content">${escapedText}</div>
+        ${attachmentsHTML}
         <div class="message-actions">
             <button class="vote-btn like-btn" data-message-id="${message.id}" data-vote-type="like">
                 👍 <span class="vote-count">${message.votes.likes}</span>

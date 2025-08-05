@@ -1831,3 +1831,427 @@ select.form-control {
     padding-top: var(--space-32);
   }
 }
+
+/* =====================================================
+   ESTILOS PARA SISTEMA DE PDFs
+   ===================================================== */
+
+/* Botón de adjuntar PDF en input */
+.message-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+}
+
+.input-actions {
+  position: absolute;
+  right: var(--space-8);
+  bottom: var(--space-8);
+  z-index: 2;
+}
+
+.btn-attachment {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-attachment:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-attachment:active {
+  transform: translateY(0);
+}
+
+/* Barra de progreso de subida */
+.pdf-upload-progress {
+  position: absolute;
+  top: -50px;
+  left: 0;
+  right: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-12);
+  z-index: 10;
+  animation: slideDown 0.3s ease-out;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg-1);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: var(--space-8);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: width 0.3s ease;
+  border-radius: var(--radius-sm);
+}
+
+.progress-text {
+  font-size: 0.85rem;
+  color: var(--color-text-2);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Sección de archivos adjuntos */
+.attachments-section {
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
+  transition: all var(--transition-base);
+  overflow: hidden;
+}
+
+.attachments-section.hidden {
+  max-height: 0;
+  border-top: none;
+}
+
+.attachments-section:not(.hidden) {
+  max-height: 300px;
+}
+
+.attachments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-1);
+}
+
+.attachments-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+
+#toggleAttachments {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+#toggleAttachments:hover {
+  background: var(--color-bg-hover);
+}
+
+.attachments-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--space-8);
+}
+
+/* Componente individual de PDF */
+.pdf-attachment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  margin-bottom: var(--space-8);
+  transition: all var(--transition-base);
+}
+
+.pdf-attachment:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.pdf-attachment:last-child {
+  margin-bottom: 0;
+}
+
+.pdf-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.pdf-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pdf-name {
+  font-weight: 600;
+  color: var(--color-text-1);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-2);
+  display: flex;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.pdf-actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.btn-pdf-preview,
+.btn-pdf-download {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-size: 0.9rem;
+}
+
+.btn-pdf-preview:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.btn-pdf-download:hover {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
+}
+
+/* Modal de preview PDF */
+.pdf-modal .modal-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 1000px;
+}
+
+.pdf-modal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-modal-body {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  min-height: 600px;
+}
+
+#pdfPreviewFrame {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  border: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* PDF en mensajes de chat */
+.message-pdf {
+  margin-top: var(--space-8);
+  padding: var(--space-12);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.message-pdf .pdf-attachment {
+  margin-bottom: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.message-pdf .pdf-attachment:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* Responsive para PDFs */
+@media (max-width: 768px) {
+  .pdf-modal .modal-content {
+    width: 95vw;
+    height: 95vh;
+    max-width: none;
+    max-height: none;
+    border-radius: var(--radius-lg);
+  }
+  
+  .pdf-modal-body {
+    min-height: 70vh;
+  }
+  
+  #pdfPreviewFrame {
+    min-height: 70vh;
+  }
+  
+  .pdf-attachment {
+    padding: var(--space-8);
+    gap: var(--space-8);
+  }
+  
+  .pdf-name {
+    font-size: 0.85rem;
+  }
+  
+  .pdf-meta {
+    font-size: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  
+  .btn-pdf-preview,
+  .btn-pdf-download {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-input-wrapper {
+    padding-right: 44px;
+  }
+  
+  .input-actions {
+    right: var(--space-4);
+    bottom: var(--space-4);
+  }
+  
+  .attachments-list {
+    max-height: 200px;
+  }
+  
+  .pdf-attachment {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-8);
+  }
+  
+  .pdf-info {
+    width: 100%;
+  }
+  
+  .pdf-actions {
+    align-self: flex-end;
+  }
+}
+
+/* Animaciones para PDFs */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pdf-attachment {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+/* Estados de loading para PDFs */
+.pdf-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pdf-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Dark mode para PDFs */
+@media (prefers-color-scheme: dark) {
+  .pdf-attachment {
+    background: var(--color-bg-2);
+    border-color: var(--color-border-dark);
+  }
+  
+  .attachments-section {
+    background: var(--color-bg-2);
+    border-color: var(--color-border-dark);
+  }
+  
+  .attachments-header {
+    background: var(--color-bg-1);
+    border-color: var(--color-border-dark);
+  }
+}
+
+[data-color-scheme="dark"] .pdf-attachment {
+  background: var(--color-bg-2);
+  border-color: var(--color-border-dark);
+}
+
+[data-color-scheme="dark"] .attachments-section {
+  background: var(--color-bg-2);
+  border-color: var(--color-border-dark);
+}
+
+[data-color-scheme="dark"] .attachments-header {
+  background: var(--color-bg-1);
+  border-color: var(--color-border-dark);
+}

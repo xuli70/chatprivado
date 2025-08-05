@@ -8,6 +8,7 @@ import { showModal, hideModal, cleanupModal, showConfirmModal, handleConfirm, sh
 import { saveRoom, loadRoom, saveUserVotes, loadFromStorage, isRoomExpired, cleanupExpiredRooms, getStorageStats, cleanupCorruptedData } from './js/modules/storage-manager.js';
 import { saveCurrentSession, restoreSession, clearCurrentSession, getCurrentSession, getSessionStats, validateSession, cleanupExpiredSessions, updateSessionTimestamp } from './js/modules/session-manager.js';
 import { sendMessage, loadMessages, addMessageToChat, processMessage, formatMessage, searchMessages, getMessageStats, validateMessage, sortMessages } from './js/modules/message-manager.js';
+import { initializePDFEventListeners, getRoomPDFs, createPDFPreviewHTML, uploadPDF, getRoomPDFStats } from './js/modules/pdf-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -55,6 +56,9 @@ class AnonymousChatApp {
             // Dar tiempo para que se inicialice
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
+        
+        // Inicializar sistema de PDFs
+        initializePDFEventListeners(this);
         
         this.loadFromStorage();
         
@@ -900,6 +904,7 @@ class AnonymousChatApp {
         this.showScreen('chatScreen');
         this.elements.displays.roomCode.textContent = this.state.currentRoom.id;
         this.loadMessages();
+        this.loadRoomPDFs(); // Cargar PDFs de la sala
         this.startTimers();
         this.setupRealtimeMessaging();
         
@@ -2488,6 +2493,193 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('\n🎯 === FIN DEL TEST ===\n');
         }, 1000);
     };
+    
+    // =====================================================
+    // MÉTODOS PARA GESTIÓN DE PDFs
+    // =====================================================
+    
+    /**
+     * Cargar y mostrar PDFs de la sala actual
+     */
+    async loadRoomPDFs() {
+        if (!this.state.currentRoom) {
+            console.warn('loadRoomPDFs: No hay sala actual');
+            return;
+        }
+        
+        try {
+            const pdfs = await getRoomPDFs(this.state.currentRoom.id, this.supabaseClient);
+            this.displayPDFs(pdfs);
+            
+            // Mostrar/ocultar sección de adjuntos
+            const attachmentsSection = document.getElementById('attachmentsSection');
+            if (attachmentsSection) {
+                if (pdfs && pdfs.length > 0) {
+                    attachmentsSection.classList.remove('hidden');
+                } else {
+                    attachmentsSection.classList.add('hidden');
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error cargando PDFs de la sala:', error);
+        }
+    }
+    
+    /**
+     * Mostrar lista de PDFs en la interfaz
+     * @param {Array} pdfs - Lista de PDFs
+     */
+    displayPDFs(pdfs) {
+        const attachmentsList = document.getElementById('attachmentsList');
+        if (!attachmentsList) {
+            console.warn('displayPDFs: No se encontró attachmentsList');
+            return;
+        }
+        
+        if (!pdfs || pdfs.length === 0) {
+            attachmentsList.innerHTML = '<p class="no-attachments">No hay archivos en esta sala</p>';
+            return;
+        }
+        
+        // Generar HTML para cada PDF
+        const pdfHTML = pdfs.map(pdf => createPDFPreviewHTML(pdf)).join('');
+        attachmentsList.innerHTML = pdfHTML;
+        
+        // Configurar event listeners para los PDFs
+        this.setupPDFEventListeners();
+    }
+    
+    /**
+     * Configurar event listeners específicos para PDFs
+     */
+    setupPDFEventListeners() {
+        // Toggle para mostrar/ocultar lista de adjuntos
+        const toggleBtn = document.getElementById('toggleAttachments');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                const attachmentsList = document.getElementById('attachmentsList');
+                if (attachmentsList) {
+                    const isHidden = attachmentsList.style.display === 'none';
+                    attachmentsList.style.display = isHidden ? 'block' : 'none';
+                    toggleBtn.textContent = isHidden ? '↑' : '↓';
+                }
+            });
+        }
+        
+        // Event listeners para preview y download (manejados por pdf-manager.js)
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-pdf-preview')) {
+                const attachment = e.target.closest('.pdf-attachment');
+                if (attachment) {
+                    this.previewPDF(attachment.dataset.attachmentId);
+                }
+            }
+            
+            if (e.target.classList.contains('btn-pdf-download')) {
+                const attachment = e.target.closest('.pdf-attachment');
+                if (attachment) {
+                    this.downloadPDF(attachment.dataset.attachmentId);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Abrir preview de PDF en modal
+     * @param {string} attachmentId - ID del attachment
+     */
+    async previewPDF(attachmentId) {
+        try {
+            const pdfs = await getRoomPDFs(this.state.currentRoom.id, this.supabaseClient);
+            const pdf = pdfs.find(p => p.id === attachmentId);
+            
+            if (!pdf) {
+                this.showToast('Archivo no encontrado', 'error');
+                return;
+            }
+            
+            // Mostrar modal de preview
+            const modal = document.getElementById('pdfPreviewModal');
+            const title = document.getElementById('pdfPreviewTitle');
+            const frame = document.getElementById('pdfPreviewFrame');
+            
+            if (modal && title && frame) {
+                title.textContent = pdf.original_filename;
+                frame.src = pdf.url;
+                modal.classList.remove('hidden');
+                
+                // Event listeners para cerrar modal
+                const closeButtons = modal.querySelectorAll('#closePdfModal, #closePdfPreview');
+                closeButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        modal.classList.add('hidden');
+                        frame.src = ''; // Limpiar iframe
+                    });
+                });
+                
+                // Cerrar al hacer click fuera
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                        frame.src = '';
+                    }
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error abriendo preview PDF:', error);
+            this.showToast('Error abriendo preview', 'error');
+        }
+    }
+    
+    /**
+     * Descargar PDF
+     * @param {string} attachmentId - ID del attachment
+     */
+    async downloadPDF(attachmentId) {
+        try {
+            const pdfs = await getRoomPDFs(this.state.currentRoom.id, this.supabaseClient);
+            const pdf = pdfs.find(p => p.id === attachmentId);
+            
+            if (!pdf) {
+                this.showToast('Archivo no encontrado', 'error');
+                return;
+            }
+            
+            // Crear enlace temporal para descarga
+            const link = document.createElement('a');
+            link.href = pdf.url;
+            link.download = pdf.original_filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showToast('Descarga iniciada', 'success');
+            
+        } catch (error) {
+            console.error('Error descargando PDF:', error);
+            this.showToast('Error en descarga', 'error');
+        }
+    }
+    
+    /**
+     * Obtener estadísticas de PDFs de la sala
+     * @returns {Promise<Object>} Estadísticas
+     */
+    async getPDFStats() {
+        if (!this.state.currentRoom) {
+            return { totalFiles: 0, totalSizeMB: 0 };
+        }
+        
+        try {
+            return await getRoomPDFStats(this.state.currentRoom.id, this.supabaseClient);
+        } catch (error) {
+            console.error('Error obteniendo estadísticas PDF:', error);
+            return { totalFiles: 0, totalSizeMB: 0 };
+        }
+    }
     
     console.log('🎯 TESTING: Usa testAdminEnterButton() para test completo del flujo admin');
 });

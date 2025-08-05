@@ -49,7 +49,8 @@
       "Bash(git add:*)",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-simple.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-vote-buttons.html\")",
-      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-voting-complete.html\")"
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-voting-complete.html\")",
+      "mcp__supabase-mcp__load_category_tools"
     ]
   },
   "enabledMcpjsonServers": [

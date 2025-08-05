@@ -98,12 +98,31 @@
             <div id="chatMessages" class="chat-messages">
                 <!-- Los mensajes se insertan aquí dinámicamente -->
             </div>
+            
+            <!-- Sección de archivos adjuntos -->
+            <div id="attachmentsSection" class="attachments-section hidden">
+                <div class="attachments-header">
+                    <h4>📁 Archivos de la sala</h4>
+                    <button id="toggleAttachments" class="btn btn--sm">↓</button>
+                </div>
+                <div id="attachmentsList" class="attachments-list">
+                    <!-- PDFs se muestran aquí -->
+                </div>
+            </div>
         </div>
 
         <div class="chat-input-container">
             <form id="messageForm" class="message-form">
                 <div class="input-group">
-                    <textarea id="messageInput" class="form-control message-input" placeholder="Escribe tu respuesta anónima..." maxlength="280" rows="2"></textarea>
+                    <div class="message-input-wrapper">
+                        <textarea id="messageInput" class="form-control message-input" placeholder="Escribe tu respuesta anónima..." maxlength="280" rows="2"></textarea>
+                        <div class="input-actions">
+                            <button id="uploadPDFBtn" class="btn-attachment" title="Subir PDF" type="button">
+                                📎
+                            </button>
+                            <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn--primary send-btn" disabled>
                         Enviar
                     </button>
@@ -161,6 +180,23 @@
     <!-- Toast para notificaciones -->
     <div id="toast" class="toast hidden">
         <span id="toastMessage"></span>
+    </div>
+
+    <!-- Modal para preview de PDFs -->
+    <div id="pdfPreviewModal" class="modal hidden pdf-modal">
+        <div class="modal-content pdf-modal-content">
+            <div class="modal-header">
+                <h3 id="pdfPreviewTitle">Vista previa PDF</h3>
+                <button id="closePdfModal" class="btn-close">×</button>
+            </div>
+            <div class="modal-body pdf-modal-body">
+                <iframe id="pdfPreviewFrame" src="" width="100%" height="600px" style="border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button id="downloadPdfBtn" class="btn btn--outline">⬇️ Descargar</button>
+                <button id="closePdfPreview" class="btn btn--primary">Cerrar</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
