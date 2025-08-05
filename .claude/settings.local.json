@@ -37,7 +37,8 @@
       "mcp__supabase-mcp__discover_tool_categories",
       "mcp__filesystem__get_file_info",
       "mcp__filesystem__create_directory",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "mcp__filesystem__list_directory"
     ]
   },
   "enabledMcpjsonServers": [

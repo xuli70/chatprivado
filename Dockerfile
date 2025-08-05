@@ -17,12 +17,14 @@ WORKDIR /app
 # Instalar Caddy (servidor web) y wget (para health checks)
 RUN apk add --no-cache caddy wget
 
-# Copiar solo archivos necesarios de la aplicación
+# Copiar archivos necesarios de la aplicación
 COPY index.html .
 COPY app.js .
 COPY supabase-client.js .
 COPY style.css .
 COPY README.md .
+# Copiar módulos JS (nuevos)
+COPY js/ ./js/
 # NO copiar env.js - se genera dinámicamente
 
 # Configurar Caddy para servir en puerto 8080
