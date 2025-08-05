@@ -106,7 +106,26 @@ export function handleConfirm(elements, state) {
  * @param {string} type - Tipo de toast ('info', 'success', 'error', 'warning')
  * @param {Object} elements - Referencias a elementos DOM
  */
-export function showToast(message, type = 'info', elements) {
+export function showToast(message, type = 'info', elements = null) {
+    // Si no se proporcionan elementos, intentar obtenerlos del DOM directamente
+    if (!elements) {
+        const toastContainer = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        if (toastContainer && toastMessage) {
+            elements = {
+                toast: {
+                    container: toastContainer,
+                    message: toastMessage
+                }
+            };
+        } else {
+            // Fallback: crear toast temporal si no existe
+            console.log(`Toast: ${message} (${type})`);
+            return;
+        }
+    }
+    
     elements.toast.message.textContent = message;
     elements.toast.container.className = `toast ${type}`;
     elements.toast.container.classList.remove('hidden');

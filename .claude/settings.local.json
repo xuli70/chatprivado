@@ -50,7 +50,9 @@
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-simple.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-vote-buttons.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-voting-complete.html\")",
-      "mcp__supabase-mcp__load_category_tools"
+      "mcp__supabase-mcp__load_category_tools",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-bucket-fix.html\")",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\quick-bucket-test.html\")"
     ]
   },
   "enabledMcpjsonServers": [

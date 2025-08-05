@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Quick Bucket Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-size: 1rem;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn.success { background: #10b981; }
+        .btn.error { background: #ef4444; }
+        .result {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+        }
+        .status {
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .status.success { background: #dcfce7; color: #166534; }
+        .status.error { background: #fee2e2; color: #dc2626; }
+        .status.warning { background: #fef3c7; color: #d97706; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Quick Bucket Test</h1>
+        <p>Test rápido para verificar el estado del bucket <code>chat-pdfs</code></p>
+        
+        <div id="status" class="status warning">
+            🔍 Haz clic en "Test Bucket" para verificar el estado
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="btn" onclick="testBucket()">🔍 Test Bucket</button>
+            <button class="btn" onclick="openSupabase()">🔗 Abrir Supabase</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+        
+        <div id="instructions" style="display: none; margin-top: 2rem;">
+            <h3>📋 Crear Bucket en Supabase</h3>
+            <ol>
+                <li>Ve a <strong>Supabase Dashboard</strong> → <strong>Storage</strong></li>
+                <li>Click en <strong>"New bucket"</strong></li>
+                <li>Nombre: <code>chat-pdfs</code></li>
+                <li>Público: <strong>✅ SÍ (importante)</strong></li>
+                <li>Click <strong>"Create"</strong></li>
+                <li>Vuelve aquí y haz <strong>"Test Bucket"</strong></li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
+    <script src="supabase-client.js"></script>
+    <script>
+        let supabaseClient = null;
+        
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Iniciando Quick Bucket Test...');
+            
+            try {
+                supabaseClient = new SupabaseClient();
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                if (supabaseClient.isSupabaseAvailable()) {
+                    log('✅ Cliente Supabase inicializado y disponible');
+                } else {
+                    log('❌ Cliente Supabase no disponible');
+                }
+            } catch (error) {
+                log(`❌ Error inicializando: ${error.message}`);
+            }
+        });
+        
+        function log(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent += `[${new Date().toLocaleTimeString()}] ${message}\n`;
+            console.log(message);
+        }
+        
+        window.testBucket = async function() {
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            const instructionsDiv = document.getElementById('instructions');
+            
+            statusDiv.textContent = '🔍 Verificando bucket...';
+            statusDiv.className = 'status warning';
+            
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '';
+            
+            log('🧪 Iniciando test de bucket chat-pdfs...');
+            
+            try {
+                if (!supabaseClient || !supabaseClient.isSupabaseAvailable()) {
+                    throw new Error('Supabase no disponible');
+                }
+                
+                log('📋 Listando buckets disponibles...');
+                const { data: buckets, error } = await supabaseClient.client.storage.listBuckets();
+                
+                if (error) {
+                    throw new Error(`Error listando buckets: ${error.message}`);
+                }
+                
+                log(`📁 Encontrados ${buckets.length} buckets en total`);
+                
+                const chatPdfsBucket = buckets.find(b => b.id === 'chat-pdfs');
+                
+                if (chatPdfsBucket) {
+                    log(`✅ ¡BUCKET ENCONTRADO!`);
+                    log(`   - Nombre: ${chatPdfsBucket.name}`);
+                    log(`   - Público: ${chatPdfsBucket.public ? 'SÍ ✅' : 'NO ❌'}`);
+                    
+                    if (chatPdfsBucket.public) {
+                        statusDiv.textContent = '✅ Bucket existe y es público - ¡Sistema listo!';
+                        statusDiv.className = 'status success';
+                        
+                        // Test acceso al bucket
+                        log('🧪 Testing acceso al bucket...');
+                        const { data: files, error: listError } = await supabaseClient.client.storage
+                            .from('chat-pdfs')
+                            .list('', { limit: 1 });
+                        
+                        if (listError) {
+                            log(`⚠️ Error acceso: ${listError.message}`);
+                        } else {
+                            log(`✅ Acceso al bucket OK - ${files.length} archivos`);
+                            log('🎉 ¡SISTEMA PDF COMPLETAMENTE FUNCIONAL!');
+                        }
+                    } else {
+                        statusDiv.textContent = '⚠️ Bucket existe pero no es público';
+                        statusDiv.className = 'status warning';
+                        log('⚠️ PROBLEMA: Bucket no es público');
+                        log('💡 SOLUCIÓN: Editar bucket en Supabase y marcar como público');
+                        instructionsDiv.style.display = 'block';
+                    }
+                } else {
+                    log('❌ BUCKET NO ENCONTRADO');
+                    log('💡 El bucket "chat-pdfs" no existe en Supabase Storage');
+                    
+                    statusDiv.textContent = '❌ Bucket no existe - necesita ser creado';
+                    statusDiv.className = 'status error';
+                    instructionsDiv.style.display = 'block';
+                    
+                    log('📋 Buckets disponibles:');
+                    buckets.forEach(bucket => {
+                        log(`   - ${bucket.id} (público: ${bucket.public})`);
+                    });
+                }
+                
+            } catch (error) {
+                log(`❌ Error en test: ${error.message}`);
+                statusDiv.textContent = `❌ Error: ${error.message}`;
+                statusDiv.className = 'status error';
+            }
+        };
+        
+        window.openSupabase = function() {
+            window.open('https://supmcp.axcsol.com', '_blank');
+        };
+        
+        console.log('🚀 Quick Bucket Test listo');
+    </script>
+</body>
+</html>
