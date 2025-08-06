@@ -9,6 +9,7 @@ import { saveRoom, loadRoom, saveUserVotes, loadFromStorage, isRoomExpired, clea
 import { saveCurrentSession, restoreSession, clearCurrentSession, getCurrentSession, getSessionStats, validateSession, cleanupExpiredSessions, updateSessionTimestamp } from './js/modules/session-manager.js';
 import { sendMessage, loadMessages, addMessageToChat, processMessage, formatMessage, searchMessages, getMessageStats, validateMessage, sortMessages } from './js/modules/message-manager.js';
 import { initializePDFEventListeners, getRoomPDFs, createPDFPreviewHTML, uploadPDF, getRoomPDFStats } from './js/modules/pdf-manager.js';
+import { initTheme, handleThemeToggle, listenForSystemThemeChanges } from './js/modules/theme-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -49,6 +50,10 @@ class AnonymousChatApp {
     async init() {
         this.cacheElements();
         this.bindEvents();
+        
+        // Inicializar tema
+        initTheme();
+        listenForSystemThemeChanges(false); // No auto-switch si hay preferencia guardada
         
         // Inicializar cliente de Supabase y esperar a que esté listo
         if (typeof SupabaseClient !== 'undefined') {
@@ -96,6 +101,13 @@ class AnonymousChatApp {
         this.elements.buttons.refreshRoom.addEventListener('click', () => this.refreshRoom());
         this.elements.buttons.leaveRoom.addEventListener('click', () => this.confirmLeaveRoom());
         this.elements.buttons.clearData.addEventListener('click', () => this.confirmClearData());
+        
+        // Botón de cambio de tema
+        if (this.elements.buttons.themeToggle) {
+            this.elements.buttons.themeToggle.addEventListener('click', () => {
+                handleThemeToggle((message, type) => this.showToast(message, type));
+            });
+        }
 
         // Modal
         this.elements.buttons.copyCode.addEventListener('click', () => this.copyRoomCode());

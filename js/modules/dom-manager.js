@@ -27,7 +27,8 @@ export function cacheElements() {
             startChat: document.getElementById('startChatBtn'),
             closeModal: document.getElementById('closeModal'),
             confirm: document.getElementById('confirmBtn'),
-            cancel: document.getElementById('cancelBtn')
+            cancel: document.getElementById('cancelBtn'),
+            themeToggle: document.getElementById('themeToggleBtn')
         },
 
         // Formularios
