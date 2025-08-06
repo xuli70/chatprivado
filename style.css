@@ -1084,7 +1084,7 @@ select.form-control {
   align-items: center;
   height: 40px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-32); /* Más espacio para separación del input */
   min-width: 0; /* Permitir shrinking */
   overflow: hidden; /* Prevenir overflow horizontal */
 }
@@ -1147,7 +1147,7 @@ select.form-control {
   flex: 1;
   overflow-y: auto;
   padding-top: var(--space-16);
-  padding-bottom: 180px; /* Espacio suficiente para scroll hasta arriba del input-container */
+  padding-bottom: 250px; /* Espacio aumentado para ver completamente la barra de botones */
 }
 
 .chat-messages {
@@ -1734,7 +1734,7 @@ select.form-control {
 /* Mobile small screens */
 @media (max-width: 480px) {
   .chat-container {
-    padding-bottom: 200px; /* Espacio suficiente para scroll hasta arriba del input en móvil */
+    padding-bottom: 280px; /* Espacio aumentado para ver completamente botones en móvil */
   }
   
   .chat-bottom-bar {
@@ -1743,7 +1743,7 @@ select.form-control {
     height: 36px; /* Altura reducida */
     flex-wrap: nowrap; /* No permitir wrap */
     overflow: hidden; /* Evitar overflow */
-    margin-bottom: var(--space-12);
+    margin-bottom: var(--space-24); /* Más margen en móvil */
   }
   
   .chat-info-compact {
@@ -1904,14 +1904,14 @@ select.form-control {
 /* Mejoras para teclado virtual en móviles */
 @media (max-height: 600px) and (max-width: 480px) {
   .chat-container {
-    padding-bottom: 180px; /* Espacio suficiente incluso en pantallas pequeñas */
+    padding-bottom: 260px; /* Espacio suficiente para ver botones completos en pantallas pequeñas */
   }
   
   .chat-bottom-bar {
     position: static; /* Hacer scroll con la pantalla */
     padding: var(--space-4) var(--space-6); /* Padding mínimo */
     height: 32px; /* Altura mínima */
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-20); /* Margen adicional en pantallas pequeñas */
   }
   
   .chat-actions-compact {
