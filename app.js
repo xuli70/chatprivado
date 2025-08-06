@@ -10,6 +10,7 @@ import { saveCurrentSession, restoreSession, clearCurrentSession, getCurrentSess
 import { sendMessage, loadMessages, addMessageToChat, processMessage, formatMessage, searchMessages, getMessageStats, validateMessage, sortMessages } from './js/modules/message-manager.js';
 import { initializePDFEventListeners, getRoomPDFs, createPDFPreviewHTML, uploadPDF, getRoomPDFStats } from './js/modules/pdf-manager.js';
 import { initTheme, handleThemeToggle, listenForSystemThemeChanges } from './js/modules/theme-manager.js';
+import { AiAnalysisManager } from './js/modules/ai-analysis-manager.js';
 
 class AnonymousChatApp {
     constructor() {
@@ -64,6 +65,12 @@ class AnonymousChatApp {
         
         // Inicializar sistema de PDFs
         initializePDFEventListeners(this);
+        
+        // Inicializar sistema de análisis IA
+        this.aiManager = new AiAnalysisManager();
+        window.aiManager = this.aiManager; // Instancia global para acceso desde HTML
+        window.chatApp = this; // Referencia global para el toast
+        this.aiManager.init();
         
         this.loadFromStorage();
         
@@ -256,11 +263,14 @@ class AnonymousChatApp {
                     <button id="adminStats" class="btn btn--outline btn--lg btn--full-width">
                         📊 Estadísticas del Sistema
                     </button>
+                    <button id="aiAnalysisBtn" class="btn btn--outline btn--lg btn--full-width">
+                        🤖 Análisis IA
+                    </button>
                 </div>
                 
                 <div class="admin-info">
                     <p><small>🔒 Modo Administrador Activo</small></p>
-                    <p><small>Funciones especiales: Crear salas, gestionar contenido, modo incógnito</small></p>
+                    <p><small>Funciones especiales: Crear salas, gestionar contenido, modo incógnito, análisis IA</small></p>
                 </div>
             </div>
         `;
@@ -289,10 +299,18 @@ class AnonymousChatApp {
         const createBtn = document.getElementById('adminCreateRoom');
         const listBtn = document.getElementById('adminListRooms');
         const statsBtn = document.getElementById('adminStats');
+        const aiBtn = document.getElementById('aiAnalysisBtn');
 
         if (createBtn) createBtn.addEventListener('click', () => this.adminCreateRoom());
         if (listBtn) listBtn.addEventListener('click', () => this.adminListRooms());
         if (statsBtn) statsBtn.addEventListener('click', () => this.adminShowStats());
+        if (aiBtn) aiBtn.addEventListener('click', () => {
+            if (this.aiManager) {
+                this.aiManager.openAnalysisModal();
+            } else {
+                this.showToast('Sistema de IA no disponible', 'error');
+            }
+        });
     }
 
     // 🔄 Restaurar pantalla original de Join Room

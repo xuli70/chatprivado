@@ -183,6 +183,49 @@
         <span id="toastMessage"></span>
     </div>
 
+    <!-- Modal de Análisis IA -->
+    <div id="aiAnalysisModal" class="modal hidden ai-modal">
+        <div class="modal-content ai-modal-content">
+            <div class="modal-header">
+                <h3>🤖 Análisis IA del Chat</h3>
+                <button id="closeAiModal" class="btn-close" onclick="aiManager.closeAnalysisModal()">×</button>
+            </div>
+            <div class="modal-body ai-modal-body">
+                <div class="ai-analysis-options">
+                    <h4>Selecciona el tipo de análisis:</h4>
+                    <div class="ai-options-grid">
+                        <button id="analysisOptionSentiment" class="ai-option-btn">
+                            <div class="ai-option-icon">😊</div>
+                            <div class="ai-option-title">Análisis de Sentimientos</div>
+                            <div class="ai-option-desc">Detecta emociones y tono de la conversación</div>
+                        </button>
+                        
+                        <button id="analysisOptionTopic" class="ai-option-btn">
+                            <div class="ai-option-icon">📋</div>
+                            <div class="ai-option-title">Análisis Temático</div>
+                            <div class="ai-option-desc">Identifica temas principales y palabras clave</div>
+                        </button>
+                        
+                        <button id="analysisOptionSummary" class="ai-option-btn">
+                            <div class="ai-option-icon">📝</div>
+                            <div class="ai-option-title">Resumen</div>
+                            <div class="ai-option-desc">Genera un resumen conciso de la conversación</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="aiAnalysisResult" class="ai-analysis-result">
+                    <div class="ai-placeholder">
+                        <p>🤖 Selecciona un tipo de análisis para comenzar</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeAiAnalysis" class="btn btn--outline" onclick="aiManager.closeAnalysisModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para preview de PDFs -->
     <div id="pdfPreviewModal" class="modal hidden pdf-modal">
         <div class="modal-content pdf-modal-content">

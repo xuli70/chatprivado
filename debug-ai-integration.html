@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Integración IA</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 2rem;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .debug-section {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #333;
+            background: #222;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            cursor: pointer;
+        }
+        .result {
+            background: #000;
+            color: #00ff00;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid #00ff00;
+            white-space: pre-wrap;
+        }
+        .error { color: #ff6666; border-left-color: #ff6666; }
+        .success { color: #66ff66; border-left-color: #66ff66; }
+        .warning { color: #ffff66; border-left-color: #ffff66; }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug - Integración Sistema IA</h1>
+    
+    <div class="debug-section">
+        <h3>1. Variables de Entorno</h3>
+        <button onclick="checkEnvVars()">Verificar Variables</button>
+        <div id="envResult" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>2. DOM Elements</h3>
+        <button onclick="checkDOMElements()">Verificar Elementos DOM</button>
+        <div id="domResult" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>3. Módulo IA</h3>
+        <button onclick="testAIModule()">Test Módulo</button>
+        <button onclick="testModalOpen()">Test Modal</button>
+        <div id="moduleResult" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>4. Admin Panel Simulation</h3>
+        <button onclick="simulateAdminPanel()">Simular Admin Panel</button>
+        <div id="adminResult" class="result"></div>
+    </div>
+
+    <!-- Modal de IA para testing -->
+    <div id="aiAnalysisModal" class="modal hidden ai-modal">
+        <div class="modal-content ai-modal-content">
+            <div class="modal-header">
+                <h3>🤖 Análisis IA del Chat</h3>
+                <button id="closeAiModal" class="btn-close" onclick="aiManager.closeAnalysisModal()">×</button>
+            </div>
+            <div class="modal-body ai-modal-body">
+                <div class="ai-analysis-options">
+                    <h4>Selecciona el tipo de análisis:</h4>
+                    <div class="ai-options-grid">
+                        <button id="analysisOptionSentiment" class="ai-option-btn">
+                            <div class="ai-option-icon">😊</div>
+                            <div class="ai-option-title">Análisis de Sentimientos</div>
+                        </button>
+                    </div>
+                </div>
+                <div id="aiAnalysisResult" class="ai-analysis-result">
+                    <div class="ai-placeholder">
+                        <p>🤖 Selecciona un tipo de análisis para comenzar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="env.js"></script>
+    <script type="module">
+        import { AiAnalysisManager } from './js/modules/ai-analysis-manager.js';
+        
+        window.checkEnvVars = function() {
+            const result = document.getElementById('envResult');
+            const envVars = {
+                SUPABASE_URL: window.env?.SUPABASE_URL ? '✅' : '❌',
+                SUPABASE_ANON_KEY: window.env?.SUPABASE_ANON_KEY ? '✅' : '❌',
+                ADMIN_PASSWORD: window.env?.ADMIN_PASSWORD ? '✅' : '❌',
+                OPENAI_API_KEY: window.env?.OPENAI_API_KEY ? '✅' : '❌',
+                AI_MODEL: window.env?.AI_MODEL || 'default'
+            };
+            
+            result.className = 'result success';
+            result.textContent = `VARIABLES DE ENTORNO:
+${JSON.stringify(envVars, null, 2)}
+
+OPENAI_API_KEY: ${window.env?.OPENAI_API_KEY ? 'Configurada' : 'NO CONFIGURADA'}`;
+        };
+
+        window.checkDOMElements = function() {
+            const result = document.getElementById('domResult');
+            const elements = {
+                'aiAnalysisModal': document.getElementById('aiAnalysisModal') ? '✅' : '❌',
+                'aiAnalysisResult': document.getElementById('aiAnalysisResult') ? '✅' : '❌',
+                'analysisOptionSentiment': document.getElementById('analysisOptionSentiment') ? '✅' : '❌',
+                'closeAiModal': document.getElementById('closeAiModal') ? '✅' : '❌'
+            };
+
+            result.className = 'result success';
+            result.textContent = `ELEMENTOS DOM:
+${JSON.stringify(elements, null, 2)}`;
+        };
+
+        window.testAIModule = async function() {
+            const result = document.getElementById('moduleResult');
+            result.className = 'result';
+            result.textContent = 'Probando módulo IA...';
+
+            try {
+                // Test instantiation
+                window.aiManager = new AiAnalysisManager();
+                window.chatApp = { showToast: (msg, type) => console.log(`Toast: ${msg}`) };
+                window.aiManager.init();
+
+                result.className = 'result success';
+                result.textContent = `MÓDULO IA:
+✅ AiAnalysisManager cargado
+✅ Instancia creada
+✅ API Key: ${window.aiManager.apiKey ? 'Configurada' : 'NO configurada'}
+✅ Modelo: ${window.aiManager.model}
+✅ Cache: ${window.aiManager.cache instanceof Map ? 'OK' : 'Error'}`;
+
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `❌ ERROR: ${error.message}`;
+            }
+        };
+
+        window.testModalOpen = function() {
+            if (!window.aiManager) {
+                alert('Ejecuta "Test Módulo" primero');
+                return;
+            }
+
+            const result = document.getElementById('moduleResult');
+            try {
+                window.aiManager.openAnalysisModal();
+                result.className = 'result success';
+                result.textContent = 'Modal IA abierto exitosamente';
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `Error abriendo modal: ${error.message}`;
+            }
+        };
+
+        window.simulateAdminPanel = function() {
+            const result = document.getElementById('adminResult');
+            
+            // Simular HTML del admin panel
+            const adminHTML = `
+                <button id="aiAnalysisBtn" onclick="testAdminClick()">🤖 Análisis IA</button>
+            `;
+            
+            result.innerHTML = `SIMULACIÓN ADMIN PANEL:<br>${adminHTML}`;
+            
+            // Función para simular click del admin
+            window.testAdminClick = function() {
+                alert('Click en botón IA detectado!');
+                if (window.aiManager) {
+                    window.aiManager.openAnalysisModal();
+                } else {
+                    alert('aiManager no está disponible');
+                }
+            };
+        };
+
+        // Auto-inicio
+        console.log('🐛 Debug IA Integration loaded');
+    </script>
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+        }
+        
+        .ai-option-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        
+        .ai-analysis-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+
+        .ai-error {
+            background: #fee;
+            border: 1px solid #fcc;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+    </style>
+</body>
+</html>

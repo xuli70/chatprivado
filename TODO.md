@@ -302,11 +302,45 @@ js/modules/
 - **CORREGIDO**: Error showToast en ui-manager.js - ahora maneja elementos faltantes
 - **Estado**: Sistema 100% funcional, solo falta crear bucket en Supabase Dashboard
 
-## 🧹 NUEVA FUNCIONALIDAD IMPLEMENTADA - SESIÓN 2025-08-06 SESSION 6
+## 📈 NUEVA FUNCIONALIDAD IMPLEMENTADA - SESIÓN 2025-08-06 SESSION 7
+
+### ✅ MESSAGE LIMIT INCREASE - CAMBIO DE LÍMITE 50 A 200 - 100% COMPLETADO
+
+**OBJETIVO ALCANZADO**: Aumentar el límite de mensajes por sala de 50 a 200 para permitir conversaciones más largas y extendidas.
+
+#### 🎯 CAMBIOS REALIZADOS
+- **✅ CONFIGURACIÓN PRINCIPAL**: app.js actualizado con messageLimit: 200
+- **✅ INTERFAZ USUARIO**: Contador visual cambiado de "--/50" a "--/200"
+- **✅ ESQUEMAS BASE DATOS**: Supabase schemas actualizados a DEFAULT 200
+- **✅ DOCUMENTACIÓN**: CLAUDE.md y README.md actualizados con nuevo límite
+- **✅ ARCHIVOS TESTING**: Todos los archivos de debug y testing actualizados
+
+#### 🛠️ CAMBIOS TÉCNICOS REALIZADOS
+
+**Configuración Principal (app.js):**
+- Línea 18: `messageLimit: 50` → `messageLimit: 200` (configuración principal)
+- Línea 2607: `messageLimit: 50` → `messageLimit: 200` (configuración de testing)
+
+**Interfaz Usuario (index.html):**
+- Línea 92: `💬 --/50` → `💬 --/200` (contador de mensajes visible)
+
+**Base de Datos:**
+- supabase-client.js: `DEFAULT 50` → `DEFAULT 200` en schema SQL
+- SUPABASE_SETUP.md: Schema actualizado para nuevas instalaciones
+
+**Documentación:**
+- CLAUDE.md: Referencias actualizadas de "50 messages" a "200 messages"
+- README.md: "Límite de 50 mensajes" → "Límite de 200 mensajes"
+
+**Archivos Testing:**
+- debug-simple.html, debug-admin.html, debug-admin-buttons.html: Actualizados
+- test-admin-quick.js: Configuraciones de prueba actualizadas
+
+## 🧹 SESIÓN ANTERIOR - 2025-08-06 SESSION 6
 
 ### ✅ UI CLEANUP - ELIMINACIÓN DE BOTONES INNECESARIOS - 100% COMPLETADO
 
-**OBJETIVO ALCANZADO**: Limpiar la interfaz eliminando botones no deseados ("Limpiar Datos" y el contador de tiempo expirado) para crear una experiencia más limpia y enfocada.
+**OBJETIVO ANTERIOR**: Limpiar la interfaz eliminando botones no deseados ("Limpiar Datos" y el contador de tiempo expirado) para crear una experiencia más limpia y enfocada.
 
 #### 🎯 ELEMENTOS ELIMINADOS
 - **✅ BOTÓN "LIMPIAR DATOS"**: Completamente removido de la barra de acciones

@@ -62,7 +62,10 @@ RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'echo "// Variables de entorno generadas dinámicamente" > /app/env.js' >> /app/start.sh && \
     echo 'echo "window.env = {" >> /app/env.js' >> /app/start.sh && \
     echo 'echo "  SUPABASE_URL: \"${SUPABASE_URL:-}\"," >> /app/env.js' >> /app/start.sh && \
-    echo 'echo "  SUPABASE_ANON_KEY: \"${SUPABASE_ANON_KEY:-}\"" >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  SUPABASE_ANON_KEY: \"${SUPABASE_ANON_KEY:-}\"," >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  ADMIN_PASSWORD: \"${ADMIN_PASSWORD:-ADMIN2025}\"," >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  OPENAI_API_KEY: \"${OPENAI_API_KEY:-}\"," >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  AI_MODEL: \"${AI_MODEL:-gpt-4o-mini}\"" >> /app/env.js' >> /app/start.sh && \
     echo 'echo "};" >> /app/env.js' >> /app/start.sh && \
     echo 'exec caddy run --config /app/Caddyfile --adapter caddyfile' >> /app/start.sh && \
     chmod +x /app/start.sh
