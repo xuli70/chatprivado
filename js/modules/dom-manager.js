@@ -22,6 +22,7 @@ export function cacheElements() {
             shareRoom: document.getElementById('shareRoomBtn'),
             refreshRoom: document.getElementById('refreshRoomBtn'),
             leaveRoom: document.getElementById('leaveRoomBtn'),
+            aiAnalysis: document.getElementById('aiAnalysisBtn'),
             copyCode: document.getElementById('copyCodeBtn'),
             startChat: document.getElementById('startChatBtn'),
             closeModal: document.getElementById('closeModal'),

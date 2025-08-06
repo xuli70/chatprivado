@@ -108,6 +108,17 @@ class AnonymousChatApp {
         this.elements.buttons.refreshRoom.addEventListener('click', () => this.refreshRoom());
         this.elements.buttons.leaveRoom.addEventListener('click', () => this.confirmLeaveRoom());
         
+        // Botón de análisis IA
+        if (this.elements.buttons.aiAnalysis) {
+            this.elements.buttons.aiAnalysis.addEventListener('click', () => {
+                if (this.aiManager) {
+                    this.aiManager.openAnalysisModal();
+                } else {
+                    this.showToast('Sistema de IA no disponible', 'error');
+                }
+            });
+        }
+        
         // Botón de cambio de tema
         if (this.elements.buttons.themeToggle) {
             this.elements.buttons.themeToggle.addEventListener('click', () => {
@@ -263,14 +274,11 @@ class AnonymousChatApp {
                     <button id="adminStats" class="btn btn--outline btn--lg btn--full-width">
                         📊 Estadísticas del Sistema
                     </button>
-                    <button id="aiAnalysisBtn" class="btn btn--outline btn--lg btn--full-width">
-                        🤖 Análisis IA
-                    </button>
                 </div>
                 
                 <div class="admin-info">
                     <p><small>🔒 Modo Administrador Activo</small></p>
-                    <p><small>Funciones especiales: Crear salas, gestionar contenido, modo incógnito, análisis IA</small></p>
+                    <p><small>Funciones especiales: Crear salas, gestionar contenido, modo incógnito</small></p>
                 </div>
             </div>
         `;
@@ -299,18 +307,10 @@ class AnonymousChatApp {
         const createBtn = document.getElementById('adminCreateRoom');
         const listBtn = document.getElementById('adminListRooms');
         const statsBtn = document.getElementById('adminStats');
-        const aiBtn = document.getElementById('aiAnalysisBtn');
 
         if (createBtn) createBtn.addEventListener('click', () => this.adminCreateRoom());
         if (listBtn) listBtn.addEventListener('click', () => this.adminListRooms());
         if (statsBtn) statsBtn.addEventListener('click', () => this.adminShowStats());
-        if (aiBtn) aiBtn.addEventListener('click', () => {
-            if (this.aiManager) {
-                this.aiManager.openAnalysisModal();
-            } else {
-                this.showToast('Sistema de IA no disponible', 'error');
-            }
-        });
     }
 
     // 🔄 Restaurar pantalla original de Join Room

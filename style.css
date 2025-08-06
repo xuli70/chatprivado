@@ -2360,13 +2360,34 @@ select.form-control {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
+.ai-result-header {
+  margin-bottom: 1rem;
+}
+
 .ai-result h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.5rem 0;
   color: var(--color-blue-600);
   font-size: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.ai-room-info {
+  background: var(--color-gray-100);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid var(--color-blue-500);
+}
+
+.ai-room-info small {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.ai-room-info strong {
+  color: var(--color-blue-700);
+  font-weight: 600;
 }
 
 .ai-result-content {

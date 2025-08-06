@@ -24,6 +24,66 @@ export async function sendMessage(roomId, message, supabaseClient) {
     return null;
 }
 
+/**
+ * Obtener TODOS los mensajes de una sala desde Supabase
+ * Para análisis IA que requiere todos los mensajes, no solo los del DOM
+ */
+export async function getAllRoomMessagesFromDB(roomId, supabaseClient) {
+    if (!roomId) {
+        console.error('getAllRoomMessagesFromDB: roomId is required');
+        return [];
+    }
+
+    if (!supabaseClient || !supabaseClient.isSupabaseAvailable()) {
+        console.warn('getAllRoomMessagesFromDB: Supabase not available');
+        return [];
+    }
+
+    try {
+        // Consulta SQL para obtener TODOS los mensajes de la sala
+        // Incluye metadatos: autor, timestamp, votos, user_identifier
+        const { data, error } = await supabaseClient.client
+            .from('chat_messages')
+            .select(`
+                id,
+                text,
+                author,
+                is_anonymous,
+                created_at,
+                likes,
+                dislikes,
+                user_identifier
+            `)
+            .eq('room_id', roomId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching messages from DB:', error);
+            return [];
+        }
+
+        console.log(`📊 AI Analysis: Loaded ${data.length} messages from DB for room ${roomId}`);
+        
+        // Procesar mensajes para formato estándar
+        return data.map(msg => ({
+            id: msg.id,
+            text: msg.text,
+            author: msg.author,
+            isAnonymous: msg.is_anonymous,
+            timestamp: msg.created_at,
+            votes: {
+                likes: msg.likes || 0,
+                dislikes: msg.dislikes || 0
+            },
+            userIdentifier: msg.user_identifier
+        }));
+
+    } catch (error) {
+        console.error('Error in getAllRoomMessagesFromDB:', error);
+        return [];
+    }
+}
+
 export function loadMessages(currentRoom, elements, callbacks = {}) {
     if (!currentRoom || !elements || !elements.displays || !elements.displays.chatMessages) {
         console.error('loadMessages: Invalid parameters');

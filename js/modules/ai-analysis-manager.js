@@ -4,6 +4,9 @@
  * Módulo completamente independiente y autónomo
  */
 
+// Import necesario para obtener mensajes de la base de datos
+import { getAllRoomMessagesFromDB } from './message-manager.js';
+
 export class AiAnalysisManager {
     constructor() {
         this.apiKey = window.env?.OPENAI_API_KEY || '';
@@ -150,8 +153,8 @@ export class AiAnalysisManager {
             this.isAnalyzing = true;
             this.showLoadingState(analysisType);
 
-            // Obtener mensajes del chat actual
-            const messages = this.getMessagesFromCurrentRoom();
+            // Obtener mensajes del chat actual desde la base de datos
+            const messages = await this.getMessagesFromCurrentRoom();
             
             if (!messages || messages.length === 0) {
                 throw new Error('No hay mensajes para analizar en la sala actual.');
@@ -187,10 +190,63 @@ export class AiAnalysisManager {
     }
 
     /**
-     * Obtener mensajes de la sala actual
+     * Obtener TODOS los mensajes de la sala actual desde la base de datos
+     * Versión mejorada que accede directamente a Supabase
      */
-    getMessagesFromCurrentRoom() {
-        // Buscar en el DOM los mensajes renderizados
+    async getMessagesFromCurrentRoom() {
+        try {
+            // Obtener sala actual desde la aplicación global
+            const currentRoom = window.chatApp?.state?.currentRoom;
+            const supabaseClient = window.chatApp?.supabaseClient;
+
+            if (!currentRoom) {
+                throw new Error('No hay sala activa');
+            }
+
+            if (!supabaseClient) {
+                console.warn('Supabase no disponible, intentando fallback DOM');
+                return this.getMessagesFromDOM();
+            }
+
+            console.log(`🔍 Obteniendo mensajes de sala ${currentRoom.id} desde base de datos...`);
+
+            // Usar la nueva función para obtener TODOS los mensajes
+            const messages = await getAllRoomMessagesFromDB(currentRoom.id, supabaseClient);
+
+            if (messages.length === 0) {
+                throw new Error(`No se encontraron mensajes en la sala ${currentRoom.id}`);
+            }
+
+            // Procesar mensajes para el análisis IA
+            const processedMessages = messages.map(msg => ({
+                id: msg.id,
+                text: msg.text,
+                author: this.formatAuthorForAnalysis(msg.author, msg.isAnonymous, msg.userIdentifier),
+                timestamp: this.formatTimestamp(msg.timestamp),
+                votes: msg.votes,
+                isAnonymous: msg.isAnonymous,
+                userIdentifier: msg.userIdentifier
+            }));
+
+            // Limitar a últimos 200 mensajes (nuevo límite del sistema)
+            const limitedMessages = processedMessages.slice(-200);
+            
+            console.log(`📊 Preparados ${limitedMessages.length} mensajes para análisis IA`);
+            return limitedMessages;
+
+        } catch (error) {
+            console.error('Error obteniendo mensajes de BD:', error);
+            
+            // Fallback al DOM si hay problemas con la BD
+            console.log('🔄 Usando fallback: mensajes del DOM');
+            return this.getMessagesFromDOM();
+        }
+    }
+
+    /**
+     * Fallback: Obtener mensajes del DOM (método anterior)
+     */
+    getMessagesFromDOM() {
         const messageElements = document.querySelectorAll('.message');
         const messages = [];
 
@@ -203,13 +259,47 @@ export class AiAnalysisManager {
                 messages.push({
                     text: textElement.textContent.trim(),
                     author: authorElement?.textContent?.trim() || 'Anónimo',
-                    timestamp: timeElement?.textContent?.trim() || 'Desconocido'
+                    timestamp: timeElement?.textContent?.trim() || 'Desconocido',
+                    votes: { likes: 0, dislikes: 0 }, // No disponible en DOM
+                    source: 'DOM'
                 });
             }
         });
 
-        // Limitar a últimos 50 mensajes para control de tokens
-        return messages.slice(-50);
+        return messages.slice(-50); // Límite menor para fallback
+    }
+
+    /**
+     * Formatear autor para análisis IA
+     */
+    formatAuthorForAnalysis(author, isAnonymous, userIdentifier) {
+        if (!isAnonymous) {
+            return author; // Creator name
+        }
+        
+        if (userIdentifier) {
+            return `Anónimo #${userIdentifier}`;
+        }
+        
+        return 'Anónimo';
+    }
+
+    /**
+     * Formatear timestamp para análisis
+     */
+    formatTimestamp(timestamp) {
+        try {
+            const date = new Date(timestamp);
+            return date.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return timestamp || 'Fecha desconocida';
+        }
     }
 
     /**
@@ -293,16 +383,51 @@ Responde en español de manera clara y profesional.`
      * Construir prompt específico con los mensajes
      */
     buildPrompt(messages, analysisType) {
-        let prompt = `Analiza la siguiente conversación de chat anónimo:\n\n`;
+        const roomInfo = window.chatApp?.state?.currentRoom;
+        const roomId = roomInfo?.id || 'Desconocida';
         
+        let prompt = `Analiza la siguiente conversación de chat anónimo:\n\n`;
+        prompt += `INFORMACIÓN DE LA SALA:\n`;
+        prompt += `- ID de sala: ${roomId}\n`;
+        prompt += `- Total de mensajes: ${messages.length}\n`;
+        prompt += `- Fuente de datos: ${messages[0]?.source || 'Base de datos Supabase'}\n`;
+        prompt += `- Período: ${messages[0]?.timestamp || 'N/A'} → ${messages[messages.length - 1]?.timestamp || 'N/A'}\n\n`;
+        
+        prompt += `CONVERSACIÓN:\n`;
         messages.forEach((msg, index) => {
-            prompt += `[${msg.timestamp}] ${msg.author}: ${msg.text}\n`;
+            let messageInfo = `[${msg.timestamp}] ${msg.author}: ${msg.text}`;
+            
+            // Agregar información de votos si está disponible
+            if (msg.votes && (msg.votes.likes > 0 || msg.votes.dislikes > 0)) {
+                messageInfo += ` [👍${msg.votes.likes} 👎${msg.votes.dislikes}]`;
+            }
+            
+            prompt += messageInfo + '\n';
         });
 
-        prompt += `\n\nTotal de mensajes: ${messages.length}\n`;
-        prompt += `Tipo de análisis solicitado: ${analysisType}\n`;
+        prompt += `\n\nCONTEXTO ADICIONAL:\n`;
+        prompt += `- Análisis solicitado: ${analysisType}\n`;
+        prompt += `- Usuarios únicos identificados: ${this.countUniqueUsers(messages)}\n`;
+        prompt += `- Mensajes con votos: ${this.countMessagesWithVotes(messages)}\n`;
         
         return prompt;
+    }
+
+    /**
+     * Contar usuarios únicos en los mensajes
+     */
+    countUniqueUsers(messages) {
+        const uniqueAuthors = new Set(messages.map(msg => msg.author));
+        return uniqueAuthors.size;
+    }
+
+    /**
+     * Contar mensajes que tienen votos
+     */
+    countMessagesWithVotes(messages) {
+        return messages.filter(msg => 
+            msg.votes && (msg.votes.likes > 0 || msg.votes.dislikes > 0)
+        ).length;
     }
 
     /**
@@ -355,15 +480,23 @@ Responde en español de manera clara y profesional.`
      */
     showAnalysisResult(analysisType, result) {
         const resultContainer = document.getElementById('aiAnalysisResult');
+        const roomInfo = window.chatApp?.state?.currentRoom;
+        const roomId = roomInfo?.id || 'N/A';
+        
         if (resultContainer) {
             resultContainer.innerHTML = `
                 <div class="ai-result">
-                    <h4>📊 ${this.getAnalysisTypeName(analysisType)}</h4>
+                    <div class="ai-result-header">
+                        <h4>📊 ${this.getAnalysisTypeName(analysisType)}</h4>
+                        <div class="ai-room-info">
+                            <small>🏠 Sala: <strong>${roomId}</strong> | 📈 Fuente: Base de datos Supabase</small>
+                        </div>
+                    </div>
                     <div class="ai-result-content">
                         ${this.formatAnalysisResult(result)}
                     </div>
                     <div class="ai-result-footer">
-                        <small>🤖 Análisis generado por ${this.model}</small>
+                        <small>🤖 Análisis generado por ${this.model} | ${new Date().toLocaleString()}</small>
                         <button class="btn btn--sm" onclick="aiManager.exportAnalysis('${analysisType}', '${result.replace(/'/g, "\\'")}')">
                             📄 Exportar
                         </button>
