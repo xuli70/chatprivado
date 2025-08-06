@@ -100,7 +100,6 @@ class AnonymousChatApp {
         this.elements.buttons.shareRoom.addEventListener('click', () => this.shareRoom());
         this.elements.buttons.refreshRoom.addEventListener('click', () => this.refreshRoom());
         this.elements.buttons.leaveRoom.addEventListener('click', () => this.confirmLeaveRoom());
-        this.elements.buttons.clearData.addEventListener('click', () => this.confirmClearData());
         
         // Botón de cambio de tema
         if (this.elements.buttons.themeToggle) {

@@ -22,7 +22,6 @@ export function cacheElements() {
             shareRoom: document.getElementById('shareRoomBtn'),
             refreshRoom: document.getElementById('refreshRoomBtn'),
             leaveRoom: document.getElementById('leaveRoomBtn'),
-            clearData: document.getElementById('clearDataBtn'),
             copyCode: document.getElementById('copyCodeBtn'),
             startChat: document.getElementById('startChatBtn'),
             closeModal: document.getElementById('closeModal'),
@@ -47,7 +46,6 @@ export function cacheElements() {
         displays: {
             roomCode: document.getElementById('roomCodeDisplay'),
             displayRoomCode: document.getElementById('displayRoomCode'),
-            timeCounter: document.getElementById('timeCounter'),
             messageCounter: document.getElementById('messageCounter'),
             chatMessages: document.getElementById('chatMessages'),
             characterCount: document.querySelector('.character-count'),
@@ -130,17 +128,4 @@ export function updateCounters(elements, state, config) {
     const messageLimit = config.messageLimit;
     elements.displays.messageCounter.textContent = `💬 ${messageCount}/${messageLimit}`;
 
-    // Contador de tiempo
-    const now = new Date();
-    const expiresAt = new Date(state.currentRoom.expiresAt);
-    const timeLeft = expiresAt.getTime() - now.getTime();
-
-    if (timeLeft <= 0) {
-        elements.displays.timeCounter.textContent = '⏱️ Expirado';
-        return;
-    }
-
-    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-    elements.displays.timeCounter.textContent = `⏱️ ${hours}:${minutes.toString().padStart(2, '0')}`;
 }

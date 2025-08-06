@@ -302,7 +302,44 @@ js/modules/
 - **CORREGIDO**: Error showToast en ui-manager.js - ahora maneja elementos faltantes
 - **Estado**: Sistema 100% funcional, solo falta crear bucket en Supabase Dashboard
 
-## 🆔 NUEVA FUNCIONALIDAD IMPLEMENTADA - SESIÓN 2025-08-05 SESSION 4
+## 🌓 NUEVA FUNCIONALIDAD IMPLEMENTADA - SESIÓN 2025-08-06 SESSION 5
+
+### ✅ SISTEMA DARK MODE TOGGLE - 100% COMPLETADO
+
+**OBJETIVO ALCANZADO**: Implementar un toggle manual para cambiar entre modo claro y oscuro, aprovechando los estilos CSS ya existentes pero que no tenían botón de control en la UI.
+
+#### 🎯 CARACTERÍSTICAS IMPLEMENTADAS
+- **✅ BOTÓN TOGGLE**: Añadido en la barra de acciones del chat con iconos 🌙/☀️
+- **✅ PERSISTENCIA**: Preferencia guardada en localStorage
+- **✅ DETECCIÓN AUTOMÁTICA**: Detecta tema del sistema en primera carga
+- **✅ TRANSICIONES SUAVES**: Cambio fluido entre temas
+- **✅ MÓDULO DEDICADO**: `theme-manager.js` con gestión completa
+
+#### 🛠️ CAMBIOS TÉCNICOS REALIZADOS
+
+**UI (index.html):**
+- Añadido botón `themeToggleBtn` en la sección `chat-actions`
+- Posicionado antes de los botones "Actualizar", "Salir de Sala", "Limpiar Datos"
+
+**Nuevo módulo (js/modules/theme-manager.js):**
+- **CREADO**: Módulo completo de 200+ líneas
+- Funciones: `initTheme()`, `toggleTheme()`, `setTheme()`, `getTheme()`
+- Persistencia con `localStorage` key: `anonymousChat_theme`
+- Soporte para detección de preferencia del sistema
+
+**Integración (app.js):**
+- Import del módulo `theme-manager.js`
+- Inicialización en `init()` con `initTheme()`
+- Event listener para botón toggle con notificación toast
+
+**DOM Manager (dom-manager.js):**
+- Añadido `themeToggle` a la función `cacheElements()`
+
+**Testing (test-dark-mode.html):**
+- **CREADO**: Página completa de testing del sistema de temas
+- Funciones de testing avanzadas y estadísticas
+
+## 🆔 FUNCIONALIDAD PREVIA - SESIÓN 2025-08-05 SESSION 4
 
 ### ✅ SISTEMA DE IDENTIFICADORES ÚNICOS PARA USUARIOS ANÓNIMOS - 100% COMPLETADO
 
