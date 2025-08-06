@@ -479,7 +479,45 @@ js/modules/
 - **`SOLUCION_BUCKET_ERROR.md`**: Documentación completa soluciones bucket
 - **`IMPLEMENTACION_IDENTIFICADORES_USUARIOS.md`**: **NUEVO** - Doc sistema identificadores
 
-## 🤖 NUEVA FUNCIONALIDAD - SESIÓN 2025-08-06 SESSION 8
+## 📊 NUEVA FUNCIONALIDAD - SESIÓN 2025-08-06 SESSION 9
+
+### ✅ SISTEMA DE LÍMITES DINÁMICOS POR BASE DE DATOS - 100% COMPLETADO
+
+**OBJETIVO ALCANZADO**: Configurar la aplicación para usar el valor `message_limit` directamente desde la base de datos, permitiendo control total por sala sin restricciones hardcodeadas.
+
+#### 🎯 PROBLEMA RESUELTO
+- **Antes**: Sistema forzaba mínimo de 200 mensajes con `Math.max()`
+- **Problema**: No se podían usar valores menores (50, 100) ni se respetaban valores mayores correctamente
+- **Solución**: Cambio a `roomData.message_limit || 200` - respeta valor exacto de BD
+
+#### 🛠️ CAMBIOS TÉCNICOS REALIZADOS
+
+**Supabase Client (supabase-client.js):**
+- Línea 319: Eliminado `Math.max()`, ahora usa valor exacto de BD o 200 como fallback
+
+**Interfaz Usuario (index.html):**
+- Línea 92: Cambio de hardcoded `💬 --/200` a dinámico `💬 --/--`
+
+**DOM Manager (dom-manager.js):**
+- Línea 129: Usa `state.currentRoom.messageLimit` en lugar de `config.messageLimit`
+
+**Main App (app.js):**
+- Líneas 1147-1152: Validación usa límite de sala actual
+- Líneas 592-679: Nuevas funciones admin para actualizar límites
+
+**Estilos (style.css):**
+- Líneas 1142-1144: Fix para mensajes del creador en dark mode
+
+#### 🎯 FUNCIONES ADMINISTRATIVAS NUEVAS
+```javascript
+// Actualizar límite de una sala específica
+adminUpdateRoomLimit("ROOMID", 300)
+
+// Actualizar todas las salas activas
+adminUpdateAllRoomsLimit(200)
+```
+
+## 🤖 FUNCIONALIDAD ANTERIOR - SESIÓN 2025-08-06 SESSION 8
 
 ### ✅ SISTEMA IA INLINE QUERIES - 100% COMPLETADO
 

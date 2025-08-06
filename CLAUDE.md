@@ -298,9 +298,9 @@ optimizeSystem()
 - **Focus states**: Estados más llamativos con animaciones
 - **Fondo bienvenida**: Gradientes radiales multicolores
 
-### 🚀 ESTADO ACTUAL - SESIÓN 2025-08-06 SESSION 8 COMPLETADA (AI INLINE QUERIES)
+### 🚀 ESTADO ACTUAL - SESIÓN 2025-08-06 SESSION 9 COMPLETADA (DYNAMIC MESSAGE LIMITS)
 
-**SISTEMA COMPLETAMENTE FUNCIONAL CON CONSULTAS IA INLINE IMPLEMENTADAS**:
+**SISTEMA COMPLETAMENTE FUNCIONAL CON LÍMITES DINÁMICOS DE BASE DE DATOS**:
 - ✅ Sistema de fluidez v3.0 operativo
 - ✅ Sistema administrador incógnito funcional con seguridad mejorada
 - ✅ Persistencia de salas implementada
@@ -311,11 +311,12 @@ optimizeSystem()
 - ✅ **SESSION 5**: Sistema Dark Mode Toggle completamente implementado
 - ✅ **SESSION 6**: UI Cleanup - Interfaz limpia y optimizada
 - ✅ **SESSION 7**: Message Limit Increase - Límite aumentado de 50 a 200 mensajes
-- ✅ **🤖 NUEVO SESSION 8**: AI Inline Queries - Consultas IA desde chat input con "**IA"
-- ✅ **DETECCIÓN AUTOMÁTICA**: Mensajes "**IA" interceptados para análisis inteligente
-- ✅ **3 TIPOS ANÁLISIS**: Sentiment, Topic, Summary según keywords automáticas
-- ✅ **INTEGRACIÓN BD**: Lee TODOS los mensajes de sala desde Supabase
-- ✅ **UI AVANZADA**: Indicadores carga, mensajes especiales, botones acción
+- ✅ **SESSION 8**: AI Inline Queries - Consultas IA desde chat input con "**IA"
+- ✅ **📊 NUEVO SESSION 9**: Dynamic Message Limits - Límites configurables por sala desde BD
+- ✅ **CONTROL TOTAL**: Cada sala puede tener límite diferente (50, 100, 200, 300, etc.)
+- ✅ **UI DINÁMICA**: Contador muestra límite real de cada sala
+- ✅ **FUNCIONES ADMIN**: Actualizar límites individual o masivamente
+- ✅ **FIX DARK MODE**: Mensajes del creador ahora visibles en modo oscuro
 
 **NUEVAS CARACTERÍSTICAS - SISTEMA IDENTIFICADORES:**
 - **Identificadores únicos**: Format "Anónimo #A1B2C3" - 6 caracteres alfanuméricos

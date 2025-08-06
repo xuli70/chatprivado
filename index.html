@@ -79,20 +79,6 @@
 
     <!-- Pantalla principal del chat -->
     <div id="chatScreen" class="screen">
-        <div class="chat-header">
-            <div class="chat-info">
-                <h3 id="roomCodeDisplay">ROOM123</h3>
-                <button id="shareRoomBtn" class="btn btn--sm">Compartir</button>
-            </div>
-            <div class="chat-limits">
-                <span id="connectionStatus" class="connection-status">
-                    <span class="connection-indicator"></span>
-                    <span class="connection-text">Conectando...</span>
-                </span>
-                <span id="messageCounter" class="limit-counter">💬 --/--</span>
-            </div>
-        </div>
-
         <div class="chat-container">
             <div id="chatMessages" class="chat-messages">
                 <!-- Los mensajes se insertan aquí dinámicamente -->
@@ -130,13 +116,23 @@
             </form>
         </div>
 
-        <div class="chat-actions">
-            <button id="themeToggleBtn" class="btn btn--outline btn--sm" title="Cambiar tema">
-                <span class="theme-icon">🌙</span>
-            </button>
-            <button id="refreshRoomBtn" class="btn btn--outline btn--sm">🔄 Actualizar</button>
-            <button id="aiAnalysisBtn" class="btn btn--outline btn--sm">🤖 Análisis IA</button>
-            <button id="leaveRoomBtn" class="btn btn--outline btn--sm">Salir de Sala</button>
+        <div class="chat-bottom-bar">
+            <div class="chat-info-compact">
+                <span id="roomCodeDisplay" class="room-code-compact">ROOM123</span>
+                <span id="connectionStatus" class="connection-status-compact">
+                    <span class="connection-indicator"></span>
+                </span>
+                <span id="messageCounter" class="counter-compact">💬 --/--</span>
+            </div>
+            <div class="chat-actions-compact">
+                <button id="shareRoomBtn" class="btn btn--xs" style="display: none;">📤</button>
+                <button id="themeToggleBtn" class="btn btn--xs" title="Cambiar tema">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button id="refreshRoomBtn" class="btn btn--xs" title="Actualizar">🔄</button>
+                <button id="aiAnalysisBtn" class="btn btn--xs" title="Análisis IA">🤖</button>
+                <button id="leaveRoomBtn" class="btn btn--xs">Salir</button>
+            </div>
         </div>
     </div>
 
