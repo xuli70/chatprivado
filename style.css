@@ -1147,7 +1147,7 @@ select.form-control {
   flex: 1;
   overflow-y: auto;
   padding-top: var(--space-16);
-  padding-bottom: 200px; /* Más espacio para la nueva barra inferior */
+  padding-bottom: var(--space-16); /* Espacio normal ya que la barra está dentro del contenedor */
 }
 
 .chat-messages {
@@ -1734,7 +1734,7 @@ select.form-control {
 /* Mobile small screens */
 @media (max-width: 480px) {
   .chat-container {
-    padding-bottom: 160px; /* Reducido ya que la barra ahora hace scroll */
+    padding-bottom: 20px; /* Reducido ya que la barra ahora está dentro del contenedor */
   }
   
   .chat-bottom-bar {
@@ -1904,13 +1904,14 @@ select.form-control {
 /* Mejoras para teclado virtual en móviles */
 @media (max-height: 600px) and (max-width: 480px) {
   .chat-container {
-    padding-bottom: 140px; /* Reducir espacio cuando altura es limitada */
+    padding-bottom: 10px; /* Reducir espacio cuando altura es limitada */
   }
   
   .chat-bottom-bar {
-    bottom: calc(110px + env(safe-area-inset-bottom));
+    position: static; /* Hacer scroll con la pantalla */
     padding: var(--space-4) var(--space-6); /* Padding mínimo */
     height: 32px; /* Altura mínima */
+    margin-bottom: var(--space-8);
   }
   
   .chat-actions-compact {

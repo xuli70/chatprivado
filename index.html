@@ -94,6 +94,26 @@
                     <!-- PDFs se muestran aquí -->
                 </div>
             </div>
+            
+            <!-- Barra de información y botones de acción (hace scroll con el contenido) -->
+            <div class="chat-bottom-bar">
+                <div class="chat-info-compact">
+                    <span id="roomCodeDisplay" class="room-code-compact">ROOM123</span>
+                    <span id="connectionStatus" class="connection-status-compact">
+                        <span class="connection-indicator"></span>
+                    </span>
+                    <span id="messageCounter" class="counter-compact">💬 --/--</span>
+                </div>
+                <div class="chat-actions-compact">
+                    <button id="shareRoomBtn" class="btn btn--xs" style="display: none;">📤</button>
+                    <button id="themeToggleBtn" class="btn btn--xs" title="Cambiar tema">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <button id="refreshRoomBtn" class="btn btn--xs" title="Actualizar">🔄 Actualizar</button>
+                    <button id="aiAnalysisBtn" class="btn btn--xs" title="Análisis IA">🤖 IA</button>
+                    <button id="leaveRoomBtn" class="btn btn--xs">Salir</button>
+                </div>
+            </div>
         </div>
 
         <div class="chat-input-container">
@@ -114,25 +134,6 @@
                 </div>
                 <small class="character-count">0/280</small>
             </form>
-        </div>
-
-        <div class="chat-bottom-bar">
-            <div class="chat-info-compact">
-                <span id="roomCodeDisplay" class="room-code-compact">ROOM123</span>
-                <span id="connectionStatus" class="connection-status-compact">
-                    <span class="connection-indicator"></span>
-                </span>
-                <span id="messageCounter" class="counter-compact">💬 --/--</span>
-            </div>
-            <div class="chat-actions-compact">
-                <button id="shareRoomBtn" class="btn btn--xs" style="display: none;">📤</button>
-                <button id="themeToggleBtn" class="btn btn--xs" title="Cambiar tema">
-                    <span class="theme-icon">🌙</span>
-                </button>
-                <button id="refreshRoomBtn" class="btn btn--xs" title="Actualizar">🔄 Actualizar</button>
-                <button id="aiAnalysisBtn" class="btn btn--xs" title="Análisis IA">🤖 IA</button>
-                <button id="leaveRoomBtn" class="btn btn--xs">Salir</button>
-            </div>
         </div>
     </div>
 
