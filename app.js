@@ -74,6 +74,9 @@ class AnonymousChatApp {
         
         this.loadFromStorage();
         
+        // Inicializar manejo del teclado virtual para móviles
+        this.handleVirtualKeyboard();
+        
         // Intentar restaurar sesión previa
         const sessionRestored = await this.restoreSession();
         if (sessionRestored) {
@@ -86,6 +89,81 @@ class AnonymousChatApp {
         } else {
             // Si no hay sesión, mostrar pantalla de bienvenida
             this.showScreen('welcomeScreen');
+        }
+    }
+
+    // Manejo del teclado virtual en móviles
+    handleVirtualKeyboard() {
+        // Detectar si estamos en un dispositivo móvil
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (!isMobile) return;
+        
+        // Usar Visual Viewport API si está disponible
+        if ('visualViewport' in window) {
+            let lastKeyboardHeight = 0;
+            
+            const handleViewportChange = () => {
+                const viewport = window.visualViewport;
+                const keyboardHeight = window.innerHeight - viewport.height;
+                const inputContainer = document.querySelector('.chat-input-container');
+                
+                if (inputContainer) {
+                    // Solo ajustar si hay un cambio significativo (más de 50px)
+                    if (Math.abs(keyboardHeight - lastKeyboardHeight) > 50) {
+                        if (keyboardHeight > 100) { // Teclado visible
+                            // Mover el input sobre el teclado
+                            inputContainer.style.transform = `translateY(-${keyboardHeight}px)`;
+                            
+                            // Ajustar el scroll del chat para ver los últimos mensajes
+                            const chatMessages = document.getElementById('chatMessages');
+                            if (chatMessages) {
+                                setTimeout(() => {
+                                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                                }, 100);
+                            }
+                        } else { // Teclado oculto
+                            inputContainer.style.transform = 'translateY(0)';
+                        }
+                        lastKeyboardHeight = keyboardHeight;
+                    }
+                }
+            };
+            
+            // Escuchar cambios en el viewport
+            window.visualViewport.addEventListener('resize', handleViewportChange);
+            window.visualViewport.addEventListener('scroll', handleViewportChange);
+        }
+        
+        // Fallback para navegadores sin Visual Viewport API
+        // Manejo adicional cuando el input recibe focus
+        if (this.elements && this.elements.inputs && this.elements.inputs.messageInput) {
+            this.elements.inputs.messageInput.addEventListener('focus', () => {
+                // Esperar a que el teclado se abra completamente
+                setTimeout(() => {
+                    // Asegurar que el input sea visible
+                    const inputContainer = document.querySelector('.chat-input-container');
+                    if (inputContainer) {
+                        inputContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                    
+                    // Scroll al final de los mensajes
+                    const chatMessages = document.getElementById('chatMessages');
+                    if (chatMessages) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }, 300);
+            });
+            
+            // Restaurar posición cuando se pierde el focus
+            this.elements.inputs.messageInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const inputContainer = document.querySelector('.chat-input-container');
+                    if (inputContainer && !window.visualViewport) {
+                        inputContainer.style.transform = 'translateY(0)';
+                    }
+                }, 100);
+            });
         }
     }
 

@@ -1093,19 +1093,18 @@ select.form-control {
   background: rgba(31, 41, 55, 0.95);
 }
 
-/* Mejora de visibilidad de botones en modo claro */
-[data-color-scheme="light"] .chat-bottom-bar .btn--xs,
-.chat-bottom-bar .btn--xs {
+/* Mejora de visibilidad de botones SOLO en modo claro */
+[data-color-scheme="light"] .chat-bottom-bar .btn--xs {
   border: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.8);
-  color: var(--color-text);
+  color: #333333;
 }
 
-[data-color-scheme="light"] .chat-bottom-bar .btn--xs:hover,
-.chat-bottom-bar .btn--xs:hover {
+[data-color-scheme="light"] .chat-bottom-bar .btn--xs:hover {
   background: rgba(255, 255, 255, 1);
   border-color: rgba(0, 0, 0, 0.2);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #222222;
 }
 
 .chat-info-compact {
@@ -1287,6 +1286,9 @@ select.form-control {
   padding: var(--space-16);
   padding-bottom: calc(var(--space-16) + env(safe-area-inset-bottom));
   z-index: 20;
+  /* Transición suave para cuando se mueve con el teclado */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .input-group {
@@ -2953,6 +2955,49 @@ select.form-control {
 
 [data-color-scheme="dark"] .ai-actions {
   border-top-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Optimizaciones específicas para teclado virtual en dispositivos móviles */
+@media (max-width: 768px) {
+  /* Prevenir que el viewport cambie cuando aparece el teclado */
+  .screen {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height para móviles modernos */
+  }
+  
+  /* Asegurar que el input container se ajuste correctamente */
+  .chat-input-container {
+    /* Transform será manejado por JavaScript */
+    transform-origin: bottom center;
+  }
+  
+  /* Cuando el input tiene focus (teclado probablemente visible) */
+  .chat-input-container:has(.message-input:focus) {
+    /* El JavaScript ajustará la posición dinámicamente */
+    /* Aquí solo aseguramos que la transición sea suave */
+    transition: transform 0.25s ease-out;
+  }
+  
+  /* Ajustar el contenedor de mensajes cuando el teclado está visible */
+  .chat-messages {
+    /* Usar toda la altura disponible */
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevenir zoom no deseado en iOS cuando se enfoca el input */
+  .message-input,
+  .form-control {
+    font-size: 16px !important; /* iOS no hace zoom con 16px o más */
+  }
+  
+  /* Mejorar la experiencia cuando el teclado está visible */
+  body:has(.message-input:focus) .chat-container {
+    /* Reducir temporalmente el padding inferior cuando el teclado está activo */
+    padding-bottom: 150px;
+  }
 }
 
 /* Responsive para móviles */
