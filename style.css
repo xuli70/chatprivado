@@ -213,7 +213,7 @@
     --color-background: #0f172a;
     --color-surface: #ffffff;
     --color-text: #000000;
-    --color-text-secondary: #30425a;
+    --color-text-secondary: #0f5349;
     --color-primary: var(--color-blue-400);
     --color-primary-hover: var(--color-blue-300);
     --color-primary-active: var(--color-blue-500);
@@ -1134,7 +1134,7 @@ select.form-control {
 }
 
 .message.creator-message {
-  background: linear-gradient(135deg, var(--color-bg-3) 0%, rgba(var(--color-green-500-rgb), 0.1) 100%);
+  background: linear-gradient(135deg, var(--color-bg-6) 0%, rgba(var(--color-green-500-rgb), 0.1) 100%);
   border-color: var(--color-success);
   border-width: 2px;
 }
