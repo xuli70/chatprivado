@@ -2588,7 +2588,7 @@ select.form-control {
 
 /* Mensajes IA en el chat */
 .ai-message {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  background: linear-gradient(135deg, rgb(238, 237, 239), rgb(180, 182, 185));
   border: 2px solid transparent;
   border-image: linear-gradient(135deg, var(--color-purple-400), var(--color-blue-400)) 1;
   border-radius: 16px;
