@@ -1134,7 +1134,7 @@ select.form-control {
 }
 
 .message.creator-message {
-  background: linear-gradient(135deg, var(--color-bg-6) 0%, rgba(var(--color-green-500-rgb), 0.1) 100%);
+  background: linear-gradient(90deg, rgba(213,227,226,0.8) 0%, rgba(127,202,201,0.1) 100%);
   border-color: var(--color-success);
   border-width: 2px;
 }
@@ -1944,7 +1944,7 @@ select.form-control {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-text-1);
+  color: rgba (150,201,202,1);
 }
 
 #toggleAttachments {
