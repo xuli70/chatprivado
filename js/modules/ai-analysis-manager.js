@@ -489,14 +489,14 @@ Responde en español de manera clara y profesional.`
                     <div class="ai-result-header">
                         <h4>📊 ${this.getAnalysisTypeName(analysisType)}</h4>
                         <div class="ai-room-info">
-                            <small>🏠 Sala: <strong>${roomId}</strong> | 📈 Fuente: Base de datos Supabase</small>
+                            <small>🏠 Sala: <strong>${roomId}</strong> | 📈 Fuente: Chat Actual</small>
                         </div>
                     </div>
                     <div class="ai-result-content">
                         ${this.formatAnalysisResult(result)}
                     </div>
                     <div class="ai-result-footer">
-                        <small>🤖 Análisis generado por ${this.model} | ${new Date().toLocaleString()}</small>
+                        <small>🤖 Análisis Inteligencia Artificial | ${new Date().toLocaleString()}</small>
                         <button class="btn btn--sm" onclick="aiManager.exportAnalysis('${analysisType}', '${result.replace(/'/g, "\\'")}')">
                             📄 Exportar
                         </button>

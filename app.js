@@ -2764,7 +2764,7 @@ class AnonymousChatApp {
                         📊 Consulta: "${query}" | 
                         🎯 Tipo: ${this.getAnalysisTypeName(analysisType)} | 
                         📈 Mensajes: ${messagesAnalyzed} | 
-                        🤖 ${model}
+                        🤖 Inteligencia Artificial
                     </small>
                 </div>
             `;
