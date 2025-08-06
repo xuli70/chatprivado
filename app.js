@@ -1133,11 +1133,11 @@ class AnonymousChatApp {
         
         if (!incognitoControl) {
             // Crear control dinámicamente
-            const chatActions = document.querySelector('.chat-actions');
+            const chatActions = document.querySelector('.chat-actions-compact');
             if (chatActions) {
                 incognitoControl = document.createElement('button');
                 incognitoControl.id = 'adminIncognitoControl';
-                incognitoControl.className = 'btn btn--outline btn--sm';
+                incognitoControl.className = 'btn btn--xs';
                 
                 // Insertar antes del primer botón
                 chatActions.insertBefore(incognitoControl, chatActions.firstChild);
