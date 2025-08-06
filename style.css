@@ -621,7 +621,7 @@ pre code {
 .btn--outline {
   background: transparent;
   border: 1px solid var(--color-border);
-  color: var(--color-text);
+  color: rgba(210, 227, 228, 1);
 }
 
 .btn--outline:hover {
@@ -1134,13 +1134,13 @@ select.form-control {
 }
 
 .message.creator-message {
-  background: linear-gradient(90deg, rgba(213,227,226,0.8) 0%, rgba(127,202,201,0.1) 100%);
+  background: rgba(213,227,226,1);
   border-color: var(--color-success);
   border-width: 2px;
 }
 
 .message.creator-message .message-header {
-  color: var(--color-success);
+  color: rgba(114, 134, 28, 1);
   font-weight: var(--font-weight-semibold);
 }
 
