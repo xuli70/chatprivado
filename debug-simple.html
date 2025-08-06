@@ -68,7 +68,7 @@
                     question: 'Sala admin activa',
                     createdAt: new Date().toISOString(),
                     expiresAt: new Date(Date.now() + 7200000).toISOString(),
-                    messageLimit: 50,
+                    messageLimit: 200,
                     messages: [{
                         id: Date.now(),
                         text: 'Mensaje inicial',
@@ -84,7 +84,7 @@
                     question: 'Sala normal expirada',
                     createdAt: new Date(Date.now() - 10000000).toISOString(),
                     expiresAt: new Date(Date.now() - 1000000).toISOString(),
-                    messageLimit: 50,
+                    messageLimit: 200,
                     messages: []
                 },
                 {
@@ -93,7 +93,7 @@
                     question: 'Sala reciente',
                     createdAt: new Date().toISOString(),
                     expiresAt: new Date(Date.now() + 7200000).toISOString(),
-                    messageLimit: 50,
+                    messageLimit: 200,
                     messages: []
                 }
             ];

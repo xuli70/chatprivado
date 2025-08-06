@@ -12,7 +12,7 @@ function crearSalasPrueba() {
             question: 'Sala de prueba admin 1',
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 7200000).toISOString(),
-            messageLimit: 50,
+            messageLimit: 200,
             messages: []
         },
         {
@@ -21,7 +21,7 @@ function crearSalasPrueba() {
             question: 'Sala de usuario normal',
             createdAt: new Date(Date.now() - 8000000).toISOString(), // Hace más de 2 horas (expirada)
             expiresAt: new Date(Date.now() - 1000000).toISOString(),
-            messageLimit: 50,
+            messageLimit: 200,
             messages: []
         },
         {
@@ -30,7 +30,7 @@ function crearSalasPrueba() {
             question: 'Sala reciente',
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 7200000).toISOString(),
-            messageLimit: 50,
+            messageLimit: 200,
             messages: []
         }
     ];

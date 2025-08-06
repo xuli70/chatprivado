@@ -1545,7 +1545,7 @@ CREATE TABLE chat_rooms (
     question TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
-    message_limit INTEGER DEFAULT 50
+    message_limit INTEGER DEFAULT 200
 );
 
 -- Tabla para los mensajes

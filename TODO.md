@@ -302,7 +302,38 @@ js/modules/
 - **CORREGIDO**: Error showToast en ui-manager.js - ahora maneja elementos faltantes
 - **Estado**: Sistema 100% funcional, solo falta crear bucket en Supabase Dashboard
 
-## 🌓 NUEVA FUNCIONALIDAD IMPLEMENTADA - SESIÓN 2025-08-06 SESSION 5
+## 🧹 NUEVA FUNCIONALIDAD IMPLEMENTADA - SESIÓN 2025-08-06 SESSION 6
+
+### ✅ UI CLEANUP - ELIMINACIÓN DE BOTONES INNECESARIOS - 100% COMPLETADO
+
+**OBJETIVO ALCANZADO**: Limpiar la interfaz eliminando botones no deseados ("Limpiar Datos" y el contador de tiempo expirado) para crear una experiencia más limpia y enfocada.
+
+#### 🎯 ELEMENTOS ELIMINADOS
+- **✅ BOTÓN "LIMPIAR DATOS"**: Completamente removido de la barra de acciones
+- **✅ CONTADOR DE TIEMPO**: Eliminado display "⏱️ Expirado" del header del chat  
+- **✅ REFERENCIAS DOM**: Limpiadas todas las referencias y event listeners
+- **✅ OPTIMIZACIÓN CÓDIGO**: Simplificada función updateCounters() para mejor rendimiento
+- **✅ PRESERVACIÓN**: Mantenida funcionalidad clearAllData() para uso programático
+
+#### 🛠️ CAMBIOS TÉCNICOS REALIZADOS
+
+**UI (index.html):**
+- **ELIMINADO**: `<button id="clearDataBtn" class="btn btn--outline btn--sm">Limpiar Datos</button>`
+- **ELIMINADO**: `<span id="timeCounter" class="limit-counter">⏱️ --:--</span>`
+- **RESULTADO**: Barra de acciones más limpia con solo botones esenciales
+
+**DOM Manager (js/modules/dom-manager.js):**
+- **ELIMINADO**: `clearData: document.getElementById('clearDataBtn'),` de cacheElements()
+- **ELIMINADO**: `timeCounter: document.getElementById('timeCounter'),` de cacheElements()
+- **SIMPLIFICADO**: Función `updateCounters()` maneja solo conteo de mensajes
+- **OPTIMIZADO**: Removida lógica de cálculo de tiempo (horas, minutos, expiración)
+
+**Main App (app.js):**
+- **ELIMINADO**: `this.elements.buttons.clearData.addEventListener('click', () => this.confirmClearData());`
+- **PRESERVADO**: Función `clearAllData()` sigue existiendo para uso programático
+- **MANTENIDO**: Todos los demás event listeners y funcionalidad intacta
+
+## 🌓 SESIÓN ANTERIOR - 2025-08-06 SESSION 5
 
 ### ✅ SISTEMA DARK MODE TOGGLE - 100% COMPLETADO
 
@@ -402,7 +433,9 @@ js/modules/
 - **Interfaz Vibrante**: Paleta de colores alegre implementada
 - **Modularización**: Arquitectura ES6 completamente operativa
 - **Sistema PDFs**: Código completo + herramientas diagnóstico listas
-- **🆔 NUEVO - Sistema Identificadores**: 100% implementado y funcional
+- **🆔 Sistema Identificadores**: 100% implementado y funcional (Session 4)
+- **🌓 Dark Mode Toggle**: Sistema de temas completo implementado (Session 5)
+- **🧹 NUEVO - UI Cleanup**: Interfaz limpia sin botones innecesarios (Session 6)
 
 #### 🛠️ HERRAMIENTAS DIAGNÓSTICO DISPONIBLES
 - **`debug-storage-bucket.html`**: Diagnóstico completo del sistema Storage

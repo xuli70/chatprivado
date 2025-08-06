@@ -23,7 +23,7 @@ Una aplicación web móvil de chat anónimo desarrollada completamente con tecno
 - Prevención de votos múltiples por usuario
 
 ### ⏱️ **Control y Límites**
-- Límite de 50 mensajes por sala
+- Límite de 200 mensajes por sala
 - Tiempo máximo de 2 horas por conversación
 - Temporizadores visuales en tiempo real
 - Alertas cuando se acercan los límites

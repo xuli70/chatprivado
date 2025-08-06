@@ -15,7 +15,7 @@ class AnonymousChatApp {
     constructor() {
         // Configuración por defecto
         this.config = {
-            messageLimit: 50,
+            messageLimit: 200,
             timeLimit: 7200000, // 2 horas en ms
             maxStorageSize: 5242880, // 5MB
             autoCleanup: true
@@ -2604,7 +2604,7 @@ window.createTestRoom = function() {
         question: '¿Esta es una pregunta de prueba para testing?',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 horas
-        messageLimit: 50,
+        messageLimit: 200,
         messages: [{
             id: Date.now(),
             text: 'Mensaje inicial de testing',
