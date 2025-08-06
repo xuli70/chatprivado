@@ -26,6 +26,8 @@ The application is now **fully modularized** with a delegation pattern:
 - **session-manager.js**: Session persistence (save/restore/clear with 24h expiry)
 - **message-manager.js**: Complete messaging system (send, load, render, process, search, stats)
 - **pdf-manager.js**: PDF upload/download/preview system (validation, Storage integration, UI components)
+- **ai-analysis-manager.js**: **NEW** - OpenAI integration for intelligent chat analysis (sentiment, topic, summary)
+- **theme-manager.js**: **NEW** - Dark/light mode toggle with system detection and persistence
 
 ### Key Data Structures
 
@@ -142,18 +144,23 @@ No installation, build, test, or lint commands are required.
 
 - `index.html` - All UI screens and modals (includes PDF upload button and preview modal)
 - `style.css` - Complete styling with CSS variables, responsive design, and PDF components
-- `app.js` - Main application class with v3.0 fluidity system and PDF methods
+- `app.js` - Main application class with v3.0 fluidity system, PDF methods, and AI inline queries
 - `supabase-client.js` - Advanced Supabase client with storage functions for PDFs
-- `js/modules/pdf-manager.js` - **NEW**: Complete PDF management (upload, validation, preview)
-- `js/modules/message-manager.js` - Extended to support PDF attachments in messages
+- `js/modules/pdf-manager.js` - Complete PDF management (upload, validation, preview)
+- `js/modules/message-manager.js` - Extended to support PDF attachments and AI analysis integration
+- `js/modules/ai-analysis-manager.js` - **NEW**: OpenAI integration for sentiment/topic/summary analysis
+- `js/modules/theme-manager.js` - **NEW**: Dark/light mode toggle system
 - `sql/03-add-pdf-support.sql` - **NEW**: Database schema for PDF attachments
 - `sql/04-create-storage-bucket.sql` - **NEW**: Storage bucket configuration
 - `sql/05-simple-bucket-setup.sql` - **NEW**: Simplified bucket setup
-- `test-pdf-system.html` - **NEW**: Complete testing suite for PDF functionality
-- `debug-storage-bucket.html` - **NEW**: Advanced diagnostic tool for Storage issues
-- `test-bucket-fix.html` - **NEW**: Quick bucket fix and validation tool
-- `CONFIGURAR_STORAGE_PDF.md` - **NEW**: Step-by-step storage configuration guide
-- `SOLUCION_BUCKET_ERROR.md` - **NEW**: Complete troubleshooting guide for bucket issues
+- `test-pdf-system.html` - Complete testing suite for PDF functionality
+- `debug-storage-bucket.html` - Advanced diagnostic tool for Storage issues
+- `test-bucket-fix.html` - Quick bucket fix and validation tool
+- `test-ai-inline-queries.html` - **NEW**: Complete testing suite for AI inline queries system
+- `test-user-identifiers.html` - Complete testing suite for user identifier system
+- `test-dark-mode.html` - Complete testing suite for dark mode toggle system
+- `CONFIGURAR_STORAGE_PDF.md` - Step-by-step storage configuration guide
+- `SOLUCION_BUCKET_ERROR.md` - Complete troubleshooting guide for bucket issues
 - `env.js` - Environment variables for frontend (auto-generated in production)
 - `.env` - Local environment variables (NOT committed to git)
 - `Dockerfile` - Container configuration with environment variable support
@@ -291,9 +298,9 @@ optimizeSystem()
 - **Focus states**: Estados más llamativos con animaciones
 - **Fondo bienvenida**: Gradientes radiales multicolores
 
-### 🚀 ESTADO ACTUAL - SESIÓN 2025-08-06 SESSION 7 COMPLETADA (MESSAGE LIMIT INCREASE)
+### 🚀 ESTADO ACTUAL - SESIÓN 2025-08-06 SESSION 8 COMPLETADA (AI INLINE QUERIES)
 
-**SISTEMA COMPLETAMENTE FUNCIONAL CON LÍMITE DE MENSAJES AUMENTADO**:
+**SISTEMA COMPLETAMENTE FUNCIONAL CON CONSULTAS IA INLINE IMPLEMENTADAS**:
 - ✅ Sistema de fluidez v3.0 operativo
 - ✅ Sistema administrador incógnito funcional con seguridad mejorada
 - ✅ Persistencia de salas implementada
@@ -303,11 +310,12 @@ optimizeSystem()
 - ✅ **SESSION 4**: Sistema de identificadores únicos para usuarios anónimos 100% COMPLETADO
 - ✅ **SESSION 5**: Sistema Dark Mode Toggle completamente implementado
 - ✅ **SESSION 6**: UI Cleanup - Interfaz limpia y optimizada
-- ✅ **📈 NUEVO SESSION 7**: Message Limit Increase - Límite aumentado de 50 a 200 mensajes
-- ✅ **CONFIGURACIÓN**: app.js actualizado con messageLimit: 200
-- ✅ **INTERFAZ**: Contador de mensajes cambiado a "--/200"
-- ✅ **BASE DATOS**: Schemas actualizados para límite de 200 mensajes por defecto
-- ✅ **DOCUMENTACIÓN**: Todas las referencias actualizadas consistentemente
+- ✅ **SESSION 7**: Message Limit Increase - Límite aumentado de 50 a 200 mensajes
+- ✅ **🤖 NUEVO SESSION 8**: AI Inline Queries - Consultas IA desde chat input con "**IA"
+- ✅ **DETECCIÓN AUTOMÁTICA**: Mensajes "**IA" interceptados para análisis inteligente
+- ✅ **3 TIPOS ANÁLISIS**: Sentiment, Topic, Summary según keywords automáticas
+- ✅ **INTEGRACIÓN BD**: Lee TODOS los mensajes de sala desde Supabase
+- ✅ **UI AVANZADA**: Indicadores carga, mensajes especiales, botones acción
 
 **NUEVAS CARACTERÍSTICAS - SISTEMA IDENTIFICADORES:**
 - **Identificadores únicos**: Format "Anónimo #A1B2C3" - 6 caracteres alfanuméricos

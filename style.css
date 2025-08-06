@@ -1139,6 +1139,10 @@ select.form-control {
   border-width: 2px;
 }
 
+[data-color-scheme="dark"] .message.creator-message {
+  background: rgba(46, 64, 58, 1);
+}
+
 .message.creator-message .message-header {
   color: rgba(114, 134, 28, 1);
   font-weight: var(--font-weight-semibold);

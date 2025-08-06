@@ -479,18 +479,131 @@ js/modules/
 - **`SOLUCION_BUCKET_ERROR.md`**: Documentación completa soluciones bucket
 - **`IMPLEMENTACION_IDENTIFICADORES_USUARIOS.md`**: **NUEVO** - Doc sistema identificadores
 
-#### 🎯 PRÓXIMA SESIÓN - DEPLOY Y TESTING FINAL
-**PRIORIDAD 1 - Activar Sistema Identificadores:**
+## 🤖 NUEVA FUNCIONALIDAD - SESIÓN 2025-08-06 SESSION 8
+
+### ✅ SISTEMA IA INLINE QUERIES - 100% COMPLETADO
+
+**OBJETIVO ALCANZADO**: Implementar consultas IA directamente desde el chat input, permitiendo a los usuarios hacer análisis inteligentes de mensajes escribiendo comandos que empiecen con "**IA".
+
+#### 🎯 CARACTERÍSTICAS IMPLEMENTADAS
+- **✅ DETECCIÓN AUTOMÁTICA**: Mensajes que empiecen con "**IA" se interceptan automáticamente
+- **✅ ANÁLISIS INTELIGENTE**: 3 tipos de análisis automático según keywords
+- **✅ INTEGRACIÓN BD**: Lee TODOS los mensajes de la sala desde Supabase
+- **✅ RENDERIZADO ESPECIAL**: Respuestas IA aparecen como mensajes especiales en el chat
+- **✅ UX AVANZADA**: Indicadores de carga, botones de acción, exportar respuestas
+- **✅ MOBILE RESPONSIVE**: Diseño completamente adaptado a móviles
+
+#### 🛠️ CAMBIOS TÉCNICOS REALIZADOS
+
+**Main App (app.js):**
+- **MODIFICADO**: `handleSendMessage()` - Líneas 1141-1145 añadidas para detectar "**IA"
+- **AÑADIDO**: `handleAIQuery()` - 200+ líneas de procesamiento completo de consultas IA
+- **AÑADIDO**: `determineAnalysisType()` - Detección inteligente de tipo de análisis
+- **AÑADIDO**: `renderAIResponse()` - Renderiza respuestas como mensajes especiales
+- **AÑADIDO**: `addAIMessageToChat()` - Sistema de mensajes IA con estilos únicos
+- **AÑADIDO**: Funciones de procesamiento: `showAIQueryIndicator()`, `copyAIResponse()`, `exportAIResponse()`
+
+**AI Analysis Manager (js/modules/ai-analysis-manager.js):**
+- **YA EXISTENTE**: Sistema previo de análisis IA reutilizado completamente
+- **INTEGRADO**: Funciona perfectamente con nuevo sistema inline
+- **MÉTODO CLAVE**: `getMessagesFromCurrentRoom()` obtiene mensajes desde BD
+
+**Estilos CSS (style.css):**
+- **AÑADIDO**: 150+ líneas de CSS especializado para componentes IA inline
+- **INCLUYE**: `.ai-message`, `.ai-query-indicator`, `.ai-processing`, `.ai-actions`
+- **ANIMACIONES**: Pulsos, spinners, slide-in effects, highlight effects
+- **DARK MODE**: Soporte completo para modo oscuro
+- **RESPONSIVE**: Diseño móvil optimizado
+
+**Testing (test-ai-inline-queries.html):**
+- **CREADO**: Suite completa de testing del sistema inline
+- **INCLUYE**: Test detección prefijo, parsing consultas, tipos análisis
+- **SIMULA**: Flujo completo E2E desde input hasta respuesta visual
+- **DEMO**: Componentes UI en vivo con datos mock
+
+#### 🎯 TIPOS DE ANÁLISIS SOPORTADOS
+
+**1. Análisis de Sentimientos (`sentiment`)**
+- **Triggers**: "sentiment", "emoci", "ánimo", "estado"
+- **Ejemplo**: `**IA analizar sentimientos`
+- **Output**: Tono emocional, emociones principales, evolución temporal
+
+**2. Análisis Temático (`topic`)**  
+- **Triggers**: "tema", "tópico", "asunto", "topic"
+- **Ejemplo**: `**IA qué temas se discuten`
+- **Output**: Temas principales, palabras clave, categorización
+
+**3. Resumen de Conversación (`summary`)**
+- **Triggers**: "resumen", "summary", "resumir", "síntesis"
+- **Ejemplo**: `**IA resumir conversación`
+- **Output**: Resumen ejecutivo, puntos clave, conclusiones
+
+**4. Por Defecto (`summary`)**
+- **Cualquier consulta**: `**IA analizar esta sala`
+- **Comportamiento**: Usa resumen como análisis por defecto
+
+#### 🎨 COMPONENTES UI IMPLEMENTADOS
+
+**1. Indicador de Carga**
+- Spinner animado con gradiente azul-púrpura
+- Muestra la consulta que se está procesando
+- Animación de pulso suave
+- Se oculta automáticamente al completar
+
+**2. Mensajes IA Especiales**
+- Diseño distintivo con bordes gradiente
+- Icono 🤖 flotante en la esquina
+- Header especial con autor "🤖 Análisis IA"
+- Metadata con detalles: consulta, tipo, mensajes analizados, modelo IA
+
+**3. Botones de Acción**
+- **📋 Copiar**: Copia respuesta al portapapeles
+- **📄 Exportar**: Descarga como archivo .txt
+- Estilos con gradientes y hover effects
+
+#### ✅ FLUJO DE USUARIO COMPLETO
+
+1. **Usuario escribe**: `**IA analizar sentimientos` en el chat input
+2. **Sistema detecta**: Prefijo "**IA" e intercepta el mensaje
+3. **Input se limpia**: Inmediatamente para feedback visual
+4. **Indicador aparece**: Muestra "Procesando consulta IA..."
+5. **Sistema procesa**: 
+   - Extrae consulta: "analizar sentimientos"
+   - Detecta tipo: `sentiment`
+   - Obtiene mensajes de BD via AI Manager
+   - Ejecuta análisis OpenAI
+6. **Respuesta se renderiza**: Como mensaje especial en el chat
+7. **Usuario puede**: Copiar o exportar la respuesta
+
+#### 🧪 TESTING IMPLEMENTADO
+
+**Test File**: `test-ai-inline-queries.html`
+- **Detección Prefijo**: Valida interceptación correcta "**IA"
+- **Parsing Consultas**: Extrae query correctamente
+- **Tipos Análisis**: Detecta sentiment/topic/summary según keywords
+- **AI Integration**: Valida conexión con AI Manager
+- **UI Components**: Renderiza indicadores y mensajes correctamente
+- **E2E Flow**: Test completo desde input hasta respuesta visual
+
+#### 🎯 PRÓXIMA SESIÓN - TESTING Y DEPLOY
+
+**PRIORIDAD 1 - Testing Sistema IA Inline:**
+- **Ejecutar tests**: Abrir `test-ai-inline-queries.html` y ejecutar suite completa
+- **Testing básico**: Crear sala, escribir `**IA analizar sentimientos`, verificar flujo
+- **Validar OpenAI**: Configurar `OPENAI_API_KEY` en variables de entorno
+
+**PRIORIDAD 2 - Activar Sistema Identificadores (pendiente sesión anterior):**
 - **Ejecutar migración**: `sql/06-add-user-identifiers.sql` en Supabase SQL Editor
 - **Verificar testing**: Abrir `test-user-identifiers.html` y ejecutar todos los tests
 - **Testing básico**: Crear sala, enviar mensajes, verificar format "Anónimo #XXXXXX"
 
-**PRIORIDAD 2 - Sistema PDF (pendiente sesiones anteriores):**
+**PRIORIDAD 3 - Sistema PDF (pendiente sesiones anteriores):**
 - **Crear bucket**: `chat-pdfs` en Supabase Dashboard → Storage (público ✅)
 - **Validar con**: `test-bucket-fix.html` para verificar bucket funciona
 - **Testing PDF**: Upload, preview, download funcionando
 
-**PRIORIDAD 3 - Deploy Final:**
-- **Validar sistemas**: Identificadores + PDFs + todas funcionalidades existentes
-- **Deploy producción**: Código 100% listo para usuarios finales
-- **Testing multi-dispositivo**: Verificar persistencia identificadores
+**PRIORIDAD 4 - Deploy Final:**
+- **Variables entorno**: Configurar `OPENAI_API_KEY` y `AI_MODEL` en Coolify
+- **Validar sistemas**: IA Inline + Identificadores + PDFs + todas funcionalidades
+- **Deploy producción**: Sistema completo listo para usuarios finales
+- **Testing multi-dispositivo**: Verificar todos los sistemas funcionando
