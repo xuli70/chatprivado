@@ -101,16 +101,16 @@
                 <div class="input-group">
                     <div class="message-input-wrapper">
                         <textarea id="messageInput" class="form-control message-input" placeholder="Escribe tu respuesta anónima..." maxlength="280" rows="4"></textarea>
-                        <div class="input-actions">
-                            <button id="uploadPDFBtn" class="btn-attachment" title="Subir PDF" type="button">
-                                📎
-                            </button>
-                            <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
-                        </div>
                     </div>
-                    <button type="submit" class="btn btn--primary send-btn" disabled>
-                        Enviar
-                    </button>
+                    <div class="action-buttons-group">
+                        <button id="uploadPDFBtn" class="btn btn--secondary btn-attachment-inline" title="Subir PDF" type="button">
+                            📎 PDF
+                        </button>
+                        <button type="submit" class="btn btn--primary send-btn" disabled>
+                            Enviar
+                        </button>
+                    </div>
+                    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
                 </div>
                 <small class="character-count">0/280</small>
             </form>

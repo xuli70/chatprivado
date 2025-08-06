@@ -1073,20 +1073,18 @@ select.form-control {
 
 /* Nueva barra inferior unificada */
 .chat-bottom-bar {
-  position: fixed;
-  bottom: calc(120px + env(safe-area-inset-bottom));
-  left: 0;
-  right: 0;
+  position: static;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   padding: var(--space-8) var(--space-16);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 20;
   height: 40px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: var(--space-16);
   min-width: 0; /* Permitir shrinking */
   overflow: hidden; /* Prevenir overflow horizontal */
 }
@@ -1273,7 +1271,7 @@ select.form-control {
   border-top: 1px solid var(--color-border);
   padding: var(--space-16);
   padding-bottom: calc(var(--space-16) + env(safe-area-inset-bottom));
-  z-index: 30;
+  z-index: 20;
 }
 
 .input-group {
@@ -1292,6 +1290,22 @@ select.form-control {
   height: 48px;
   border-radius: var(--radius-lg);
   flex-shrink: 0;
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.btn-attachment-inline {
+  height: 48px;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .character-count {
@@ -1720,15 +1734,16 @@ select.form-control {
 /* Mobile small screens */
 @media (max-width: 480px) {
   .chat-container {
-    padding-bottom: 280px; /* Aumentado para nuevo layout con textarea más alto */
+    padding-bottom: 160px; /* Reducido ya que la barra ahora hace scroll */
   }
   
   .chat-bottom-bar {
-    bottom: calc(200px + env(safe-area-inset-bottom)); /* Aumentado para no solapar con textarea alto */
+    position: static; /* Hacer scroll con la pantalla */
     padding: var(--space-6) var(--space-8); /* Menos padding en móviles */
     height: 36px; /* Altura reducida */
     flex-wrap: nowrap; /* No permitir wrap */
     overflow: hidden; /* Evitar overflow */
+    margin-bottom: var(--space-12);
   }
   
   .chat-info-compact {
@@ -2281,8 +2296,6 @@ select.form-control {
   .message-input-wrapper {
     order: 1;
     width: 100%;
-    padding-right: 44px;
-    position: relative;
   }
   
   .message-input {
@@ -2297,15 +2310,21 @@ select.form-control {
     box-sizing: border-box;
   }
   
-  .send-btn {
+  .action-buttons-group {
     order: 2;
+    display: flex;
+    gap: var(--space-8);
     width: 100%;
-    margin-top: var(--space-4);
   }
   
-  .input-actions {
-    right: var(--space-4);
-    bottom: var(--space-4);
+  .btn-attachment-inline {
+    flex: 0 0 auto;
+    padding: var(--space-8) var(--space-12);
+  }
+  
+  .send-btn {
+    flex: 1;
+    margin-top: 0;
   }
   
   .attachments-list {
