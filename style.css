@@ -1085,6 +1085,8 @@ select.form-control {
   z-index: 20;
   height: 40px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  min-width: 0; /* Permitir shrinking */
+  overflow: hidden; /* Prevenir overflow horizontal */
 }
 
 [data-color-scheme="dark"] .chat-bottom-bar {
@@ -1096,6 +1098,9 @@ select.form-control {
   align-items: center;
   gap: var(--space-12);
   font-size: var(--font-size-xs);
+  flex-shrink: 1; /* Puede reducirse */
+  min-width: 0; /* Permite truncar texto */
+  overflow: hidden; /* Evita overflow */
 }
 
 .room-code-compact {
@@ -1126,6 +1131,8 @@ select.form-control {
 .chat-actions-compact {
   display: flex;
   gap: var(--space-4);
+  flex-shrink: 0; /* Los botones no se reducen */
+  align-items: center;
 }
 
 .btn--xs {
@@ -1716,6 +1723,37 @@ select.form-control {
   
   .chat-bottom-bar {
     bottom: calc(140px + env(safe-area-inset-bottom)); /* Ajustado para móviles pequeños */
+    padding: var(--space-6) var(--space-8); /* Menos padding en móviles */
+    height: 36px; /* Altura reducida */
+    flex-wrap: nowrap; /* No permitir wrap */
+    overflow: hidden; /* Evitar overflow */
+  }
+  
+  .chat-info-compact {
+    gap: var(--space-8); /* Menos espacio entre elementos */
+    flex-shrink: 0; /* No reducir tamaño */
+    min-width: 0; /* Permitir texto truncado */
+  }
+  
+  .chat-actions-compact {
+    gap: var(--space-2); /* Botones más juntos */
+    flex-shrink: 1; /* Puede reducirse si es necesario */
+  }
+  
+  .btn--xs {
+    padding: var(--space-1) var(--space-4); /* Padding más pequeño */
+    font-size: 11px; /* Texto más pequeño */
+    min-height: 24px;
+    height: 24px;
+  }
+  
+  .room-code-compact {
+    font-size: 11px; /* Código más pequeño */
+    padding: var(--space-1) var(--space-2);
+  }
+  
+  .counter-compact {
+    font-size: 10px; /* Contador más pequeño */
   }
   
   .chat-input-container {
@@ -1854,12 +1892,70 @@ select.form-control {
   
   .chat-bottom-bar {
     bottom: calc(110px + env(safe-area-inset-bottom));
+    padding: var(--space-4) var(--space-6); /* Padding mínimo */
+    height: 32px; /* Altura mínima */
+  }
+  
+  .chat-actions-compact {
+    gap: var(--space-1); /* Gap mínimo entre botones */
+  }
+  
+  .btn--xs {
+    padding: var(--space-1) var(--space-3); /* Padding mínimo */
+    font-size: 10px; /* Texto mínimo */
+    min-height: 22px;
+    height: 22px;
+  }
+  
+  /* Ocultar texto en botones si es necesario, solo mostrar iconos */
+  .btn--xs {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .welcome-content {
     min-height: 100vh; /* Usar viewport fijo en pantallas muy pequeñas */
     justify-content: flex-start;
     padding-top: var(--space-32);
+  }
+}
+
+/* Pantallas extra pequeñas - optimización extrema */
+@media (max-width: 320px) {
+  .chat-bottom-bar {
+    padding: var(--space-2) var(--space-4);
+    height: 28px;
+    font-size: 9px;
+  }
+  
+  .chat-info-compact {
+    gap: var(--space-4);
+  }
+  
+  .room-code-compact {
+    font-size: 9px;
+    padding: 1px 2px;
+  }
+  
+  .counter-compact {
+    font-size: 8px;
+  }
+  
+  .chat-actions-compact {
+    gap: 1px;
+  }
+  
+  .btn--xs {
+    padding: 1px 3px;
+    font-size: 9px;
+    min-height: 20px;
+    height: 20px;
+  }
+  
+  /* En pantallas muy pequeñas, priorizar iconos sobre texto */
+  .btn--xs:not(#leaveRoomBtn) {
+    font-size: 12px; /* Solo iconos más grandes */
   }
 }
 
