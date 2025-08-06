@@ -1062,8 +1062,10 @@ select.form-control {
 
 .message-input {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
   font-family: var(--font-family-base);
+  overflow-y: auto;
+  line-height: 1.4;
 }
 
 /* Chat específico */
@@ -2272,6 +2274,17 @@ select.form-control {
 @media (max-width: 480px) {
   .message-input-wrapper {
     padding-right: 44px;
+  }
+  
+  .message-input {
+    width: 100%;
+    min-height: 120px;
+    max-height: 200px;
+    padding: var(--space-12);
+    font-size: 16px;
+    line-height: 1.4;
+    overflow-y: auto;
+    resize: none;
   }
   
   .input-actions {
