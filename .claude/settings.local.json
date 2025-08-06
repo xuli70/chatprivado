@@ -60,7 +60,9 @@
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-ai-analysis.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\debug-ai-integration.html\")",
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-ai-supabase-integration.html\")",
-      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-ai-inline-queries.html\")"
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-ai-inline-queries.html\")",
+      "mcp__supabase2-mcp__list-tables",
+      "mcp__supabase2-mcp__query"
     ]
   },
   "enabledMcpjsonServers": [

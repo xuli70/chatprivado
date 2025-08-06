@@ -588,6 +588,96 @@ class AnonymousChatApp {
         });
     }
 
+    // 📝 FUNCIONES ADMINISTRADOR - Actualizar límite de mensajes
+    async adminUpdateRoomLimit(roomId, newLimit) {
+        console.log('📝 Admin: Actualizar límite de sala', roomId, 'a', newLimit);
+        
+        try {
+            if (this.supabaseClient.isOnline) {
+                const { error } = await this.supabaseClient.client
+                    .from('chat_rooms')
+                    .update({ message_limit: newLimit })
+                    .eq('id', roomId);
+                
+                if (error) {
+                    console.error('Error actualizando límite:', error);
+                    this.showToast('Error al actualizar límite', 'error');
+                    return false;
+                }
+                
+                console.log('✅ Límite actualizado en Supabase');
+                this.showToast(`Límite actualizado a ${newLimit} mensajes`, 'success');
+                
+                // Si es la sala actual, actualizar también en memoria
+                if (this.state.currentRoom && this.state.currentRoom.id === roomId) {
+                    this.state.currentRoom.messageLimit = newLimit;
+                    this.updateCounters();
+                }
+                
+                return true;
+            } else {
+                // Actualizar en localStorage
+                const roomData = localStorage.getItem(`room_${roomId}`);
+                if (roomData) {
+                    const room = JSON.parse(roomData);
+                    room.messageLimit = newLimit;
+                    localStorage.setItem(`room_${roomId}`, JSON.stringify(room));
+                    
+                    // Si es la sala actual, actualizar también en memoria
+                    if (this.state.currentRoom && this.state.currentRoom.id === roomId) {
+                        this.state.currentRoom.messageLimit = newLimit;
+                        this.updateCounters();
+                    }
+                    
+                    this.showToast(`Límite actualizado a ${newLimit} mensajes (local)`, 'success');
+                    return true;
+                }
+            }
+        } catch (error) {
+            console.error('Error en adminUpdateRoomLimit:', error);
+            this.showToast('Error al actualizar límite', 'error');
+            return false;
+        }
+    }
+
+    // 🔄 Actualizar límites masivamente
+    async adminUpdateAllRoomsLimit(newLimit = 200) {
+        console.log('🔄 Admin: Actualizar todos los límites a', newLimit);
+        
+        try {
+            if (this.supabaseClient.isOnline) {
+                const { error } = await this.supabaseClient.client
+                    .from('chat_rooms')
+                    .update({ message_limit: newLimit })
+                    .eq('is_active', true);
+                
+                if (error) {
+                    console.error('Error actualizando límites:', error);
+                    this.showToast('Error al actualizar límites', 'error');
+                    return false;
+                }
+                
+                console.log('✅ Todos los límites actualizados en Supabase');
+                this.showToast(`Todos los límites actualizados a ${newLimit} mensajes`, 'success');
+                
+                // Si hay sala actual, actualizar también
+                if (this.state.currentRoom) {
+                    this.state.currentRoom.messageLimit = newLimit;
+                    this.updateCounters();
+                }
+                
+                return true;
+            } else {
+                this.showToast('Actualización masiva solo disponible con conexión', 'error');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error en adminUpdateAllRoomsLimit:', error);
+            this.showToast('Error al actualizar límites', 'error');
+            return false;
+        }
+    }
+
     // 🗑️ FUNCIONES ADMINISTRADOR - Eliminación manual de salas
     async adminDeleteRoom(roomId) {
         console.log('🗑️ Admin: Eliminar sala', roomId);
@@ -853,7 +943,9 @@ class AnonymousChatApp {
    • adminListRooms() - Ver todas las salas
    • adminJoinExistingRoom("ID") - Entrar directamente a sala existente
    • adminDeleteRoom("ID") - Eliminar sala (soft delete)
-   • adminReactivateRoom("ID") - Reactivar sala eliminada`;
+   • adminReactivateRoom("ID") - Reactivar sala eliminada
+   • adminUpdateRoomLimit("ID", 200) - Actualizar límite de una sala
+   • adminUpdateAllRoomsLimit(200) - Actualizar límite de todas las salas`;
             
             this.showConfirmModal(
                 '📊 Estadísticas del Sistema',
@@ -1144,7 +1236,9 @@ class AnonymousChatApp {
             return;
         }
 
-        if (this.state.currentRoom.messages.length >= this.config.messageLimit) {
+        // Usar el límite de la sala actual, no el de config
+        const messageLimit = this.state.currentRoom.messageLimit || this.config.messageLimit;
+        if (this.state.currentRoom.messages.length >= messageLimit) {
             this.showToast('Se ha alcanzado el límite de mensajes', 'error');
             return;
         }

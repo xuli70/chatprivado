@@ -315,7 +315,8 @@ class SupabaseClient {
                 question: roomData.question,
                 createdAt: roomData.created_at,
                 expiresAt: roomData.expires_at,
-                messageLimit: roomData.message_limit,
+                // Usar el máximo entre el valor de BD y 200 para compatibilidad con salas antiguas
+                messageLimit: Math.max(roomData.message_limit || 50, 200),
                 messages: messages.map(msg => ({
                     id: msg.id,
                     text: msg.text,

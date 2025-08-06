@@ -124,9 +124,9 @@ export function updateCharacterCount(elements) {
 export function updateCounters(elements, state, config) {
     if (!state.currentRoom) return;
 
-    // Contador de mensajes
+    // Contador de mensajes - usar el límite de la sala actual, no de config
     const messageCount = state.currentRoom.messages.length;
-    const messageLimit = config.messageLimit;
+    const messageLimit = state.currentRoom.messageLimit || config.messageLimit;
     elements.displays.messageCounter.textContent = `💬 ${messageCount}/${messageLimit}`;
 
 }
