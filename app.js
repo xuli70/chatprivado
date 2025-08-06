@@ -1137,6 +1137,13 @@ class AnonymousChatApp {
         
         if (!messageText) return;
 
+        // 🤖 INTERCEPTAR CONSULTAS IA - Detectar mensajes que empiezan con **IA
+        if (messageText.startsWith('**IA')) {
+            console.log('🤖 Detectada consulta IA inline:', messageText);
+            await this.handleAIQuery(messageText);
+            return;
+        }
+
         if (this.state.currentRoom.messages.length >= this.config.messageLimit) {
             this.showToast('Se ha alcanzado el límite de mensajes', 'error');
             return;
@@ -2515,6 +2522,286 @@ class AnonymousChatApp {
         } catch (error) {
             console.error('Error obteniendo estadísticas PDF:', error);
             return { totalFiles: 0, totalSizeMB: 0 };
+        }
+    }
+
+    // 🤖 IA INLINE QUERIES - Procesar consultas IA desde chat input
+    async handleAIQuery(messageText) {
+        console.log('🤖 Procesando consulta IA inline:', messageText);
+        
+        // Limpiar input inmediatamente
+        this.elements.inputs.messageInput.value = '';
+        this.updateCharacterCount();
+
+        // Verificar que el manager IA esté disponible
+        if (!this.aiManager) {
+            this.showToast('Sistema IA no disponible', 'error');
+            return;
+        }
+
+        // Extraer la consulta (remover **IA del inicio)
+        const query = messageText.substring(4).trim();
+        if (!query) {
+            this.showToast('Consulta IA vacía. Ejemplo: **IA analizar sentimientos', 'warning');
+            return;
+        }
+
+        // Mostrar indicador visual de que se está procesando
+        this.showAIQueryIndicator(query);
+
+        try {
+            // Obtener mensajes de la sala actual desde la BD
+            const messages = await this.aiManager.getMessagesFromCurrentRoom();
+            
+            if (!messages || messages.length === 0) {
+                this.hideAIQueryIndicator();
+                this.showToast('No hay mensajes para analizar en esta sala', 'warning');
+                return;
+            }
+
+            // Determinar tipo de análisis basado en la consulta
+            const analysisType = this.determineAnalysisType(query);
+            
+            // Ejecutar análisis IA
+            const result = await this.aiManager.performOpenAIAnalysis(messages, analysisType);
+            
+            // Mostrar resultado como mensaje especial en el chat
+            this.renderAIResponse(query, result, analysisType, messages.length);
+            
+            // Limpiar indicador
+            this.hideAIQueryIndicator();
+            
+            console.log('✅ Consulta IA completada exitosamente');
+
+        } catch (error) {
+            console.error('❌ Error procesando consulta IA:', error);
+            this.hideAIQueryIndicator();
+            
+            // Mostrar error como mensaje especial
+            this.renderAIError(query, error.message);
+        }
+    }
+
+    // 🎯 Determinar tipo de análisis basado en la consulta del usuario
+    determineAnalysisType(query) {
+        const lowerQuery = query.toLowerCase();
+        
+        if (lowerQuery.includes('sentiment') || lowerQuery.includes('emoci') || 
+            lowerQuery.includes('ánimo') || lowerQuery.includes('estado')) {
+            return 'sentiment';
+        }
+        
+        if (lowerQuery.includes('tema') || lowerQuery.includes('tópico') || 
+            lowerQuery.includes('asunto') || lowerQuery.includes('topic')) {
+            return 'topic';
+        }
+        
+        if (lowerQuery.includes('resumen') || lowerQuery.includes('summary') || 
+            lowerQuery.includes('resumir') || lowerQuery.includes('síntesis')) {
+            return 'summary';
+        }
+        
+        // Por defecto usar summary para consultas generales
+        return 'summary';
+    }
+
+    // 💬 Renderizar respuesta IA como mensaje especial en el chat
+    renderAIResponse(query, result, analysisType, messagesAnalyzed) {
+        // Crear mensaje especial para la respuesta IA
+        const aiResponse = {
+            id: `ai_${Date.now()}`,
+            text: result,
+            isAnonymous: false,
+            author: '🤖 Análisis IA',
+            timestamp: new Date().toISOString(),
+            votes: { likes: 0, dislikes: 0 },
+            isAIResponse: true, // Marca especial
+            aiMetadata: {
+                query: query,
+                analysisType: analysisType,
+                messagesAnalyzed: messagesAnalyzed,
+                model: this.aiManager.model || 'gpt-4o-mini'
+            }
+        };
+
+        // Agregar al chat sin enviarlo a la BD (solo visual)
+        this.addAIMessageToChat(aiResponse);
+        
+        // Mostrar toast informativo
+        this.showToast(`Análisis completado: ${messagesAnalyzed} mensajes analizados`, 'success');
+    }
+
+    // ❌ Renderizar error IA como mensaje especial
+    renderAIError(query, errorMessage) {
+        const aiError = {
+            id: `ai_error_${Date.now()}`,
+            text: `Error procesando consulta: "${query}"\n\n${errorMessage}`,
+            isAnonymous: false,
+            author: '🤖 Error IA',
+            timestamp: new Date().toISOString(),
+            votes: { likes: 0, dislikes: 0 },
+            isAIError: true // Marca especial
+        };
+
+        this.addAIMessageToChat(aiError);
+        this.showToast('Error en análisis IA', 'error');
+    }
+
+    // 📱 Agregar mensaje IA al chat con estilo especial
+    addAIMessageToChat(aiMessage) {
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message ai-message';
+        messageEl.setAttribute('data-message-id', aiMessage.id);
+
+        const timeStr = new Date(aiMessage.timestamp).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        // Formatear texto IA con mejor presentación
+        const formattedText = this.formatAIText(aiMessage.text);
+
+        let metadataHTML = '';
+        if (aiMessage.aiMetadata) {
+            const { query, analysisType, messagesAnalyzed, model } = aiMessage.aiMetadata;
+            metadataHTML = `
+                <div class="ai-metadata">
+                    <small>
+                        📊 Consulta: "${query}" | 
+                        🎯 Tipo: ${this.getAnalysisTypeName(analysisType)} | 
+                        📈 Mensajes: ${messagesAnalyzed} | 
+                        🤖 ${model}
+                    </small>
+                </div>
+            `;
+        }
+
+        messageEl.innerHTML = `
+            <div class="message-header ai-header">
+                <span class="message-author ai-author">${aiMessage.author}</span>
+                <span class="message-time">${timeStr}</span>
+                <span class="ai-indicator">🎯</span>
+            </div>
+            <div class="message-content ai-content">${formattedText}</div>
+            ${metadataHTML}
+            <div class="ai-actions">
+                <button class="ai-action-btn" onclick="chatApp.copyAIResponse('${aiMessage.id}')">
+                    📋 Copiar
+                </button>
+                <button class="ai-action-btn" onclick="chatApp.exportAIResponse('${aiMessage.id}')">
+                    📄 Exportar
+                </button>
+            </div>
+        `;
+
+        this.elements.displays.chatMessages.appendChild(messageEl);
+        
+        // Scroll suave y efecto visual
+        messageEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        
+        setTimeout(() => {
+            messageEl.classList.add('ai-message-highlight');
+            setTimeout(() => {
+                messageEl.classList.remove('ai-message-highlight');
+            }, 3000);
+        }, 100);
+    }
+
+    // 📝 Formatear texto IA para mejor legibilidad
+    formatAIText(text) {
+        return text
+            .replace(/\n\n/g, '</p><p class="ai-paragraph">')
+            .replace(/\n/g, '<br>')
+            .replace(/(^\d+\.\s)/gm, '<strong class="ai-number">$1</strong>')
+            .replace(/^/, '<p class="ai-paragraph">')
+            .replace(/$/, '</p>');
+    }
+
+    // 🎯 Obtener nombre legible del tipo de análisis
+    getAnalysisTypeName(analysisType) {
+        const names = {
+            sentiment: 'Análisis de Sentimientos',
+            topic: 'Análisis Temático',
+            summary: 'Resumen de Conversación'
+        };
+        return names[analysisType] || 'Análisis';
+    }
+
+    // ⌛ Mostrar indicador de que se está procesando consulta IA
+    showAIQueryIndicator(query) {
+        // Crear elemento indicador temporal
+        const indicator = document.createElement('div');
+        indicator.id = 'ai-query-indicator';
+        indicator.className = 'ai-query-indicator';
+        indicator.innerHTML = `
+            <div class="ai-processing">
+                <div class="ai-spinner"></div>
+                <div class="ai-processing-text">
+                    <strong>🤖 Procesando consulta IA...</strong>
+                    <small>Consulta: "${query}"</small>
+                </div>
+            </div>
+        `;
+
+        // Insertar antes del input de mensajes
+        const chatInput = document.querySelector('.chat-input');
+        if (chatInput) {
+            chatInput.insertAdjacentElement('beforebegin', indicator);
+        }
+    }
+
+    // 🚫 Ocultar indicador de procesamiento IA
+    hideAIQueryIndicator() {
+        const indicator = document.getElementById('ai-query-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    // 📋 Copiar respuesta IA al clipboard
+    copyAIResponse(messageId) {
+        const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageEl) return;
+
+        const content = messageEl.querySelector('.ai-content');
+        if (content) {
+            // Extraer texto sin HTML
+            const text = content.innerText || content.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                this.showToast('Respuesta IA copiada al portapapeles', 'success');
+            }).catch(() => {
+                this.showToast('Error copiando respuesta', 'error');
+            });
+        }
+    }
+
+    // 📄 Exportar respuesta IA como archivo
+    exportAIResponse(messageId) {
+        const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageEl) return;
+
+        const content = messageEl.querySelector('.ai-content');
+        const metadata = messageEl.querySelector('.ai-metadata');
+        
+        if (content) {
+            const text = content.innerText || content.textContent;
+            const metaText = metadata ? (metadata.innerText || metadata.textContent) : '';
+            
+            const filename = `respuesta-ia-${new Date().toISOString().split('T')[0]}.txt`;
+            const fullContent = `RESPUESTA DE ANÁLISIS IA\n======================\n\n${metaText}\n\nRESULTADO:\n${text}\n\n---\nGenerado por Chat Anónimo v3.0 con IA inline`;
+
+            const blob = new Blob([fullContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.showToast('Respuesta IA exportada', 'success');
         }
     }
 }
