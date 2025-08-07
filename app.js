@@ -2628,6 +2628,9 @@ class AnonymousChatApp {
                 frame.src = pdf.url;
                 modal.classList.remove('hidden');
                 
+                // Guardar el attachment ID para el botón de descarga
+                modal.dataset.currentAttachmentId = attachmentId;
+                
                 // Los event listeners ya están configurados en setupPdfModalListeners()
                 // Solo necesitamos mostrar el modal
             }
@@ -2684,6 +2687,18 @@ class AnonymousChatApp {
                 this.closePdfModal();
             }
         });
+        
+        // Botón de descarga
+        const downloadBtn = document.getElementById('downloadPdfBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', async () => {
+                // Obtener el ID del attachment actual desde el modal
+                const modal = document.getElementById('pdfPreviewModal');
+                if (modal && modal.dataset.currentAttachmentId) {
+                    await this.downloadPDF(modal.dataset.currentAttachmentId);
+                }
+            });
+        }
         
         // Marcar que los listeners ya están configurados
         modal.dataset.listenersConfigured = 'true';

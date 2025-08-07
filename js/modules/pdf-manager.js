@@ -406,60 +406,13 @@ export function initializePDFEventListeners(app) {
         const attachmentId = pdfAttachment.dataset.attachmentId;
 
         if (e.target.classList.contains('btn-pdf-preview')) {
-            openPDFPreview(attachmentId, app);
+            // Usar el método de app.js en lugar de crear un modal duplicado
+            app.openPdfPreview(attachmentId);
         } else if (e.target.classList.contains('btn-pdf-download')) {
-            downloadPDF(attachmentId, app);
+            // Usar el método de app.js para descargar
+            app.downloadPDF(attachmentId);
         }
     });
-}
-
-/**
- * Abrir preview de PDF en modal
- * @param {string} attachmentId - ID del attachment
- * @param {Object} app - Instancia de la aplicación
- */
-async function openPDFPreview(attachmentId, app) {
-    try {
-        const pdfs = await getRoomPDFs(app.state.currentRoom.id, app.supabaseClient);
-        const attachment = pdfs.find(pdf => pdf.id === attachmentId);
-        
-        if (!attachment) {
-            showToast('Archivo no encontrado', 'error');
-            return;
-        }
-
-        // Crear modal para preview
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay pdf-preview-modal';
-        modal.innerHTML = `
-            <div class="modal-content pdf-preview-content">
-                <div class="modal-header">
-                    <h3>${escapeHtml(attachment.original_filename)}</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <iframe src="${attachment.url}" 
-                            width="100%" 
-                            height="600px" 
-                            style="border: none;">
-                    </iframe>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Event listener para cerrar modal
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal || e.target.classList.contains('modal-close')) {
-                document.body.removeChild(modal);
-            }
-        });
-
-    } catch (error) {
-        showToast('Error abriendo preview', 'error');
-        console.error('Error en openPDFPreview:', error);
-    }
 }
 
 /**
