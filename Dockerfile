@@ -57,16 +57,29 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
 
-# Crear script de inicio que genere las variables de entorno para el frontend
+# Usar envsubst para generar config.js dinámicamente
+RUN apk add --no-cache gettext
+
+# Copiar template de configuración
+COPY config.js.template .
+
+# Crear script de inicio que procese el template y genere config.js
 RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'echo "// Variables de entorno generadas dinámicamente" > /app/env.js' >> /app/start.sh && \
+    echo 'echo "🔧 Procesando template de configuración con envsubst..."' >> /app/start.sh && \
+    echo 'envsubst < /app/config.js.template > /app/config.js' >> /app/start.sh && \
+    echo 'echo "✅ config.js generado exitosamente"' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Generar también env.js para compatibilidad legacy' >> /app/start.sh && \
+    echo 'echo "// Variables de entorno generadas dinámicamente (legacy)" > /app/env.js' >> /app/start.sh && \
     echo 'echo "window.env = {" >> /app/env.js' >> /app/start.sh && \
     echo 'echo "  SUPABASE_URL: \"${SUPABASE_URL:-}\"," >> /app/env.js' >> /app/start.sh && \
     echo 'echo "  SUPABASE_ANON_KEY: \"${SUPABASE_ANON_KEY:-}\"," >> /app/env.js' >> /app/start.sh && \
     echo 'echo "  ADMIN_PASSWORD: \"${ADMIN_PASSWORD:-ADMIN2025}\"," >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "  AI_ACCESS_PASSWORD: \"${AI_ACCESS_PASSWORD:-IA24}\"," >> /app/env.js' >> /app/start.sh && \
     echo 'echo "  OPENAI_API_KEY: \"${OPENAI_API_KEY:-}\"," >> /app/env.js' >> /app/start.sh && \
     echo 'echo "  AI_MODEL: \"${AI_MODEL:-gpt-4o-mini}\"" >> /app/env.js' >> /app/start.sh && \
     echo 'echo "};" >> /app/env.js' >> /app/start.sh && \
+    echo 'echo "🚀 Iniciando servidor..."' >> /app/start.sh && \
     echo 'exec caddy run --config /app/Caddyfile --adapter caddyfile' >> /app/start.sh && \
     chmod +x /app/start.sh
 

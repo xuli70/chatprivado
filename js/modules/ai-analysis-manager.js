@@ -9,6 +9,14 @@ import { getAllRoomMessagesFromDB } from './message-manager.js';
 
 export class AiAnalysisManager {
     constructor() {
+        // Debug: Verificar estado de window.env al momento de construcción
+        console.log('🔍 DEBUG: Estado window.env en constructor:', {
+            windowEnvExists: typeof window.env !== 'undefined',
+            windowEnvKeys: window.env ? Object.keys(window.env) : 'N/A',
+            aiAccessPassword: window.env?.AI_ACCESS_PASSWORD,
+            openaiApiKey: window.env?.OPENAI_API_KEY ? 'CONFIGURADO' : 'NO CONFIGURADO'
+        });
+        
         this.apiKey = window.env?.OPENAI_API_KEY || '';
         this.model = window.env?.AI_MODEL || 'gpt-4o-mini';
         this.cache = new Map(); // Cache de análisis para evitar re-análisis costosos
@@ -27,8 +35,19 @@ export class AiAnalysisManager {
      * Método público que configura event listeners y UI
      */
     init() {
+        // Debug: Verificar estado de variables después de init
+        console.log('🔍 DEBUG: Estado window.env después de init:', {
+            windowEnvExists: typeof window.env !== 'undefined',
+            aiAccessPassword: window.env?.AI_ACCESS_PASSWORD,
+            allEnvKeys: window.env ? Object.keys(window.env) : 'N/A'
+        });
+
         this.setupEventListeners();
         this.checkApiKeyAvailability();
+        
+        // Test de acceso a password después de init
+        const testPassword = this.getAiAccessPassword();
+        console.log('🧪 Test acceso password después de init:', testPassword);
     }
 
     /**
@@ -173,6 +192,29 @@ export class AiAnalysisManager {
     }
 
     /**
+     * Obtener password IA de forma dinámica con fallbacks
+     */
+    getAiAccessPassword() {
+        // Debug exhaustivo del estado de variables
+        console.log('🔍 DEBUG: Acceso dinámico a password:', {
+            windowExists: typeof window !== 'undefined',
+            windowEnvExists: typeof window.env !== 'undefined',
+            windowEnvObject: window.env,
+            aiAccessPasswordDirect: window.env?.AI_ACCESS_PASSWORD,
+            windowAppConfig: window.APP_CONFIG?.AI_ACCESS_PASSWORD || 'N/A'
+        });
+
+        // Intentar múltiples fuentes con fallbacks
+        const password = 
+            window.env?.AI_ACCESS_PASSWORD || 
+            window.APP_CONFIG?.AI_ACCESS_PASSWORD || 
+            '';
+
+        console.log('🔐 Password obtenido:', password ? `"${password}"` : 'VACÍO');
+        return password;
+    }
+
+    /**
      * Validar password ingresado
      */
     validatePassword() {
@@ -185,18 +227,23 @@ export class AiAnalysisManager {
         }
 
         const enteredPassword = passwordInput.value.trim();
-        const correctPassword = window.env?.AI_ACCESS_PASSWORD || '';
+        const correctPassword = this.getAiAccessPassword(); // Acceso dinámico
         
         console.log('🔐 Validando password...');
+        console.log('🔐 Password ingresado:', `"${enteredPassword}"`);
+        console.log('🔐 Password esperado:', `"${correctPassword}"`);
         
         if (!correctPassword) {
-            feedbackDiv.innerHTML = '<span class="error">❌ Password no configurado en el sistema</span>';
+            const errorMsg = '❌ Password no configurado en el sistema';
+            console.error('🔐 ERROR:', errorMsg);
+            feedbackDiv.innerHTML = `<span class="error">${errorMsg}</span>`;
             feedbackDiv.className = 'password-feedback error';
             return;
         }
 
         if (enteredPassword === correctPassword) {
             // Password correcto
+            console.log('✅ Password validado correctamente');
             feedbackDiv.innerHTML = '<span class="success">✅ Password correcto</span>';
             feedbackDiv.className = 'password-feedback success';
             
@@ -207,6 +254,7 @@ export class AiAnalysisManager {
             
         } else {
             // Password incorrecto
+            console.log('❌ Password incorrecto');
             feedbackDiv.innerHTML = '<span class="error">❌ Password incorrecto</span>';
             feedbackDiv.className = 'password-feedback error';
             
