@@ -224,6 +224,40 @@
         </div>
     </div>
 
+    <!-- Modal de Password para acceso IA -->
+    <div id="aiPasswordModal" class="modal hidden ai-password-modal">
+        <div class="modal-content ai-password-content">
+            <div class="modal-header">
+                <h3>🔐 Acceso IA Requerido</h3>
+                <button id="closeAiPasswordModal" class="btn-close">×</button>
+            </div>
+            <div class="modal-body ai-password-body">
+                <div class="ai-password-form">
+                    <p class="ai-password-description">
+                        Introduce el código de acceso para utilizar las funciones de análisis IA:
+                    </p>
+                    <div class="password-input-group">
+                        <input type="password" 
+                               id="aiPasswordInput" 
+                               class="password-input" 
+                               placeholder="Código (4 caracteres)"
+                               maxlength="4"
+                               autocomplete="off">
+                        <div class="password-feedback" id="passwordFeedback"></div>
+                    </div>
+                    <div class="password-actions">
+                        <button id="submitAiPassword" class="btn btn--primary">
+                            🚀 Acceder
+                        </button>
+                        <button id="cancelAiPassword" class="btn btn--outline">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para preview de PDFs -->
     <div id="pdfPreviewModal" class="modal hidden pdf-modal">
         <div class="modal-content pdf-modal-content">

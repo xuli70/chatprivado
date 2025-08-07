@@ -84,18 +84,176 @@ export class AiAnalysisManager {
 
     /**
      * Abrir modal de análisis IA
+     * Ahora incluye validación de password para usuarios no-admin
      */
     openAnalysisModal() {
         console.log('🤖 Intentando abrir modal de análisis IA...');
         
-        const modal = document.getElementById('aiAnalysisModal');
-        if (!modal) {
-            console.error('❌ Modal aiAnalysisModal no encontrado en DOM');
-            this.showToast('Error: Modal IA no encontrado', 'error');
+        // Verificar si el usuario es administrador
+        const isAdmin = window.chatApp?.state?.isAdmin || false;
+        console.log('🔐 Estado admin:', isAdmin);
+        
+        if (!isAdmin) {
+            // Usuario regular - mostrar modal de password
+            console.log('👤 Usuario regular detectado - solicitando password...');
+            this.showPasswordModal();
+            return;
+        }
+        
+        // Usuario admin - acceso directo
+        console.log('👑 Usuario admin - acceso directo al modal IA');
+        this.openAiModalDirect();
+    }
+
+    /**
+     * Mostrar modal de password para usuarios no-admin
+     */
+    showPasswordModal() {
+        const passwordModal = document.getElementById('aiPasswordModal');
+        if (!passwordModal) {
+            console.error('❌ Modal aiPasswordModal no encontrado en DOM');
+            this.showError('Error: Modal de password no encontrado');
             return;
         }
 
-        // Siempre mostrar el modal, independientemente de la API Key
+        // Mostrar modal de password
+        passwordModal.style.display = 'flex';
+        passwordModal.classList.remove('hidden');
+        
+        // Focus en el input de password
+        setTimeout(() => {
+            const passwordInput = document.getElementById('aiPasswordInput');
+            if (passwordInput) {
+                passwordInput.focus();
+                passwordInput.value = ''; // Limpiar valor previo
+            }
+        }, 100);
+        
+        // Configurar event listeners si no existen
+        this.setupPasswordModalListeners();
+        
+        console.log('🔐 Modal de password mostrado');
+    }
+
+    /**
+     * Configurar event listeners para modal de password
+     */
+    setupPasswordModalListeners() {
+        // Botón de envío
+        const submitBtn = document.getElementById('submitAiPassword');
+        if (submitBtn && !submitBtn.hasAttribute('data-listener-added')) {
+            submitBtn.setAttribute('data-listener-added', 'true');
+            submitBtn.addEventListener('click', () => this.validatePassword());
+        }
+
+        // Botón de cancelar
+        const cancelBtn = document.getElementById('cancelAiPassword');
+        if (cancelBtn && !cancelBtn.hasAttribute('data-listener-added')) {
+            cancelBtn.setAttribute('data-listener-added', 'true');
+            cancelBtn.addEventListener('click', () => this.closePasswordModal());
+        }
+
+        // Botón X de cerrar
+        const closeBtn = document.getElementById('closeAiPasswordModal');
+        if (closeBtn && !closeBtn.hasAttribute('data-listener-added')) {
+            closeBtn.setAttribute('data-listener-added', 'true');
+            closeBtn.addEventListener('click', () => this.closePasswordModal());
+        }
+
+        // Enter en el input
+        const passwordInput = document.getElementById('aiPasswordInput');
+        if (passwordInput && !passwordInput.hasAttribute('data-listener-added')) {
+            passwordInput.setAttribute('data-listener-added', 'true');
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.validatePassword();
+                }
+            });
+        }
+    }
+
+    /**
+     * Validar password ingresado
+     */
+    validatePassword() {
+        const passwordInput = document.getElementById('aiPasswordInput');
+        const feedbackDiv = document.getElementById('passwordFeedback');
+        
+        if (!passwordInput || !feedbackDiv) {
+            console.error('❌ Elementos de password no encontrados');
+            return;
+        }
+
+        const enteredPassword = passwordInput.value.trim();
+        const correctPassword = window.env?.AI_ACCESS_PASSWORD || '';
+        
+        console.log('🔐 Validando password...');
+        
+        if (!correctPassword) {
+            feedbackDiv.innerHTML = '<span class="error">❌ Password no configurado en el sistema</span>';
+            feedbackDiv.className = 'password-feedback error';
+            return;
+        }
+
+        if (enteredPassword === correctPassword) {
+            // Password correcto
+            feedbackDiv.innerHTML = '<span class="success">✅ Password correcto</span>';
+            feedbackDiv.className = 'password-feedback success';
+            
+            setTimeout(() => {
+                this.closePasswordModal();
+                this.openAiModalDirect();
+            }, 500);
+            
+        } else {
+            // Password incorrecto
+            feedbackDiv.innerHTML = '<span class="error">❌ Password incorrecto</span>';
+            feedbackDiv.className = 'password-feedback error';
+            
+            // Limpiar input después de error
+            setTimeout(() => {
+                passwordInput.value = '';
+                passwordInput.focus();
+            }, 1000);
+        }
+    }
+
+    /**
+     * Cerrar modal de password
+     */
+    closePasswordModal() {
+        const passwordModal = document.getElementById('aiPasswordModal');
+        if (passwordModal) {
+            passwordModal.style.display = 'none';
+            passwordModal.classList.add('hidden');
+            
+            // Limpiar feedback
+            const feedbackDiv = document.getElementById('passwordFeedback');
+            if (feedbackDiv) {
+                feedbackDiv.innerHTML = '';
+                feedbackDiv.className = 'password-feedback';
+            }
+            
+            // Limpiar input
+            const passwordInput = document.getElementById('aiPasswordInput');
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
+        }
+    }
+
+    /**
+     * Abrir modal IA directamente (sin validación)
+     */
+    openAiModalDirect() {
+        const modal = document.getElementById('aiAnalysisModal');
+        if (!modal) {
+            console.error('❌ Modal aiAnalysisModal no encontrado en DOM');
+            this.showError('Error: Modal IA no encontrado');
+            return;
+        }
+
+        // Mostrar el modal de análisis IA
         modal.style.display = 'flex';
         modal.classList.remove('hidden');
         

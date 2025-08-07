@@ -1,8 +1,26 @@
 # TODO - Chat Anónimo Móvil
 
-## 🎯 ESTADO ACTUAL (2025-08-06 Session 11) - MOBILE RESPONSIVE MESSAGE INPUT COMPLETADO
+## 🎯 ESTADO ACTUAL (2025-08-07 Session 12) - ADMIN RESPONSIVE & PDF MODAL FIX COMPLETADO
 
-### ✅ NUEVA SESSION 2025-08-06: MOBILE RESPONSIVE MESSAGE INPUT - COMPLETADO AL 100%
+### ✅ NUEVA SESSION 2025-08-07: BARRA ADMIN RESPONSIVE & MODAL PDF - COMPLETADO AL 100%
+
+**PROBLEMAS RESUELTOS EN ESTA SESIÓN:**
+
+#### 1. BARRA DE BOTONES NO RESPONSIVE EN MODO ADMIN - SOLUCIONADO
+- ✅ **Botón incógnito simplificado**: Solo emoji (🎭 o 👑) sin texto
+- ✅ **Overflow horizontal permitido**: Cambiado de `overflow: hidden` a `overflow-x: auto`
+- ✅ **Scroll suave en móvil**: Añadido `-webkit-overflow-scrolling: touch`
+- ✅ **Layout mejorado**: `.chat-actions-compact` con `flex-shrink: 0` y `min-width: max-content`
+- ✅ **Modo usuario intacto**: Botón "Actualizar" mantiene su texto en modo usuario
+
+#### 2. MODAL PDF NO SE CERRABA CORRECTAMENTE - SOLUCIONADO
+- ✅ **Modales duplicados eliminados**: Había 2 sistemas de modales (HTML + dinámico)
+- ✅ **pdf-manager.js corregido**: Eliminada función `openPDFPreview()` duplicada
+- ✅ **Event listeners unificados**: Solo se configuran una vez en `setupPdfModalListeners()`
+- ✅ **Botón descarga funcional**: Añadido listener para botón de descarga en modal
+- ✅ **Cierre con un click**: Tanto X como botón Cerrar funcionan correctamente
+
+### ✅ SESSION ANTERIOR 2025-08-06: MOBILE RESPONSIVE MESSAGE INPUT - COMPLETADO AL 100%
 
 **OPTIMIZACIÓN MOBILE COMPLETAMENTE IMPLEMENTADA:**
 - ✅ **Textarea ancho completo**: Ocupa todo el ancho de pantalla en móvil

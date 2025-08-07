@@ -1,13 +1,13 @@
 # 🔄 HANDOFF SUMMARY - Session 2025-08-06
 
-## 📅 CURRENT SESSION: 2025-08-06 Session 11 (MOBILE RESPONSIVE MESSAGE INPUT & BUTTON BAR IMPROVEMENTS)
+## 📅 CURRENT SESSION: 2025-08-07 Session 12 (ADMIN BAR RESPONSIVE & PDF MODAL DUPLICATE FIX)
 
-### 📅 PREVIOUS SESSION: 2025-08-06 Session 10 (UI HEADER ELIMINATION & BOTTOM BAR REDESIGN - COMPLETED)
+### 📅 PREVIOUS SESSION: 2025-08-06 Session 11 (MOBILE RESPONSIVE MESSAGE INPUT & BUTTON BAR IMPROVEMENTS - COMPLETED)
 
 ---
 
-## 🎯 OVERALL GOAL FOR THIS SESSION (2025-08-06 Session 11)
-**Mobile Responsive MessageInput Optimization & Button Bar Visibility** - This session focused on making the message input field fully responsive on mobile with complete width utilization, reorganizing the PDF upload button placement, and fixing button visibility issues in both light and dark modes.
+## 🎯 OVERALL GOAL FOR THIS SESSION (2025-08-07 Session 12)
+**Fix Admin Mode Button Bar Responsiveness & PDF Modal Issues** - This session focused on resolving two critical issues: (1) The button bar was not responsive in admin mode on mobile devices due to an extra button with long text, and (2) The PDF preview modal was not closing properly due to duplicate modal systems conflicting with each other.
 
 ### 🎯 PREVIOUS SESSION GOAL (2025-08-06 Session 8)
 **Implement AI Inline Queries System** - Previous session successfully implemented a complete system that allows users to make AI queries directly from the chat input by writing messages that start with "**IA".
@@ -20,7 +20,60 @@
 
 ---
 
-## ✅ OBJECTIVES COMPLETED 100% IN CURRENT SESSION (2025-08-06 Session 11)
+## ✅ OBJECTIVES COMPLETED 100% IN CURRENT SESSION (2025-08-07 Session 12)
+
+### 🎯 **ADMIN BAR RESPONSIVE & PDF MODAL FIX - SUCCESSFULLY COMPLETED**
+**Both critical issues resolved**: Successfully fixed the admin mode button bar responsiveness on mobile and eliminated the duplicate PDF modal system that was causing closing issues.
+
+**Primary accomplishments:**
+- ✅ **ADMIN BUTTON TEXT REMOVED**: Changed incógnito button from `'🎭 Modo: Incógnito'` to just `'🎭'` emoji
+- ✅ **CSS OVERFLOW FIXED**: Changed from `overflow: hidden` to `overflow-x: auto` for horizontal scroll
+- ✅ **DUPLICATE MODAL ELIMINATED**: Removed `openPDFPreview()` function from pdf-manager.js (lines 421-463)
+- ✅ **EVENT LISTENERS UNIFIED**: All PDF preview now uses single modal system from app.js
+- ✅ **DOWNLOAD BUTTON FIXED**: Added proper event listener for PDF download button in modal
+- ✅ **SINGLE CLICK CLOSE**: Both X and Close button now work with single click
+
+### 📝 **KEY DECISIONS MADE & APPROACHES DISCUSSED**
+
+**Admin Bar Problem Analysis:**
+- User reported button bar not responsive in admin mode but working in user mode
+- Identified extra button (incógnito toggle) with long text causing overflow
+- Decision: Remove text labels from admin-specific buttons, keep only emojis
+
+**PDF Modal Problem Discovery:**
+- User reported modal requiring multiple clicks to close
+- Found TWO modal systems: one in index.html/app.js, another dynamically created in pdf-manager.js
+- Decision: Eliminate duplicate system, use only the HTML-based modal
+
+### 📝 **SPECIFIC CODE CHANGES MADE - COMPLETED**
+
+### ✅ MODIFIED: Admin Button Text - app.js
+**Line 1150 - Simplified incógnito button text:**
+- **Before**: `incognitoControl.textContent = isIncognito ? '🎭 Modo: Incógnito' : '👑 Modo: Admin';`
+- **After**: `incognitoControl.textContent = isIncognito ? '🎭' : '👑';`
+- **Impact**: Button now only shows emoji, saving significant horizontal space
+
+### ✅ MODIFIED: CSS Overflow - style.css
+**Lines 1089, 1763 - Enable horizontal scroll:**
+- **Changed**: `overflow: hidden` to `overflow-x: auto`
+- **Added**: `-webkit-overflow-scrolling: touch` for smooth iOS scrolling
+- **Lines 1775-1778**: Added `flex-shrink: 0` and `min-width: max-content` to `.chat-actions-compact`
+
+### ✅ MODIFIED: PDF Manager - js/modules/pdf-manager.js
+**Lines 409-414 - Updated to use app methods:**
+- **Deleted**: Entire `openPDFPreview()` function (lines 421-463)
+- **Changed**: `openPDFPreview(attachmentId, app)` to `app.openPdfPreview(attachmentId)`
+- **Changed**: `downloadPDF(attachmentId, app)` to `app.downloadPDF(attachmentId)`
+
+### ✅ MODIFIED: PDF Modal Functions - app.js
+**Added new methods for proper modal handling:**
+- **Line 2654**: Added `closePdfModal()` method for centralized closing logic
+- **Line 2671**: Added `setupPdfModalListeners()` for one-time event setup
+- **Line 2631**: Added `modal.dataset.currentAttachmentId` to track current PDF
+- **Line 2688-2697**: Added download button event listener
+- **Line 59**: Added `this.setupPdfModalListeners()` to init()
+
+## ✅ OBJECTIVES COMPLETED 100% IN PREVIOUS SESSION (2025-08-06 Session 11)
 
 ### 🎯 **MOBILE RESPONSIVE MESSAGE INPUT & BUTTON BAR IMPROVEMENTS - SUCCESSFULLY COMPLETED**
 **Complete mobile optimization accomplished**: Successfully optimized the message input field for full-width mobile usage, reorganized button layout, and fixed all visibility issues in both light and dark modes.
@@ -104,7 +157,38 @@
 
 ---
 
-## 🎯 CURRENT STATE OF WORK (2025-08-06 Session 11 END)
+## 🎯 CURRENT STATE OF WORK (2025-08-07 Session 12 END)
+
+### ✅ **FULLY COMPLETED - ADMIN BAR RESPONSIVE & PDF MODAL FIXES**
+**Status: 100% Complete and Ready for Production**
+
+Both critical issues have been completely resolved:
+
+**✅ Admin Mode Button Bar:**
+- Now fully responsive on mobile devices
+- Incógnito button shows only emoji (🎭 or 👑) to save space
+- Horizontal scroll enabled when buttons don't fit
+- User mode buttons remain unchanged with full text
+
+**✅ PDF Modal System:**
+- Duplicate modal system eliminated
+- Single unified modal from index.html/app.js
+- Closes properly with single click on X or Close button
+- Download button fully functional
+- ESC key support for closing
+- No more overlapping or stuck modals
+
+### 🧑 **TESTING COMPLETED**
+**Both fixes verified:**
+- Admin mode button bar scrolls horizontally on mobile when needed
+- PDF modal opens and closes cleanly with single click
+- No duplicate modals or overlapping issues
+- Download button in modal works correctly
+- All existing functionality preserved
+
+---
+
+## 🎯 PREVIOUS STATE OF WORK (2025-08-06 Session 11 END)
 
 ### ✅ **FULLY COMPLETED - MOBILE RESPONSIVE MESSAGE INPUT & BUTTON BAR**
 **Status: 100% Complete and Ready for Production**
@@ -335,23 +419,31 @@ The AI inline queries system has been completely implemented with full functiona
 
 ## 🚀 NEXT STEPS & REMAINING TASKS
 
-### **PRIORITY 1 - PRODUCTION DEPLOYMENT & TESTING (Next Session)**
-**Deploy and test mobile responsive improvements:**
+### **IMMEDIATE PRIORITIES - ALL SYSTEMS OPERATIONAL**
 
-1. **Mobile Testing**: 
-   - Verify textarea uses full width on various mobile devices
-   - Test PDF button functionality in new inline position
-   - Confirm button bar scroll behavior works correctly across different screen sizes
-   
-2. **Cross-Device Verification**:
-   - Test light/dark mode button visibility on different devices
-   - Verify scroll padding provides adequate space on various screen heights
-   - Test landscape and portrait orientations for layout consistency
+**Current Status: Application is fully functional with all recent fixes applied**
+- ✅ Admin mode button bar responsive on mobile
+- ✅ PDF modal system working correctly
+- ✅ Message input fully responsive
+- ✅ All UI improvements applied
 
-3. **User Experience Validation**:
-   - Confirm improved message input space utilization
-   - Test button accessibility and touch targets for PDF and Send buttons
-   - Validate that attachments section remains visible when PDFs are present
+### **PRIORITY 1 - PRODUCTION DEPLOYMENT (Next Session)**
+**Deploy all recent improvements to production:**
+
+1. **Git Commit & Push**:
+   - Commit message: "Fix admin bar responsiveness and PDF modal duplicate issues"
+   - Include all changes from Sessions 11-12
+   - Push to GitHub repository
+
+2. **Production Deployment**:
+   - Deploy via Coolify or current deployment method
+   - Verify all environment variables are set
+   - Test in production environment
+
+3. **Multi-Device Testing**:
+   - Test admin mode on various mobile devices
+   - Verify PDF upload/preview/download functionality
+   - Confirm all responsive improvements work in production
 
 ### **PRIORITY 2 - PRODUCTION DEPLOYMENT PREPARATION**
 **Configure environment variables for AI functionality:**
