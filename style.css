@@ -1086,7 +1086,8 @@ select.form-control {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: var(--space-32); /* Más espacio para separación del input */
   min-width: 0; /* Permitir shrinking */
-  overflow: hidden; /* Prevenir overflow horizontal */
+  overflow-x: auto; /* Permitir scroll horizontal si es necesario */
+  -webkit-overflow-scrolling: touch; /* Smooth scroll en iOS */
 }
 
 [data-color-scheme="dark"] .chat-bottom-bar {
@@ -1759,7 +1760,8 @@ select.form-control {
     padding: var(--space-6) var(--space-8); /* Menos padding en móviles */
     height: 36px; /* Altura reducida */
     flex-wrap: nowrap; /* No permitir wrap */
-    overflow: hidden; /* Evitar overflow */
+    overflow-x: auto; /* Permitir scroll horizontal */
+    -webkit-overflow-scrolling: touch; /* Smooth scroll en iOS */
     margin-bottom: var(--space-24); /* Más margen en móvil */
   }
   
@@ -1771,7 +1773,9 @@ select.form-control {
   
   .chat-actions-compact {
     gap: var(--space-2); /* Botones más juntos */
-    flex-shrink: 1; /* Puede reducirse si es necesario */
+    flex-shrink: 0; /* No reducir para mantener todos los botones visibles */
+    flex-wrap: nowrap; /* Mantener en una línea */
+    min-width: max-content; /* Ancho mínimo para mostrar todos los botones */
   }
   
   .btn--xs {

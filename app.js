@@ -1147,7 +1147,7 @@ class AnonymousChatApp {
         if (incognitoControl) {
             // Actualizar texto según estado actual
             const isIncognito = this.state.currentUser?.adminIncognito || false;
-            incognitoControl.textContent = isIncognito ? '🎭 Modo: Incógnito' : '👑 Modo: Admin';
+            incognitoControl.textContent = isIncognito ? '🎭' : '👑';
             incognitoControl.title = isIncognito ? 'Actualmente apareces como Anónimo. Click para identificarte como Administrador.' : 'Actualmente apareces como Administrador. Click para modo incógnito.';
             
             
