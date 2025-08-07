@@ -56,6 +56,9 @@ class AnonymousChatApp {
         initTheme();
         listenForSystemThemeChanges(false); // No auto-switch si hay preferencia guardada
         
+        // Configurar event listeners del modal PDF
+        this.setupPdfModalListeners();
+        
         // Inicializar cliente de Supabase y esperar a que esté listo
         if (typeof SupabaseClient !== 'undefined') {
             this.supabaseClient = new SupabaseClient();
@@ -2625,28 +2628,65 @@ class AnonymousChatApp {
                 frame.src = pdf.url;
                 modal.classList.remove('hidden');
                 
-                // Event listeners para cerrar modal
-                const closeButtons = modal.querySelectorAll('#closePdfModal, #closePdfPreview');
-                closeButtons.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        modal.classList.add('hidden');
-                        frame.src = ''; // Limpiar iframe
-                    });
-                });
-                
-                // Cerrar al hacer click fuera
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.add('hidden');
-                        frame.src = '';
-                    }
-                });
+                // Los event listeners ya están configurados en setupPdfModalListeners()
+                // Solo necesitamos mostrar el modal
             }
             
         } catch (error) {
             console.error('Error abriendo preview PDF:', error);
             this.showToast('Error abriendo preview', 'error');
         }
+    }
+    
+    /**
+     * Cerrar modal de preview PDF
+     */
+    closePdfModal() {
+        const modal = document.getElementById('pdfPreviewModal');
+        const frame = document.getElementById('pdfPreviewFrame');
+        
+        if (modal) {
+            modal.classList.add('hidden');
+            if (frame) {
+                frame.src = '';
+            }
+            // Restaurar scroll del body si estaba bloqueado
+            document.body.style.overflow = '';
+        }
+    }
+    
+    /**
+     * Configurar event listeners del modal PDF (solo una vez)
+     */
+    setupPdfModalListeners() {
+        const modal = document.getElementById('pdfPreviewModal');
+        if (!modal) return;
+        
+        // Verificar si ya se configuraron los listeners
+        if (modal.dataset.listenersConfigured === 'true') return;
+        
+        // Botones de cerrar
+        const closeButtons = modal.querySelectorAll('#closePdfModal, #closePdfPreview');
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', () => this.closePdfModal());
+        });
+        
+        // Click fuera del modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closePdfModal();
+            }
+        });
+        
+        // ESC key para cerrar
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                this.closePdfModal();
+            }
+        });
+        
+        // Marcar que los listeners ya están configurados
+        modal.dataset.listenersConfigured = 'true';
     }
     
     /**
