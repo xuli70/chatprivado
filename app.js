@@ -1600,7 +1600,13 @@ class AnonymousChatApp {
                         this.showToast('Mensaje borrado exitosamente', 'success');
                         
                         // Recargar mensajes para mostrar el estado actualizado
-                        await this.loadRoom();
+                        if (this.state.currentRoom?.id) {
+                            const updatedRoom = await this.loadRoom(this.state.currentRoom.id);
+                            if (updatedRoom) {
+                                this.state.currentRoom = updatedRoom;
+                                this.loadMessages();
+                            }
+                        }
                         
                     } else {
                         console.error('Error borrando mensaje:', result.error);
@@ -1661,7 +1667,13 @@ class AnonymousChatApp {
                 this.showToast('Mensaje restaurado exitosamente', 'success');
                 
                 // Recargar mensajes para mostrar el estado actualizado
-                await this.loadRoom();
+                if (this.state.currentRoom?.id) {
+                    const updatedRoom = await this.loadRoom(this.state.currentRoom.id);
+                    if (updatedRoom) {
+                        this.state.currentRoom = updatedRoom;
+                        this.loadMessages();
+                    }
+                }
                 
             } else {
                 console.error('Error restaurando mensaje:', result.error);
