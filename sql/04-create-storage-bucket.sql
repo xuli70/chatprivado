@@ -11,7 +11,7 @@
 -- =====================================================
 -- OPCIÓN 1: CREAR BUCKET DESDE EL DASHBOARD (RECOMENDADO)
 -- =====================================================
--- 1. Ve a tu proyecto en Supabase: https://supmcp.axcsol.com
+-- 1. Ve a tu proyecto en Supabase: your-supabase-url
 -- 2. En el menú lateral, haz clic en "Storage"
 -- 3. Haz clic en "Create Bucket"
 -- 4. Configura:

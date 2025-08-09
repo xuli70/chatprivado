@@ -1,10 +1,32 @@
 # TODO - Chat Anónimo Móvil
 
-## 🎯 ESTADO ACTUAL (2025-08-07 Session 12) - ADMIN RESPONSIVE & PDF MODAL FIX COMPLETADO
+## 🎯 ESTADO ACTUAL (2025-08-07 Session 14) - SISTEMA RLS BÁSICO IMPLEMENTADO
 
-### ✅ NUEVA SESSION 2025-08-07: BARRA ADMIN RESPONSIVE & MODAL PDF - COMPLETADO AL 100%
+### ✅ NUEVA SESSION 2025-08-07: IMPLEMENTACIÓN RLS BÁSICO + TESTING - COMPLETADO AL 100%
 
-**PROBLEMAS RESUELTOS EN ESTA SESIÓN:**
+**OBJETIVO ALCANZADO EN ESTA SESIÓN:**
+Se implementó exitosamente **Row Level Security (RLS) simplificado** para proteger la base de datos contra acceso externo malicioso manteniendo 100% de la funcionalidad actual del sistema.
+
+**TRABAJO REALIZADO EN ESTA SESIÓN:**
+
+#### 1. IMPLEMENTACIÓN RLS SIMPLIFICADO - COMPLETADO ✅
+- ✅ **Análisis de requerimientos**: Definido modelo de seguridad simple sin roles complejos
+- ✅ **Script principal**: Creado `sql/rls-simple-enable.sql` para habilitar RLS básico
+- ✅ **Script rollback**: Creado `sql/rls-simple-rollback.sql` para rollback completo
+- ✅ **Políticas específicas**: Creado `sql/rls-correct-policies.sql` con permisos diferenciados
+- ✅ **Testing suite**: Creado `test-rls-basic.html` para validación completa
+- ✅ **Documentación**: Creado `RLS_IMPLEMENTATION_GUIDE.md` con guía completa
+
+#### 2. COMPRENSIÓN DEL MODELO DE PERMISOS - ACLARADO ✅
+- ✅ **Crear salas**: Solo admin con sistema ADMIN2025 (frontend controla acceso)
+- ✅ **Leer salas**: Todos los usuarios (para unirse con código)
+- ✅ **Mensajes, votos, PDFs, IA**: Todos los usuarios con anon key
+- ✅ **Sin expiración**: Admin elimina salas manualmente cuando quiere
+- ✅ **Un solo rol**: Todos usan misma anon key, sin tokens complejos
+
+### ✅ SESSION ANTERIOR 2025-08-07: BARRA ADMIN RESPONSIVE & MODAL PDF - COMPLETADO AL 100%
+
+**PROBLEMAS RESUELTOS EN SESIÓN ANTERIOR:**
 
 #### 1. BARRA DE BOTONES NO RESPONSIVE EN MODO ADMIN - SOLUCIONADO
 - ✅ **Botón incógnito simplificado**: Solo emoji (🎭 o 👑) sin texto
@@ -166,8 +188,8 @@
 - [x] **INTERFAZ VIBRANTE**: Paleta de colores alegre implementada
 - [ ] **CONFIGURAR PRODUCCIÓN**: Variables de entorno en Coolify
   ```
-  SUPABASE_URL=https://supmcp.axcsol.com
-  SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc1MjM5MzEyMCwiZXhwIjo0OTA4MDY2NzIwLCJyb2xlIjoiYW5vbiJ9._g-1Vn-8D_lH_CRihAM58E0zKdZm5ZU8SVrKuJgJ4sU
+  SUPABASE_URL=your-supabase-url
+  SUPABASE_ANON_KEY=your-anon-key-here
   ADMIN_PASSWORD=ADMIN2025
   ```
 - [ ] **TESTING FINAL**: Verificar sistema completo en producción
@@ -316,7 +338,7 @@ js/modules/
 
 ### 🚀 ESTADO ACTUAL - SISTEMA COMPLETAMENTE FUNCIONAL Y CORREGIDO
 
-#### ✅ SISTEMA PDF IMPLEMENTADO COMPLETAMENTE (BUCKET PENDIENTE - 2025-08-05)
+#### ✅ SISTEMA PDF IMPLEMENTADO COMPLETAMENTE (100% OPERATIVO - 2025-08-07)
 - **Código PDF**: ✅ IMPLEMENTADO - Módulo completo con upload, preview, download
 - **UI Integrada**: ✅ Botón 📎, sección adjuntos, modal preview
 - **Base de Datos**: ✅ Tabla `chat_attachments` creada y configurada
@@ -707,7 +729,7 @@ adminUpdateAllRoomsLimit(200)
 - **Validar con**: `test-bucket-fix.html` para verificar bucket funciona
 - **Testing PDF**: Upload, preview, download funcionando
 
-**PRIORIDAD 4 - Deploy Final:**
+**PRIORIDAD 2 - Deploy Final:**
 - **Variables entorno**: Configurar `OPENAI_API_KEY` y `AI_MODEL` en Coolify
 - **Validar sistemas**: IA Inline + Identificadores + PDFs + todas funcionalidades
 - **Deploy producción**: Sistema completo listo para usuarios finales

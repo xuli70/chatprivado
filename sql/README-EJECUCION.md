@@ -22,7 +22,7 @@ Implementar sistema de persistencia permanente mediante columna `is_active` en S
 ## 🚀 Pasos para Ejecutar
 
 ### Paso 1: Acceder a Supabase
-1. Ve a tu proyecto Supabase: https://supmcp.axcsol.com
+1. Ve a tu proyecto Supabase: your-supabase-url
 2. Navega a **SQL Editor** en el menú lateral
 3. Crea una nueva query
 

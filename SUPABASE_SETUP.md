@@ -10,7 +10,7 @@ Si recibes el error `ERROR: 42P07: relation "chat_rooms" already exists`, ejecut
 
 **Solo ejecuta esto si es tu primera vez configurando Supabase:**
 
-Accede al **SQL Editor** de tu proyecto Supabase (https://supmcp.axcsol.com) y ejecuta el siguiente código:
+Accede al **SQL Editor** de tu proyecto Supabase (your-supabase-url) y ejecuta el siguiente código:
 
 ```sql
 -- Tabla para las salas de chat
@@ -140,7 +140,7 @@ $$ LANGUAGE plpgsql;
 
 1. Ve a **Settings** → **API** en tu proyecto Supabase
 2. Copia los siguientes valores:
-   - **URL**: `https://supmcp.axcsol.com`
+   - **URL**: `your-supabase-url`
    - **anon key**: La clave pública (anon/public key)
 
 ### 3. Configuración para Desarrollo Local
@@ -149,7 +149,7 @@ Edita el archivo `.env` en la raíz del proyecto:
 
 ```env
 # Configuración de Supabase para Chat Anónimo Móvil
-SUPABASE_URL=https://supmcp.axcsol.com
+SUPABASE_URL=your-supabase-url
 SUPABASE_ANON_KEY=tu_clave_anon_key_real_aqui
 NODE_ENV=development
 ```

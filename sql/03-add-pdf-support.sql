@@ -3,7 +3,7 @@
 -- =====================================================
 -- Archivo: sql/03-add-pdf-support.sql
 -- Propósito: Agregar funcionalidad completa de PDFs
--- Ejecutar en: Panel SQL de Supabase (https://supmcp.axcsol.com)
+-- Ejecutar en: Panel SQL de Supabase (your-supabase-url)
 -- =====================================================
 
 -- 1. CREAR TABLA PARA ADJUNTOS PDF

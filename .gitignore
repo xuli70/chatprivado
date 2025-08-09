@@ -10,7 +10,7 @@ test-*.html
 env.example.js
 
 # Archivo env.js generado dinámicamente en producción (opcional, el local es seguro)
-# env.js
+env.js
 
 # Archivos de respaldo
 *.backup
