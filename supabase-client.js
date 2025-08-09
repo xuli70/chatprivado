@@ -296,10 +296,10 @@ class SupabaseClient {
                 return this.getRoomLocal(roomId);
             }
 
-            // Obtener mensajes de la sala
+            // Obtener mensajes de la sala (incluyendo campos de borrado)
             const { data: messages, error: messagesError } = await this.client
                 .from('chat_messages')
-                .select('*')
+                .select('*, is_deleted, deleted_by, deleted_at')
                 .eq('room_id', roomId)
                 .order('created_at', { ascending: true });
 
@@ -327,7 +327,11 @@ class SupabaseClient {
                     votes: {
                         likes: msg.likes || 0,
                         dislikes: msg.dislikes || 0
-                    }
+                    },
+                    // Campos de borrado
+                    isDeleted: msg.is_deleted || false,
+                    deletedBy: msg.deleted_by,
+                    deletedAt: msg.deleted_at
                 }))
             };
 
@@ -639,6 +643,85 @@ class SupabaseClient {
         }
     }
 
+    // ==================== GESTIÓN DE BORRADO DE MENSAJES ====================
+
+    async adminDeleteMessage(messageId, adminIdentifier) {
+        if (!this.isOnline) {
+            return this.adminDeleteMessageLocal(messageId, adminIdentifier);
+        }
+
+        try {
+            // Usar la función RPC para borrado seguro
+            const { data, error } = await this.client.rpc('admin_delete_message', {
+                message_id_param: messageId,
+                admin_identifier_param: adminIdentifier
+            });
+
+            if (error) {
+                console.error('Error borrando mensaje en Supabase:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+
+            if (data && data.success) {
+                console.log('Mensaje borrado exitosamente por administrador');
+                return {
+                    success: true,
+                    message: data.message
+                };
+            } else {
+                return {
+                    success: false,
+                    error: data?.error || 'Error desconocido'
+                };
+            }
+
+        } catch (error) {
+            console.error('Error en adminDeleteMessage:', error);
+            return this.adminDeleteMessageLocal(messageId, adminIdentifier);
+        }
+    }
+
+    async adminRestoreMessage(messageId) {
+        if (!this.isOnline) {
+            return this.adminRestoreMessageLocal(messageId);
+        }
+
+        try {
+            // Usar la función RPC para restaurar mensaje
+            const { data, error } = await this.client.rpc('admin_restore_message', {
+                message_id_param: messageId
+            });
+
+            if (error) {
+                console.error('Error restaurando mensaje en Supabase:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+
+            if (data && data.success) {
+                console.log('Mensaje restaurado exitosamente');
+                return {
+                    success: true,
+                    message: data.message
+                };
+            } else {
+                return {
+                    success: false,
+                    error: data?.error || 'Error desconocido'
+                };
+            }
+
+        } catch (error) {
+            console.error('Error en adminRestoreMessage:', error);
+            return this.adminRestoreMessageLocal(messageId);
+        }
+    }
+
     // ==================== FUNCIONES DE FALLBACK (localStorage) ====================
 
     createRoomLocal(room) {
@@ -760,6 +843,68 @@ class SupabaseClient {
         const userVotes = JSON.parse(votes);
         const voteKey = Object.keys(userVotes).find(key => key.includes(`-${messageId}`));
         return voteKey ? userVotes[voteKey] : null;
+    }
+
+    adminDeleteMessageLocal(messageId, adminIdentifier) {
+        // Buscar el mensaje en localStorage
+        const keys = Object.keys(localStorage);
+        let messageFound = false;
+
+        keys.forEach(key => {
+            if (key.startsWith('room_')) {
+                const roomData = localStorage.getItem(key);
+                if (roomData) {
+                    const room = JSON.parse(roomData);
+                    const messageIndex = room.messages.findIndex(msg => msg.id === messageId);
+                    
+                    if (messageIndex !== -1) {
+                        // Marcar mensaje como borrado
+                        room.messages[messageIndex].isDeleted = true;
+                        room.messages[messageIndex].deletedBy = adminIdentifier;
+                        room.messages[messageIndex].deletedAt = new Date().toISOString();
+                        
+                        localStorage.setItem(key, JSON.stringify(room));
+                        messageFound = true;
+                    }
+                }
+            }
+        });
+
+        return {
+            success: messageFound,
+            error: messageFound ? null : 'Mensaje no encontrado'
+        };
+    }
+
+    adminRestoreMessageLocal(messageId) {
+        // Buscar el mensaje en localStorage
+        const keys = Object.keys(localStorage);
+        let messageFound = false;
+
+        keys.forEach(key => {
+            if (key.startsWith('room_')) {
+                const roomData = localStorage.getItem(key);
+                if (roomData) {
+                    const room = JSON.parse(roomData);
+                    const messageIndex = room.messages.findIndex(msg => msg.id === messageId);
+                    
+                    if (messageIndex !== -1) {
+                        // Restaurar mensaje
+                        room.messages[messageIndex].isDeleted = false;
+                        room.messages[messageIndex].deletedBy = null;
+                        room.messages[messageIndex].deletedAt = null;
+                        
+                        localStorage.setItem(key, JSON.stringify(room));
+                        messageFound = true;
+                    }
+                }
+            }
+        });
+
+        return {
+            success: messageFound,
+            error: messageFound ? null : 'Mensaje no encontrado'
+        };
     }
 
     // ==================== UTILIDADES ====================

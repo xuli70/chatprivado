@@ -1276,6 +1276,146 @@ select.form-control {
   font-weight: var(--font-weight-medium);
 }
 
+/* ==================== MENSAJES BORRADOS ==================== */
+
+.message-deleted {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+  position: relative;
+}
+
+[data-color-scheme="dark"] .message-deleted {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.message-deleted .message-header {
+  opacity: 0.8;
+}
+
+.deleted-message-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-16);
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  margin: var(--space-8) 0;
+}
+
+[data-color-scheme="dark"] .deleted-message-content {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.deleted-icon {
+  font-size: 1.5em;
+  margin-bottom: var(--space-4);
+  opacity: 0.6;
+}
+
+.deleted-text {
+  font-style: italic;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-4);
+}
+
+.deleted-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  opacity: 0.8;
+}
+
+/* ==================== BOTONES ADMINISTRADOR ==================== */
+
+.admin-delete-btn {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #f87171;
+  color: #dc2626;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-6);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  min-width: 32px;
+  min-height: 28px;
+  transition: all var(--duration-fast) var(--ease-standard);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-delete-btn:hover {
+  background: linear-gradient(135deg, #fecaca 0%, #f87171 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.admin-delete-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
+}
+
+.admin-restore-btn {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #60a5fa;
+  color: #2563eb;
+  border-radius: var(--radius-full);
+  padding: var(--space-4) var(--space-8);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  min-width: 80px;
+  min-height: 32px;
+  transition: all var(--duration-fast) var(--ease-standard);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.admin-restore-btn:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.admin-restore-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+}
+
+.deleted-actions {
+  justify-content: center;
+  margin-top: var(--space-8);
+}
+
+/* Dark mode para botones admin */
+[data-color-scheme="dark"] .admin-delete-btn {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(248, 113, 113, 0.15) 100%);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #f87171;
+}
+
+[data-color-scheme="dark"] .admin-delete-btn:hover {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+  border-color: #f87171;
+}
+
+[data-color-scheme="dark"] .admin-restore-btn {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(96, 165, 250, 0.15) 100%);
+  border-color: rgba(96, 165, 250, 0.6);
+  color: #60a5fa;
+}
+
+[data-color-scheme="dark"] .admin-restore-btn:hover {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%);
+  border-color: #60a5fa;
+}
+
 /* Input del chat */
 .chat-input-container {
   position: fixed;

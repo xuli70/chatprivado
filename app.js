@@ -1178,6 +1178,9 @@ class AnonymousChatApp {
         const mode = this.state.currentUser.adminIncognito ? 'incógnito (Anónimo)' : 'identificado (Administrador)';
         this.showToast(`Modo cambiado: ${mode}`, 'success');
         
+        // Actualizar visibilidad de botones de admin
+        this.updateAdminButtonsVisibility();
+        
         console.log(`🎭 Admin modo: ${this.state.currentUser.adminIncognito ? 'Incógnito' : 'Identificado'}`);
     }
 
@@ -1430,10 +1433,19 @@ class AnonymousChatApp {
 
     addMessageToChat(message, isRealtime = false) {
         const callbacks = {
-            handleVote: (e) => this.handleVote(e)
+            handleVote: (e) => this.handleVote(e),
+            handleAdminDelete: (e) => this.handleAdminDeleteMessage(e),
+            handleAdminRestore: (e) => this.handleAdminRestoreMessage(e)
         };
         
-        return addMessageToChat(message, this.elements, isRealtime, callbacks);
+        const messageEl = addMessageToChat(message, this.elements, isRealtime, callbacks);
+        
+        // Actualizar visibilidad de botones de admin para el nuevo mensaje
+        setTimeout(() => {
+            this.updateAdminButtonsVisibility();
+        }, 10);
+        
+        return messageEl;
     }
 
     async handleVote(e) {
@@ -1554,6 +1566,132 @@ class AnonymousChatApp {
         }
     }
 
+    // ==================== GESTIÓN DE BORRADO DE MENSAJES ====================
+
+    async handleAdminDeleteMessage(e) {
+        if (!this.state.isAdmin) {
+            this.showToast('Solo el administrador puede borrar mensajes', 'error');
+            return;
+        }
+
+        try {
+            const messageId = parseInt(e.currentTarget.getAttribute('data-message-id'));
+            const messageEl = e.currentTarget.closest('.message');
+            
+            if (!messageId) {
+                console.error('ID de mensaje no válido');
+                return;
+            }
+
+            // Mostrar modal de confirmación
+            const confirmed = await this.showConfirmModal(
+                'Confirmar borrado',
+                '¿Estás seguro de que quieres borrar este mensaje?\n\nEsta acción se puede deshacer desde el modo administrador.',
+                'Borrar',
+                'Cancelar'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            // Mostrar indicador de carga
+            const originalText = e.currentTarget.innerHTML;
+            e.currentTarget.innerHTML = '⏳';
+            e.currentTarget.disabled = true;
+
+            // Ejecutar borrado
+            const adminIdentifier = this.state.isAdmin ? 'Administrador' : 'Admin';
+            const result = await this.supabaseClient.adminDeleteMessage(messageId, adminIdentifier);
+
+            if (result.success) {
+                this.showToast('Mensaje borrado exitosamente', 'success');
+                
+                // Recargar mensajes para mostrar el estado actualizado
+                await this.loadRoom();
+                
+            } else {
+                console.error('Error borrando mensaje:', result.error);
+                this.showToast('Error al borrar mensaje: ' + (result.error || 'Error desconocido'), 'error');
+                
+                // Restaurar botón
+                e.currentTarget.innerHTML = originalText;
+                e.currentTarget.disabled = false;
+            }
+
+        } catch (error) {
+            console.error('Error en handleAdminDeleteMessage:', error);
+            this.showToast('Error al borrar mensaje. Inténtalo de nuevo.', 'error');
+        }
+    }
+
+    async handleAdminRestoreMessage(e) {
+        if (!this.state.isAdmin) {
+            this.showToast('Solo el administrador puede restaurar mensajes', 'error');
+            return;
+        }
+
+        try {
+            const messageId = parseInt(e.currentTarget.getAttribute('data-message-id'));
+            
+            if (!messageId) {
+                console.error('ID de mensaje no válido');
+                return;
+            }
+
+            // Mostrar indicador de carga
+            const originalText = e.currentTarget.innerHTML;
+            e.currentTarget.innerHTML = '⏳';
+            e.currentTarget.disabled = true;
+
+            // Ejecutar restauración
+            const result = await this.supabaseClient.adminRestoreMessage(messageId);
+
+            if (result.success) {
+                this.showToast('Mensaje restaurado exitosamente', 'success');
+                
+                // Recargar mensajes para mostrar el estado actualizado
+                await this.loadRoom();
+                
+            } else {
+                console.error('Error restaurando mensaje:', result.error);
+                this.showToast('Error al restaurar mensaje: ' + (result.error || 'Error desconocido'), 'error');
+                
+                // Restaurar botón
+                e.currentTarget.innerHTML = originalText;
+                e.currentTarget.disabled = false;
+            }
+
+        } catch (error) {
+            console.error('Error en handleAdminRestoreMessage:', error);
+            this.showToast('Error al restaurar mensaje. Inténtalo de nuevo.', 'error');
+        }
+    }
+
+    updateAdminButtonsVisibility() {
+        if (!this.state.isAdmin) {
+            // Ocultar todos los botones de admin si no es admin
+            document.querySelectorAll('.admin-delete-btn, .admin-restore-btn').forEach(btn => {
+                btn.style.display = 'none';
+            });
+            return;
+        }
+
+        // Mostrar botones de admin apropiados
+        document.querySelectorAll('.message').forEach(messageEl => {
+            const isDeleted = messageEl.classList.contains('message-deleted');
+            const deleteBtn = messageEl.querySelector('.admin-delete-btn');
+            const restoreBtn = messageEl.querySelector('.admin-restore-btn');
+
+            if (deleteBtn && !isDeleted) {
+                deleteBtn.style.display = 'inline-block';
+            }
+            if (restoreBtn && isDeleted) {
+                restoreBtn.style.display = 'inline-block';
+            }
+        });
+    }
+
     loadMessages() {
         const callbacks = {
             handleVote: (e) => this.handleVote(e),
@@ -1562,10 +1700,17 @@ class AnonymousChatApp {
             getUserVote: (roomId, messageId) => {
                 const userVoteKey = `${roomId}-${messageId}`;
                 return this.state.userVotes.get(userVoteKey);
-            }
+            },
+            handleAdminDelete: (e) => this.handleAdminDeleteMessage(e),
+            handleAdminRestore: (e) => this.handleAdminRestoreMessage(e)
         };
         
         loadMessages(this.state.currentRoom, this.elements, callbacks);
+        
+        // Actualizar visibilidad de botones de admin después de cargar mensajes
+        setTimeout(() => {
+            this.updateAdminButtonsVisibility();
+        }, 100);
     }
 
     showEmptyState() {

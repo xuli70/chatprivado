@@ -52,7 +52,10 @@ export async function getAllRoomMessagesFromDB(roomId, supabaseClient) {
                 created_at,
                 likes,
                 dislikes,
-                user_identifier
+                user_identifier,
+                is_deleted,
+                deleted_by,
+                deleted_at
             `)
             .eq('room_id', roomId)
             .order('created_at', { ascending: true });
@@ -75,7 +78,10 @@ export async function getAllRoomMessagesFromDB(roomId, supabaseClient) {
                 likes: msg.likes || 0,
                 dislikes: msg.dislikes || 0
             },
-            userIdentifier: msg.user_identifier
+            userIdentifier: msg.user_identifier,
+            isDeleted: msg.is_deleted || false,
+            deletedBy: msg.deleted_by,
+            deletedAt: msg.deleted_at
         }));
 
     } catch (error) {
@@ -123,6 +129,11 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
     messageEl.className = `message ${!message.isAnonymous ? 'creator-message' : ''}`;
     messageEl.setAttribute('data-message-id', message.id);
 
+    // Agregar clase especial para mensajes borrados
+    if (message.isDeleted) {
+        messageEl.classList.add('message-deleted');
+    }
+
     // Agregar clase especial para mensajes en tiempo real
     if (isRealtime) {
         messageEl.classList.add('realtime-message');
@@ -133,20 +144,72 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
         minute: '2-digit'
     });
 
-    // Escapar HTML de forma segura
-    const escapedText = escapeHtml(message.text);
+    // Preparar contenido dependiendo si está borrado
+    let contentHTML = '';
+    let actionsHTML = '';
     
-    // Generar HTML para attachments de PDF si existen
-    let attachmentsHTML = '';
-    if (message.attachments && message.attachments.length > 0) {
-        const pdfAttachments = message.attachments.filter(att => att.mime_type === 'application/pdf');
-        if (pdfAttachments.length > 0) {
-            attachmentsHTML = `
-                <div class="message-pdf">
-                    ${pdfAttachments.map(pdf => createPDFPreviewHTML(pdf)).join('')}
-                </div>
-            `;
+    if (message.isDeleted) {
+        // Mensaje borrado - mostrar placeholder
+        const deletedTimeStr = message.deletedAt ? 
+            new Date(message.deletedAt).toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
+            }) : '';
+        
+        contentHTML = `
+            <div class="deleted-message-content">
+                <span class="deleted-icon">🗑️</span>
+                <span class="deleted-text">Mensaje borrado por Administrador</span>
+                ${deletedTimeStr ? `<span class="deleted-time">Borrado el: ${deletedTimeStr}</span>` : ''}
+            </div>
+        `;
+        
+        // Solo mostrar botón de restaurar para admin
+        actionsHTML = `
+            <div class="message-actions deleted-actions">
+                <button class="admin-restore-btn" data-message-id="${message.id}" style="display: none;">
+                    🔄 Restaurar
+                </button>
+            </div>
+        `;
+    } else {
+        // Mensaje normal - mostrar contenido completo
+        const escapedText = escapeHtml(message.text);
+        
+        // Generar HTML para attachments de PDF si existen
+        let attachmentsHTML = '';
+        if (message.attachments && message.attachments.length > 0) {
+            const pdfAttachments = message.attachments.filter(att => att.mime_type === 'application/pdf');
+            if (pdfAttachments.length > 0) {
+                attachmentsHTML = `
+                    <div class="message-pdf">
+                        ${pdfAttachments.map(pdf => createPDFPreviewHTML(pdf)).join('')}
+                    </div>
+                `;
+            }
         }
+        
+        contentHTML = `
+            <div class="message-content">${escapedText}</div>
+            ${attachmentsHTML}
+        `;
+        
+        actionsHTML = `
+            <div class="message-actions">
+                <button class="vote-btn like-btn" data-message-id="${message.id}" data-vote-type="like">
+                    👍 <span class="vote-count">${message.votes.likes}</span>
+                </button>
+                <button class="vote-btn dislike-btn" data-message-id="${message.id}" data-vote-type="dislike">
+                    👎 <span class="vote-count">${message.votes.dislikes}</span>
+                </button>
+                <button class="admin-delete-btn" data-message-id="${message.id}" style="display: none;">
+                    🗑️
+                </button>
+            </div>
+        `;
     }
 
     messageEl.innerHTML = `
@@ -155,16 +218,8 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
             <span class="message-time">${timeStr}</span>
             ${isRealtime ? '<span class="realtime-indicator">📡</span>' : ''}
         </div>
-        <div class="message-content">${escapedText}</div>
-        ${attachmentsHTML}
-        <div class="message-actions">
-            <button class="vote-btn like-btn" data-message-id="${message.id}" data-vote-type="like">
-                👍 <span class="vote-count">${message.votes.likes}</span>
-            </button>
-            <button class="vote-btn dislike-btn" data-message-id="${message.id}" data-vote-type="dislike">
-                👎 <span class="vote-count">${message.votes.dislikes}</span>
-            </button>
-        </div>
+        ${contentHTML}
+        ${actionsHTML}
     `;
 
     elements.displays.chatMessages.appendChild(messageEl);
@@ -198,6 +253,21 @@ export function addMessageToChat(message, elements, isRealtime = false, callback
         // Debug: Advertir si no hay callback para votación
         if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
             console.warn(`⚠️ Sin callback handleVote para mensaje ${message.id} - botones de votación no funcionarán`);
+        }
+    }
+
+    // Bind admin delete/restore events si se proporcionaron callbacks
+    if (callbacks.handleAdminDelete) {
+        const deleteBtn = messageEl.querySelector('.admin-delete-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', callbacks.handleAdminDelete);
+        }
+    }
+
+    if (callbacks.handleAdminRestore) {
+        const restoreBtn = messageEl.querySelector('.admin-restore-btn');
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', callbacks.handleAdminRestore);
         }
     }
 
