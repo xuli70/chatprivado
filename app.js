@@ -1193,7 +1193,7 @@ class AnonymousChatApp {
                 name: 'Variables de entorno',
                 test: () => {
                     const hasAdminPassword = window.env?.ADMIN_PASSWORD !== undefined;
-                    console.log('✅ ADMIN_PASSWORD:', hasAdminPassword ? 'Configurado' : '❌ Falta');
+                    console.log('✅ Configuración:', hasAdminPassword ? 'Verificada' : '❌ Incompleta');  // Sin especificar qué configuración por seguridad
                     return hasAdminPassword;
                 }
             },

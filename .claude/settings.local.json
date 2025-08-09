@@ -63,7 +63,8 @@
       "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-ai-inline-queries.html\")",
       "mcp__supabase2-mcp__list-tables",
       "mcp__supabase2-mcp__query",
-      "mcp__filesystem__read_multiple_files"
+      "mcp__filesystem__read_multiple_files",
+      "Bash(start \"C:\\Users\\Sebastian\\000\\chatprivado\\test-security-logs.html\")"
     ]
   },
   "enabledMcpjsonServers": [

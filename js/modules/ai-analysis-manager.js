@@ -10,12 +10,7 @@ import { getAllRoomMessagesFromDB } from './message-manager.js';
 export class AiAnalysisManager {
     constructor() {
         // Debug: Verificar estado de window.env al momento de construcción
-        console.log('🔍 DEBUG: Estado window.env en constructor:', {
-            windowEnvExists: typeof window.env !== 'undefined',
-            windowEnvKeys: window.env ? Object.keys(window.env) : 'N/A',
-            aiAccessPassword: window.env?.AI_ACCESS_PASSWORD,
-            openaiApiKey: window.env?.OPENAI_API_KEY ? 'CONFIGURADO' : 'NO CONFIGURADO'
-        });
+        // console.log comentado por seguridad - exponía claves sensibles
         
         this.apiKey = window.env?.OPENAI_API_KEY || '';
         this.model = window.env?.AI_MODEL || 'gpt-4o-mini';
@@ -36,18 +31,14 @@ export class AiAnalysisManager {
      */
     init() {
         // Debug: Verificar estado de variables después de init
-        console.log('🔍 DEBUG: Estado window.env después de init:', {
-            windowEnvExists: typeof window.env !== 'undefined',
-            aiAccessPassword: window.env?.AI_ACCESS_PASSWORD,
-            allEnvKeys: window.env ? Object.keys(window.env) : 'N/A'
-        });
+        // console.log comentado por seguridad - exponía claves sensibles
 
         this.setupEventListeners();
         this.checkApiKeyAvailability();
         
         // Test de acceso a password después de init
         const testPassword = this.getAiAccessPassword();
-        console.log('🧪 Test acceso password después de init:', testPassword);
+        // console.log comentado por seguridad - exponía password
     }
 
     /**
@@ -60,7 +51,7 @@ export class AiAnalysisManager {
             return false;
         }
         
-        console.log('✅ OpenAI API Key configurada correctamente');
+        console.log('✅ API Key configurada');  // Sin especificar qué key por seguridad
         return true;
     }
 
@@ -110,7 +101,7 @@ export class AiAnalysisManager {
         
         // Verificar si el usuario es administrador
         const isAdmin = window.chatApp?.state?.isAdmin || false;
-        console.log('🔐 Estado admin:', isAdmin);
+        // console.log comentado por seguridad - no exponer estado admin
         
         if (!isAdmin) {
             // Usuario regular - mostrar modal de password
@@ -196,13 +187,7 @@ export class AiAnalysisManager {
      */
     getAiAccessPassword() {
         // Debug exhaustivo del estado de variables
-        console.log('🔍 DEBUG: Acceso dinámico a password:', {
-            windowExists: typeof window !== 'undefined',
-            windowEnvExists: typeof window.env !== 'undefined',
-            windowEnvObject: window.env,
-            aiAccessPasswordDirect: window.env?.AI_ACCESS_PASSWORD,
-            windowAppConfig: window.APP_CONFIG?.AI_ACCESS_PASSWORD || 'N/A'
-        });
+        // console.log comentado por seguridad - exponía passwords y configuración
 
         // Intentar múltiples fuentes con fallbacks
         const password = 
@@ -210,7 +195,7 @@ export class AiAnalysisManager {
             window.APP_CONFIG?.AI_ACCESS_PASSWORD || 
             '';
 
-        console.log('🔐 Password obtenido:', password ? `"${password}"` : 'VACÍO');
+        // console.log comentado por seguridad - exponía password en texto claro
         return password;
     }
 
@@ -229,9 +214,7 @@ export class AiAnalysisManager {
         const enteredPassword = passwordInput.value.trim();
         const correctPassword = this.getAiAccessPassword(); // Acceso dinámico
         
-        console.log('🔐 Validando password...');
-        console.log('🔐 Password ingresado:', `"${enteredPassword}"`);
-        console.log('🔐 Password esperado:', `"${correctPassword}"`);
+        // console.logs comentados por seguridad - exponían passwords
         
         if (!correctPassword) {
             const errorMsg = '❌ Password no configurado en el sistema';
@@ -243,7 +226,7 @@ export class AiAnalysisManager {
 
         if (enteredPassword === correctPassword) {
             // Password correcto
-            console.log('✅ Password validado correctamente');
+            console.log('✅ Password correcto');  // Sin mostrar el valor
             feedbackDiv.innerHTML = '<span class="success">✅ Password correcto</span>';
             feedbackDiv.className = 'password-feedback success';
             
