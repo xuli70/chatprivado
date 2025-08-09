@@ -1329,6 +1329,15 @@ select.form-control {
   opacity: 0.8;
 }
 
+/* Modo claro - mejorar visibilidad de texto en mensajes borrados */
+[data-color-scheme="light"] .deleted-text {
+  color: #374151;
+}
+
+[data-color-scheme="light"] .deleted-time {
+  color: #6B7280;
+}
+
 /* ==================== BOTONES ADMINISTRADOR ==================== */
 
 .admin-delete-btn {
