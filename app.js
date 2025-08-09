@@ -1577,47 +1577,57 @@ class AnonymousChatApp {
         try {
             const messageId = parseInt(e.currentTarget.getAttribute('data-message-id'));
             const messageEl = e.currentTarget.closest('.message');
+            const deleteButton = e.currentTarget; // Capturar referencia al botón
             
             if (!messageId) {
                 console.error('ID de mensaje no válido');
                 return;
             }
 
-            // Mostrar modal de confirmación
-            const confirmed = await this.showConfirmModal(
+            // Crear callback para confirmación
+            const confirmDeleteCallback = async () => {
+                try {
+                    // Mostrar indicador de carga
+                    const originalText = deleteButton.innerHTML;
+                    deleteButton.innerHTML = '⏳';
+                    deleteButton.disabled = true;
+
+                    // Ejecutar borrado
+                    const adminIdentifier = this.state.isAdmin ? 'Administrador' : 'Admin';
+                    const result = await this.supabaseClient.adminDeleteMessage(messageId, adminIdentifier);
+
+                    if (result.success) {
+                        this.showToast('Mensaje borrado exitosamente', 'success');
+                        
+                        // Recargar mensajes para mostrar el estado actualizado
+                        await this.loadRoom();
+                        
+                    } else {
+                        console.error('Error borrando mensaje:', result.error);
+                        this.showToast('Error al borrar mensaje: ' + (result.error || 'Error desconocido'), 'error');
+                        
+                        // Restaurar botón
+                        deleteButton.innerHTML = originalText;
+                        deleteButton.disabled = false;
+                    }
+                } catch (deleteError) {
+                    console.error('Error en callback de borrado:', deleteError);
+                    this.showToast('Error al borrar mensaje. Inténtalo de nuevo.', 'error');
+                    
+                    // Restaurar botón
+                    deleteButton.innerHTML = originalText;
+                    deleteButton.disabled = false;
+                }
+            };
+
+            // Mostrar modal de confirmación con callback
+            this.showConfirmModal(
                 'Confirmar borrado',
                 '¿Estás seguro de que quieres borrar este mensaje?\n\nEsta acción se puede deshacer desde el modo administrador.',
+                confirmDeleteCallback,
                 'Borrar',
-                'Cancelar'
+                'danger'
             );
-
-            if (!confirmed) {
-                return;
-            }
-
-            // Mostrar indicador de carga
-            const originalText = e.currentTarget.innerHTML;
-            e.currentTarget.innerHTML = '⏳';
-            e.currentTarget.disabled = true;
-
-            // Ejecutar borrado
-            const adminIdentifier = this.state.isAdmin ? 'Administrador' : 'Admin';
-            const result = await this.supabaseClient.adminDeleteMessage(messageId, adminIdentifier);
-
-            if (result.success) {
-                this.showToast('Mensaje borrado exitosamente', 'success');
-                
-                // Recargar mensajes para mostrar el estado actualizado
-                await this.loadRoom();
-                
-            } else {
-                console.error('Error borrando mensaje:', result.error);
-                this.showToast('Error al borrar mensaje: ' + (result.error || 'Error desconocido'), 'error');
-                
-                // Restaurar botón
-                e.currentTarget.innerHTML = originalText;
-                e.currentTarget.disabled = false;
-            }
 
         } catch (error) {
             console.error('Error en handleAdminDeleteMessage:', error);
