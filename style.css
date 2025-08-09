@@ -1330,12 +1330,28 @@ select.form-control {
 }
 
 /* Modo claro - mejorar visibilidad de texto en mensajes borrados */
-[data-color-scheme="light"] .deleted-text {
-  color: #374151;
+[data-color-scheme="light"] .message-deleted {
+  color: white;
 }
 
-[data-color-scheme="light"] .deleted-time {
-  color: #6B7280;
+[data-color-scheme="light"] .message-deleted .deleted-text {
+  color: white;
+}
+
+[data-color-scheme="light"] .message-deleted .deleted-time {
+  color: white;
+}
+
+[data-color-scheme="light"] .message-deleted .deleted-icon {
+  color: white;
+}
+
+[data-color-scheme="light"] .message-deleted .message-author {
+  color: white;
+}
+
+[data-color-scheme="light"] .message-deleted .message-time {
+  color: white;
 }
 
 /* ==================== BOTONES ADMINISTRADOR ==================== */
